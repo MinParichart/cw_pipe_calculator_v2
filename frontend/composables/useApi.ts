@@ -220,6 +220,34 @@ export const documentsApi = {
 
   delete: (documentId: number) =>
     apiRequest<void>(`/documents/${documentId}`, { method: 'DELETE' }),
+
+  // Version-level documents (v2)
+  listByVersion: (versionId: number) =>
+    apiRequest<any[]>(`/versions/${versionId}/documents`),
+
+  uploadForVersion: async (versionId: number, file: File, metadata: {
+    floor: string
+    type: string
+    scale: string
+  }) => {
+    const nuxtApp = useNuxtApp()
+    const api = (nuxtApp as any).$api
+
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('floor', metadata.floor)
+    formData.append('type', metadata.type)
+    formData.append('scale', metadata.scale)
+
+    const response = await api.request({
+      method: 'POST',
+      url: `/versions/${versionId}/documents`,
+      data: formData,
+      headers: {},
+    })
+
+    return response.data.data || response.data
+  },
 }
 
 /**

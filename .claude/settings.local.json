@@ -100,7 +100,8 @@
       "Bash(cmd //C \"taskkill /PID 31144 /F\")",
       "Bash(TaskStop b9wodpcpa:*)",
       "Bash(lsof -ti:3004)",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(ls -la pages/projects/[id]/versions/)"
     ]
   }
 }

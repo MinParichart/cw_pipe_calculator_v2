@@ -12,7 +12,7 @@
 
     <!-- Results Display -->
     <div v-if="hybridResult" class="space-y-4">
-      <!-- Fixture Branch Pipes by Node (MOCK UI) -->
+      <!-- Fixture Branch Pipes by Node (v2 mode: from hybridResult.fixtureNodes, v1 mode: from fixtureNodesData) -->
       <div class="rounded-lg bg-purple-50 border border-purple-200 p-4">
         <h5 class="text-sm font-bold text-purple-900 mb-3 flex items-center">
           <svg
@@ -34,7 +34,7 @@
         <!-- Group by Node -->
         <div class="space-y-3">
           <div
-            v-for="node in fixtureNodesData"
+            v-for="node in (hybridResult.fixtureNodes || fixtureNodesData)"
             :key="node.id"
             class="bg-white rounded-lg border border-purple-200 overflow-hidden"
           >
@@ -144,14 +144,17 @@
 const { hybridSizingApi, networksApi } = useApi();
 
 const props = defineProps<{
-  pipeId?: number;
-  networkId?: number;
+  pipeId?: number;        // v1 mode
+  networkId?: number;      // v1 mode
+  networkData?: any;       // v2 mode: network data from version snapshot
+  versionId?: number;      // v2 mode
   systemType?: "FLUSH_TANK" | "FLUSH_VALVE";
 }>();
 
 const emit = defineEmits<{
   select: [method: "table26" | "hazenWilliams", result: any];
   apply: [method: "table26" | "hazenWilliams", sizeMM: number];
+  sizingChange: [];
 }>();
 
 const toast = useToast();
@@ -162,6 +165,18 @@ const selectedMethod = ref<"table26" | "hazenWilliams" | null>(null);
 const hybridResult = ref<any>(null);
 const networkNodes = ref<any[]>([]);
 const loadingNodes = ref(false);
+
+// Computed: Detect which mode we're in
+const isV2Mode = computed(() => {
+  return !!(props.networkData && props.versionId);
+});
+
+console.log('[HybridPipeSizing] Component mounted/updated:', {
+  networkId: props.networkId,
+  versionId: props.versionId,
+  hasNetworkData: !!props.networkData,
+  isV2Mode: isV2Mode.value
+});
 
 // Pipe size mapping from Fixture Units table
 const getPipeSize = (fixtureType: string): string => {
@@ -202,14 +217,21 @@ const fixtureNodesData = computed(() => {
   return transformNodesToFixtureNodes(networkNodes.value);
 });
 
-// Method: load network nodes
+// Method: load network nodes (supports both v1 and v2 modes)
 const loadNetworkNodes = async () => {
-  if (!props.networkId) return;
-
   try {
     loadingNodes.value = true;
-    const nodes = await networksApi.getNodes(props.networkId);
-    networkNodes.value = nodes;
+
+    if (isV2Mode.value && props.networkData) {
+      // v2 mode: Load from networkData prop
+      console.log('[HybridPipeSizing V2] Loading nodes from networkData');
+      networkNodes.value = props.networkData.nodes || [];
+    } else if (props.networkId) {
+      // v1 mode: Load from API
+      console.log('[HybridPipeSizing V1] Loading nodes from API');
+      const nodes = await networksApi.getNodes(props.networkId);
+      networkNodes.value = nodes;
+    }
   } catch (error: any) {
     console.error("Failed to load network nodes:", error);
   } finally {
@@ -219,7 +241,7 @@ const loadNetworkNodes = async () => {
 
 // Computed
 const canCalculate = computed(() => {
-  return props.pipeId || props.networkId;
+  return props.pipeId || props.networkId || isV2Mode.value;
 });
 
 // Methods
@@ -231,31 +253,82 @@ const calculateHybrid = async () => {
   try {
     let result: any;
 
-    if (props.pipeId) {
-      // Calculate for single pipe
+    if (isV2Mode.value && props.networkData) {
+      // v2 mode: Calculate locally from networkData (no API call)
+      console.log('[HybridPipeSizing V2] Calculating from networkData');
+
+      // Get fixture nodes from networkData
+      const nodesWithFixtures = (props.networkData.nodes || []).filter((node: any) =>
+        node.fixtures && node.fixtures.length > 0
+      );
+
+      if (nodesWithFixtures.length === 0) {
+        hybridResult.value = null;
+        toast.info("ไม่พบข้อมูลสุขภัณฑ์");
+        calculating.value = false;
+        return;
+      }
+
+      // Transform to fixture nodes format for display
+      const fixtureNodes = transformNodesToFixtureNodes(nodesWithFixtures);
+
+      // Create mock result for v2 mode (display fixture nodes only)
+      result = {
+        fixtureNodes: fixtureNodes,
+        tableSizing: {
+          mm: 15,
+          inches: '1/2"',
+          method: 'table26'
+        },
+        formulaSizing: {
+          mm: 15,
+          inches: '1/2"',
+          method: 'hazenWilliams'
+        },
+        comparison: {
+          agreement: true,
+          difference: 0
+        }
+      };
+
+      console.log('[HybridPipeSizing V2] Created result from networkData:', fixtureNodes.length, 'nodes with fixtures');
+
+    } else if (props.pipeId) {
+      // v1 mode: Calculate for single pipe
       result = await hybridSizingApi.calculatePipe(props.pipeId, {
         systemType: props.systemType || "FLUSH_TANK"
       });
     } else if (props.networkId) {
-      // Calculate for all pipes in network and show first result
+      // v1 mode: Calculate for all pipes in network and show first result
       const results = await hybridSizingApi.calculateNetwork(props.networkId, {
         systemType: props.systemType || "FLUSH_TANK"
       });
       result = results[0]; // Show first pipe as example
+    } else {
+      hybridResult.value = null;
+      calculating.value = false;
+      return;
     }
 
     hybridResult.value = result;
 
     // Auto-select recommended method (prefer formula if larger)
-    selectedMethod.value = result.comparison.agreement
+    selectedMethod.value = result.comparison?.agreement
       ? "table26"
-      : result.formulaSizing.mm > result.tableSizing.mm
+      : result.formulaSizing?.mm > result.tableSizing?.mm
         ? "hazenWilliams"
         : "table26";
 
     emitSelection();
-    toast.success("คำนวณเสร็จสิ้น");
+    emit("sizingChange");
+
+    if (isV2Mode.value) {
+      toast.success(`โหลดข้อมูลสุขภัณฑ์ ${result.fixtureNodes?.length || 0} ห้องเรียบร้อย`);
+    } else {
+      toast.success("คำนวณเสร็จสิ้น");
+    }
   } catch (error: any) {
+    console.error("[HybridPipeSizing] Error:", error);
     toast.error(error.message || "คำนวณไม่สำเร็จ");
   } finally {
     calculating.value = false;

@@ -1,15 +1,125 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="bg-white shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="flex items-center justify-between">
-          <button
-            @click="goBack"
-            class="flex items-center text-sm text-gray-600 hover:text-gray-900"
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div class="px-4 py-6 sm:px-0">
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h1 class="text-3xl font-bold text-gray-900">Calculation</h1>
+              <p class="mt-1 text-sm text-gray-600">
+                คำนวณขนาดท่อด้วยระบบ Auto Suggest และ Hybrid Sizing
+              </p>
+            </div>
+
+            <!-- Version Badge -->
+            <div class="flex items-center gap-3">
+              <div class="bg-orange-100 border border-orange-200 rounded-lg px-4 py-2">
+                <div class="flex items-center gap-2">
+                  <svg class="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  <div>
+                    <p class="text-xs text-orange-600 font-medium">Version</p>
+                    <p class="text-lg font-bold text-orange-900">{{ version?.name || `Version ${version?.versionNumber || '-'}` }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <!-- Auto Suggest Upsizing -->
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-medium text-gray-900">
+                Auto Suggest Upsizing
+              </h3>
+              <svg
+                class="h-5 w-5 text-blue-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                />
+              </svg>
+            </div>
+
+            <AutoSuggestUpsizing
+              v-if="networkData"
+              :network-data="networkData"
+              :version-id="versionId"
+              :project-id="projectId"
+              @suggestion-change="onSuggestionChange"
+              @summary-change="onSummaryChange"
+              @need-major-loss="onNeedMajorLoss"
+            />
+            <div v-else class="text-center py-8 text-gray-500">
+              <p class="text-sm">ไม่พบข้อมูล Network</p>
+            </div>
+          </div>
+
+          <!-- Hybrid Pipe Sizing -->
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-medium text-gray-900">
+                Hybrid Pipe Sizing
+              </h3>
+              <svg
+                class="h-5 w-5 text-orange-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                />
+              </svg>
+            </div>
+
+            <HybridPipeSizing
+              v-if="networkData"
+              :network-data="networkData"
+              :version-id="versionId"
+              @sizing-change="onSizingChange"
+            />
+            <div v-else class="text-center py-8 text-gray-500">
+              <p class="text-sm">ไม่พบข้อมูล Network</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Required Inlet Pressure Calculator -->
+        <div class="mt-6">
+          <RequiredInletPressure
+            v-if="networkData"
+            ref="requiredInletPressureRef"
+            :network-data="networkData"
+            :version-id="versionId"
+            :project-id="projectId"
+          />
+        </div>
+
+        <!-- Calculation Summary -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">สรุปขนาดท่อ</h3>
+          </div>
+
+          <div
+            v-if="!hasCalculated && !pipeSizesSummary"
+            class="text-center py-12"
           >
             <svg
-              class="h-4 w-4 mr-1"
+              class="mx-auto h-16 w-16 text-gray-400 mb-4"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -18,123 +128,26 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M15 19l-7-7 7-7"
+                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M15 7h6m-6 0h.01M9 3h6m-6 0h.01M3 21h18M9 3v6m6-6h6m-6 0v6"
               />
             </svg>
-            กลับ
-          </button>
-
-      </div>
-    </div>
-  </div>
-
-    <!-- Calculation Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div v-if="loading" class="flex items-center justify-center h-64">
-        <div class="text-center">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p class="mt-2 text-gray-600">Loading...</p>
-        </div>
-      </div>
-
-      <div v-else class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <!-- Main Calculation Area -->
-        <div class="lg:col-span-3 space-y-6">
-          <!-- Input Parameters -->
-          <div class="bg-white rounded-lg shadow-sm p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Design Parameters</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  C-Factor
-                </label>
-                <input
-                  :value="criteria?.cFactor || 150"
-                  type="text"
-                  disabled
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Velocity (m/s)
-                </label>
-                <input
-                  :value="`${criteria?.velocityMinimum || 0.6} - ${criteria?.velocityMaximum || 3.0}`"
-                  type="text"
-                  disabled
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  Demand Mode
-                </label>
-                <input
-                  :value="criteria?.demandMode || 'MIXED'"
-                  type="text"
-                  disabled
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                />
-              </div>
-            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">
+              ยังไม่มีการคำนวณ
+            </h3>
+            <p class="text-gray-600">กดปุ่มคำนวณเพื่อเริ่มคำนวณขนาดท่อ</p>
           </div>
 
-          <!-- Calculate Button -->
-          <div class="bg-white rounded-lg shadow-sm p-6">
-            <div class="flex items-center justify-between">
-              <div>
-                <h2 class="text-lg font-medium text-gray-900">Calculation</h2>
-                <p class="text-sm text-gray-600 mt-1">
-                  Calculate pipe sizes based on Hunter's Curve
-                </p>
-              </div>
-              <button
-                @click="runCalculation"
-                class="px-6 py-3 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="calculating || !canCalculate()"
+          <div v-else>
+            <!-- Pipe Sizes Summary -->
+            <div
+              v-if="pipeSizesSummary"
+              class="mb-6 p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg border border-green-200"
+            >
+              <h4
+                class="text-sm font-bold text-gray-900 mb-3 flex items-center"
               >
-                <span v-if="calculating">
-                  <svg class="animate-spin inline-block h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Calculating...
-                </span>
-                <span v-else>🧮 Calculate</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Results -->
-          <div v-if="hasResults()" class="bg-white rounded-lg shadow-sm p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Calculation Results</h2>
-
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div class="border rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-blue-600">-</div>
-                <div class="text-xs text-gray-600 mt-1">Total Pipes</div>
-              </div>
-              <div class="border rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-purple-600">-</div>
-                <div class="text-xs text-gray-600 mt-1">Total Fixtures</div>
-              </div>
-              <div class="border rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-green-600">-</div>
-                <div class="text-xs text-gray-600 mt-1">Max Flow (L/min)</div>
-              </div>
-              <div class="border rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-orange-600">-</div>
-                <div class="text-xs text-gray-600 mt-1">Total Head Loss (m)</div>
-              </div>
-            </div>
-
-            <!-- Results Table Placeholder -->
-            <div class="border-2 border-dashed border-gray-300 rounded-lg h-[300px] flex items-center justify-center">
-              <div class="text-center">
                 <svg
-                  class="mx-auto h-12 w-12 text-gray-400"
+                  class="h-4 w-4 mr-2 text-green-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -143,88 +156,66 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <p class="mt-2 text-sm text-gray-500">
-                  Calculation Results
-                </p>
-                <p class="text-xs text-gray-400 mt-1">
-                  (Will be implemented in next phase)
-                </p>
+                รายชื่อเส้นท่อที่เลือก
+              </h4>
+
+              <!-- Critical Path -->
+              <div
+                v-if="pipeSizesSummary.criticalPath?.length > 0"
+                class="mb-3"
+              >
+                <h5 class="text-xs font-semibold text-red-700 mb-2">
+                  Critical Path ({{ pipeSizesSummary.criticalPath.length }}
+                  เส้น)
+                </h5>
+                <div class="space-y-1">
+                  <div
+                    v-for="(pipe, idx) in pipeSizesSummary.criticalPath"
+                    :key="`cp-${idx}`"
+                    class="flex items-center justify-between bg-white px-3 py-2 rounded border border-red-200"
+                  >
+                    <span class="text-sm font-medium text-gray-800">{{
+                      pipe.segmentName
+                    }}</span>
+                    <span class="text-sm font-bold text-red-600"
+                      >{{ pipe.sizeMM }}mm ({{ pipe.sizeInches }})</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- Branch Pipes -->
+              <div v-if="pipeSizesSummary.branch?.length > 0">
+                <h5 class="text-xs font-semibold text-blue-700 mb-2">
+                  Branch Pipes ({{ pipeSizesSummary.branch.length }} เส้น)
+                </h5>
+                <div class="space-y-1">
+                  <div
+                    v-for="(pipe, idx) in pipeSizesSummary.branch"
+                    :key="`br-${idx}`"
+                    class="flex items-center justify-between bg-white px-3 py-2 rounded border border-blue-200"
+                  >
+                    <span class="text-sm font-medium text-gray-800">{{
+                      pipe.segmentName
+                    }}</span>
+                    <span class="text-sm font-bold text-blue-600"
+                      >{{ pipe.sizeMM }}mm ({{ pipe.sizeInches }})</span
+                    >
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Sidebar -->
-        <div class="lg:col-span-1 space-y-6">
-          <!-- Status Card -->
-          <div class="bg-white rounded-lg shadow-sm p-4">
-            <h3 class="text-sm font-medium text-gray-900 mb-3">Status</h3>
-            <div class="space-y-2 text-sm">
-              <div class="flex items-center justify-between">
-                <span class="text-gray-600">Reference:</span>
-                <span :class="hasReference() ? 'text-green-600' : 'text-gray-400'">
-                  {{ hasReference() ? '✓' : '○' }}
-                </span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-gray-600">Network:</span>
-                <span :class="hasNetwork() ? 'text-green-600' : 'text-gray-400'">
-                  {{ hasNetwork() ? '✓' : '○' }}
-                </span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-gray-600">Fixtures:</span>
-                <span :class="hasFixtures() ? 'text-green-600' : 'text-gray-400'">
-                  {{ hasFixtures() ? '✓' : '○' }}
-                </span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-gray-600">Calculated:</span>
-                <span :class="hasResults() ? 'text-green-600' : 'text-gray-400'">
-                  {{ hasResults() ? '✓' : '○' }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Prerequisites Warning -->
-          <div v-if="!canCalculate()" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h3 class="text-sm font-medium text-yellow-800 mb-2">⚠️ Prerequisites</h3>
-            <ul class="text-xs text-yellow-700 space-y-1">
-              <li v-if="!hasReference()" class="flex items-start">
-                <span class="mr-1">○</span>
-                <span>Upload reference file</span>
-              </li>
-              <li v-if="!hasNetwork()" class="flex items-start">
-                <span class="mr-1">○</span>
-                <span>Create network diagram</span>
-              </li>
-              <li v-if="!hasFixtures()" class="flex items-start">
-                <span class="mr-1">○</span>
-                <span>Add fixtures</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Actions -->
-          <div v-if="hasResults()" class="bg-white rounded-lg shadow-sm p-4">
-            <h3 class="text-sm font-medium text-gray-900 mb-3">Actions</h3>
-            <div class="space-y-2">
-              <button
-                @click="exportResults"
-                class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-              >
-                📄 Export Report
-              </button>
-              <button
-                @click="goBack"
-                class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                กลับไปหน้าโปรเจกต์
-              </button>
+          <div class="mt-6 flex justify-between items-center">
+            <div class="flex gap-3">
+              <BackButton @click="goToPrevStep" />
+              <NextStepButton
+                @click="goToNextStep"
+              />
             </div>
           </div>
         </div>
@@ -234,120 +225,182 @@
 </template>
 
 <script setup lang="ts">
-import { useVersionStore } from '~/stores/versionStore'
-import { projectsApi } from '~/composables/useApi'
+import AutoSuggestUpsizing from "~/components/calculator/AutoSuggestUpsizing.vue";
+import HybridPipeSizing from "~/components/calculator/HybridPipeSizing.vue";
+import RequiredInletPressure from "~/components/calculator/RequiredInletPressure.vue";
+import BackButton from "~/components/navigation/BackButton.vue";
+import NextStepButton from "~/components/navigation/NextStepButton.vue";
+import { versionsApi } from "~/composables/useApi";
+import { useWorkflowStore } from "~/stores/workflowStore";
 
-const route = useRoute()
-const router = useRouter()
-const toast = useToast()
-const versionStore = useVersionStore()
+const route = useRoute();
+const router = useRouter();
+const toast = useToast();
+const workflowStore = useWorkflowStore();
 
 // State
-const loading = ref(true)
-const version = ref<any>(null)
-const criteria = ref<any>(null)
-const calculating = ref(false)
+const projectId = computed(() => parseInt(route.params.id as string));
+const versionId = computed(() => parseInt(route.params.versionId as string));
+const version = ref<any>(null);
+const networkData = ref<any>(null);
+const hasCalculated = ref(false);
+const calculationSummary = ref<any>({
+  totalFixtures: 0,
+  totalFU: 0,
+  flowRate: 0,
+  maxPipeSize: "-"
+});
+const pipeSizesSummary = ref<any>(null);
+
+console.log("🚀 [Step 5 - V2] Calculation page mounted");
+console.log("   - Project ID:", projectId.value);
+console.log("   - Version ID:", versionId.value);
 
 // Methods
 const loadVersion = async () => {
-  loading.value = true
   try {
-    const versionId = parseInt(route.params.versionId as string)
-    const projectId = parseInt(route.params.id as string)
-
-    // Load version
-    const result = await versionStore.loadVersions(projectId)
-    if (result.success) {
-      const found = versionStore.versions.find(v => v.id === versionId)
-      if (found) {
-        version.value = found
-        // Check prerequisites
-        if (!found.referenceLayer) {
-          toast.info('Please upload reference file first')
-          router.replace(`/projects/${route.params.id}/versions/${versionId}/upload`)
-        } else if (!found.snapshotNetwork) {
-          toast.info('Please create network first')
-          router.replace(`/projects/${route.params.id}/versions/${versionId}/network`)
-        } else if (!found.snapshotFixtures) {
-          toast.info('Please add fixtures first')
-          router.replace(`/projects/${route.params.id}/versions/${versionId}/fixtures`)
-        }
-      } else {
-        toast.error('Version not found')
-        goBack()
-      }
-    }
-
-    // Load project criteria
-    try {
-      criteria.value = await projectsApi.getCriteria(projectId)
-    } catch (error) {
-      // No criteria, use defaults
+    const data = await versionsApi.get(versionId.value);
+    if (data) {
+      version.value = data;
+      console.log('✅ Version loaded:', {
+        id: data.id,
+        name: data.name,
+        hasSnapshotNetwork: !!data.snapshotNetwork,
+        hasSnapshotFixtures: !!data.snapshotFixtures
+      });
     }
   } catch (err: any) {
-    toast.error(err.message || 'Failed to load version')
-    goBack()
-  } finally {
-    loading.value = false
+    console.error('Failed to load version:', err);
+    toast.error('ไม่สามารถโหลด Version ได้');
   }
-}
+};
 
-const hasReference = () => {
-  return !!version.value?.referenceLayer
-}
-
-const hasNetwork = () => {
-  return !!version.value?.snapshotNetwork
-}
-
-const hasFixtures = () => {
-  return !!version.value?.snapshotFixtures
-}
-
-const hasResults = () => {
-  return !!version.value?.snapshotResults
-}
-
-const canCalculate = () => {
-  return hasReference() && hasNetwork() && hasFixtures()
-}
-
-const runCalculation = async () => {
-  if (!canCalculate()) {
-    toast.error('Please complete all previous steps first')
-    return
-  }
-
-  calculating.value = true
+const loadNetworkFromVersion = () => {
   try {
-    // TODO: Implement actual calculation
-    // For now, just simulate
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    toast.success('คำนวณเสร็จสิ้น')
-    await loadVersion() // Reload to get updated data
-  } catch (err: any) {
-    toast.error(err.message || 'คำนวณไม่สำเร็จ')
-  } finally {
-    calculating.value = false
+    if (version.value?.snapshotNetwork) {
+      networkData.value = JSON.parse(version.value.snapshotNetwork);
+      console.log('✅ Network loaded from snapshot:', {
+        nodes: networkData.value?.nodes?.length || 0,
+        pipes: networkData.value?.pipes?.length || 0
+      });
+    } else {
+      console.log('ℹ️ No snapshotNetwork found');
+      networkData.value = null;
+    }
+  } catch (error) {
+    console.error('Failed to parse network snapshot:', error);
+    networkData.value = null;
   }
-}
+};
 
-const exportResults = () => {
-  toast.info('Export feature coming soon')
-}
+const loadCalculationSummary = async () => {
+  try {
+    // TODO: Load from version.snapshotResults if available
+    if (version.value?.snapshotResults) {
+      const results = JSON.parse(version.value.snapshotResults);
+      console.log('✅ Calculation results loaded from snapshot');
+      // Parse results if needed
+      hasCalculated.value = true;
+    } else {
+      hasCalculated.value = false;
+    }
+  } catch (error) {
+    console.error('Failed to parse calculation results:', error);
+    hasCalculated.value = false;
+  }
+};
 
-const goBack = () => {
-  router.push(`/projects/${route.params.id}`)
-}
+const onSuggestionChange = () => {
+  workflowStore.markStepComplete("calculation");
+  console.log('✅ [Step 5 - V2] Suggestion changed');
+};
 
-// Load version on mount
-onMounted(() => {
-  loadVersion()
-})
+const onSummaryChange = (summary: any) => {
+  pipeSizesSummary.value = summary;
 
-// Define page meta for layout
+  // Update calculationSummary from stats
+  if (summary.stats) {
+    calculationSummary.value = {
+      totalFixtures: summary.stats.totalFixtures || 0,
+      totalFU: summary.stats.totalFU || 0,
+      flowRate: summary.stats.flowRate || 0,
+      maxPipeSize: summary.stats.maxPipeSize || "-"
+    };
+    console.log("[Calculation] Calculation summary updated:", calculationSummary.value);
+  }
+
+  console.log("[Calculation] Pipe sizes summary received:", summary);
+
+  // Save to version.snapshotResults
+  saveCalculationSnapshot(summary);
+};
+
+const saveCalculationSnapshot = async (results: any) => {
+  try {
+    const snapshotResults = {
+      pipeSizesSummary: results,
+      calculationSummary: calculationSummary.value,
+      updatedAt: new Date().toISOString()
+    };
+
+    await versionsApi.update(versionId.value, {
+      snapshotResults: JSON.stringify(snapshotResults)
+    });
+
+    console.log('✅ Calculation snapshot saved');
+  } catch (error) {
+    console.error('Failed to save calculation snapshot:', error);
+  }
+};
+
+const onSizingChange = () => {
+  workflowStore.markStepComplete("calculation");
+  console.log('✅ [Step 5 - V2] Sizing changed');
+};
+
+// Reference to RequiredInletPressure component
+const requiredInletPressureRef = ref<any>(null);
+
+// Handle major loss from AutoSuggestUpsizing, pass to RequiredInletPressure
+const onNeedMajorLoss = (majorLossBar: number) => {
+  console.log(
+    "[Calculation] Received majorLoss from AutoSuggestUpsizing:",
+    majorLossBar.toFixed(3),
+    "bar"
+  );
+  // Pass to RequiredInletPressure component
+  if (requiredInletPressureRef.value) {
+    requiredInletPressureRef.value.onNeedMajorLoss(majorLossBar);
+  }
+};
+
+const saveCalculation = () => {
+  workflowStore.markStepComplete("calculation");
+  toast.success("บันทึกผลการคำนวณเรียบร้อย");
+};
+
+const goToNextStep = () => {
+  router.push(`/projects/${route.params.id}/versions`);
+};
+
+const goToPrevStep = () => {
+  router.push(`/projects/${route.params.id}/versions/${route.params.versionId}/fixtures`);
+};
+
+// Load data on mount
+onMounted(async () => {
+  console.log("🚀 [Step 5 - V2] onMounted called");
+
+  await loadVersion();
+  loadNetworkFromVersion();
+  await loadCalculationSummary();
+
+  workflowStore.setCurrentStep("calculation");
+
+  console.log("✅ [Step 5 - V2] Data loaded");
+});
+
 definePageMeta({
-  layout: 'dashboard'
-})
+  layout: "dashboard"
+});
 </script>

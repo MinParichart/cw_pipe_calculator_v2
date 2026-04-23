@@ -243,11 +243,33 @@ import { useProjectStore } from "~/stores/projectStore";
 import { fixtureFlowRates } from "~/utils/fixtureData";
 
 const props = defineProps<{
-  networkId?: number;
+  networkId?: number;      // v1 mode
+  networkData?: any;       // v2 mode
+  versionId?: number;      // v2 mode
   projectId?: number;
 }>();
 
 const projectStore = useProjectStore();
+
+// Computed: Detect which mode we're in
+const isV2Mode = computed(() => {
+  return !!(props.networkData && props.versionId);
+});
+
+// Get storage key based on mode
+const getStorageKey = () => {
+  return isV2Mode.value
+    ? `requiredInletPressure_ver_${props.versionId}`   // v2: use versionId
+    : `requiredInletPressure_net_${props.networkId}`;  // v1: use networkId
+};
+
+console.log('[RequiredInletPressure] Component mounted/updated:', {
+  networkId: props.networkId,
+  versionId: props.versionId,
+  hasNetworkData: !!props.networkData,
+  isV2Mode: isV2Mode.value,
+  storageKey: getStorageKey()
+});
 
 // 1. โหลดข้อมูลจาก LocalStorage (กันหายเวลารีเฟรช)
 const loadSavedValues = () => {
@@ -261,10 +283,8 @@ const loadSavedValues = () => {
   }
 
   // ดึงจาก LocalStorage เป็นหลัก
-  if (typeof window !== "undefined" && props.networkId) {
-    const saved = localStorage.getItem(
-      `requiredInletPressure_${props.networkId}`
-    );
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem(getStorageKey());
     if (saved) {
       const data = JSON.parse(saved);
       return {
@@ -286,9 +306,9 @@ const majorLossMwg = ref<number>(0.0);
 watch(
   [verticalHeight, selectedFixtureKey],
   ([newHeight, newFixture]) => {
-    if (typeof window !== "undefined" && props.networkId) {
+    if (typeof window !== "undefined") {
       localStorage.setItem(
-        `requiredInletPressure_${props.networkId}`,
+        getStorageKey(),
         JSON.stringify({
           verticalHeight: newHeight,
           selectedFixtureKey: newFixture

@@ -1200,7 +1200,9 @@ const { autoSuggestApi } = useApi();
 const projectStore = useProjectStore();
 
 const props = defineProps<{
-  networkId?: number;
+  networkId?: number;      // v1 mode: network ID from database
+  networkData?: any;       // v2 mode: network data from version snapshot
+  versionId?: number;      // v2 mode: version ID
   systemType?: "FLUSH_TANK" | "FLUSH_VALVE";
   projectId?: number; // 🔥 FIX: Add projectId for localStorage key consistency
 }>();
@@ -1223,6 +1225,18 @@ const projectCriteria = ref<any>(null); // Add criteria state
 const expandedSimulationPipeId = ref<number | null>(null); // Track which pipe's simulation is expanded
 const simulatedResults = ref<Map<number, any[]>>(new Map()); // Store simulation results for each pipe
 const currentProjectId = ref<number | null>(null); // Track current project ID
+
+// Computed: Detect which mode we're in
+const isV2Mode = computed(() => {
+  return !!(props.networkData && props.versionId);
+});
+
+console.log('[AutoSuggest] Component mounted/updated:', {
+  networkId: props.networkId,
+  versionId: props.versionId,
+  hasNetworkData: !!props.networkData,
+  isV2Mode: isV2Mode.value
+});
 
 // Pressure Calculation State
 const selectedFixture = ref<any>(null); // สุขภัณฑ์ปลายทายที่เลือก
@@ -2636,36 +2650,264 @@ const getFrictionLossColor = (frictionLoss: number) => {
   return "text-green-600";
 };
 
-// Auto-analyze on mount
-onMounted(() => {
-  console.log("[AutoSuggest] 🚀 Component mounted - networkId:", props.networkId, "projectId:", props.projectId);
+// ===== V2 MODE: Local Analysis from networkData =====
+const analyzePipesV2 = async () => {
+  console.log("[AutoSuggest V2] 📍 analyzePipesV2() called - versionId:", props.versionId);
 
-  if (props.networkId) {
-    console.log("[AutoSuggest] ✅ networkId exists, starting analysis...");
+  if (!props.networkData || !props.networkData.pipes || props.networkData.pipes.length === 0) {
+    console.warn("[AutoSuggest V2] ⚠️ No pipes in networkData");
+    toast.error("ไม่พบข้อมูล Network");
+    return;
+  }
 
-    // 🆕 Clear criteria cache to ensure we get the latest PVC Class
-    if (props.projectId) {
-      projectStore.clearProject(props.projectId);
-      console.log(`[AutoSuggest] 🗑️ Cleared criteria cache for project ${props.projectId}`);
-    }
+  analyzing.value = true;
 
-    // 🛡️ Load from localStorage FIRST (browser-only, prevents hydration mismatch)
-    if (typeof window !== "undefined") {
-      const cacheKey = `staticHead_net_${props.networkId}`;
-      const cachedHead = localStorage.getItem(cacheKey);
-      if (cachedHead !== null) {
-        staticHeadM.value = parseFloat(cachedHead);
-        console.log(
-          `[AutoSuggest] 📦 Loaded staticHead from localStorage (onMounted): ${staticHeadM.value}`
-        );
+  try {
+    console.log("[AutoSuggest V2] 📍 Loading project criteria...");
+    await loadProjectCriteria();
+    console.log("[AutoSuggest V2] ✅ Criteria loaded:", projectCriteria.value);
+
+    // Load fixtures data from version.snapshotFixtures
+    let fixturesData: any[] = [];
+    if (typeof window !== "undefined" && props.projectId) {
+      const storageKey = `pipeGPMData_${props.projectId}`;
+      const savedData = localStorage.getItem(storageKey);
+      if (savedData) {
+        try {
+          fixturesData = JSON.parse(savedData);
+          console.log(`✅ [V2] Loaded fixtures data from Step 4 (${fixturesData.length} ท่อ)`);
+        } catch (e) {
+          console.error("❌ [V2] ไม่สามารถอ่านข้อมูลจาก Step 4 ได้:", e);
+        }
       }
     }
 
-    // Then start analyzing
-    console.log("[AutoSuggest] 🔍 Calling analyzePipes()...");
+    // Process pipes from networkData
+    const analyzedPipes = props.networkData.pipes.map((pipe: any) => {
+      // Find fixtures data for this pipe
+      const fixturesPipe = fixturesData.find((p: any) => p.pipeId === pipe.id);
+
+      const fu = fixturesPipe?.totalFU || 0;
+      const baseHunterGPM = fixturesPipe?.hunterGPM || 0;
+      const hoseBibbGPM = fixturesPipe?.hoseBibbGPM || 0;
+      const rawTotalGPM = baseHunterGPM + hoseBibbGPM;
+
+      console.log(`[AutoSuggest V2] Pipe ${pipe.id}: FU=${fu}, HunterGPM=${baseHunterGPM.toFixed(2)}, HB=${hoseBibbGPM.toFixed(2)}`);
+
+      // Apply Water Factor
+      const waterFactorPercent = getWaterFactorPercent(fu);
+      const adjustedHunterGPM = calculateAdjustedGPM(baseHunterGPM, fu);
+      const adjustedGPM = adjustedHunterGPM + hoseBibbGPM;
+
+      const flowM3S = gpmToM3S(adjustedGPM);
+      const flowLPS = gpmToLPS(adjustedGPM);
+
+      // Get pipe size
+      const currentSizeMM = pipe.nominalSize || 15;
+      const sizeInfo = PIPE_SIZES.find((s) => s.mm === currentSizeMM) || PIPE_SIZES[0];
+
+      // Calculate internal diameter
+      let internalDiameterM: number;
+      const cFactor = pipe.cFactor || 150;
+
+      if (cFactor === 150) {
+        const pvcClass = projectCriteria.value?.pvcClass || 7;
+        internalDiameterM = calculatePVCInternalDiameterWorstCase(currentSizeMM, pvcClass);
+        console.log(`[AutoSuggest V2] Pipe ${pipe.id}: DN=${currentSizeMM}mm, PVC Class=${pvcClass}, ID=${internalDiameterM}m`);
+      } else {
+        internalDiameterM = sizeInfo.internalDiameterM;
+      }
+
+      // Calculate velocity and friction loss
+      const velocity = calculateVelocity(flowM3S, internalDiameterM);
+      const frictionLoss = calculateFrictionLoss(flowM3S, internalDiameterM, cFactor);
+      const pipeLength = pipe.length || 1;
+      const majorLoss = calculateMajorLoss(pipeLength, frictionLoss);
+
+      // Determine status
+      const status = determineStatus(velocity);
+
+      // Generate warnings
+      const warnings: string[] = [];
+      if (velocity < VELOCITY_CRITICAL_LOW) {
+        warnings.push("CRITICAL: Velocity extremely low - risk of sedimentation");
+      } else if (velocity < VELOCITY_MIN) {
+        warnings.push("WARNING: Velocity below minimum - may cause sedimentation");
+      } else if (velocity > VELOCITY_CRITICAL_HIGH) {
+        warnings.push("CRITICAL: Velocity extremely high - risk of water hammer");
+      } else if (velocity > VELOCITY_MAX) {
+        warnings.push("WARNING: Velocity above maximum - may cause noise");
+      }
+
+      if (frictionLoss > MAX_FRICTION_LOSS * 1.5) {
+        warnings.push("CRITICAL: Friction loss extremely high");
+      } else if (frictionLoss > MAX_FRICTION_LOSS) {
+        warnings.push("WARNING: Friction loss above recommended");
+      }
+
+      // Get node labels
+      const sourceNode = props.networkData.nodes?.find((n: any) => n.id === pipe.sourceNodeId);
+      const targetNode = props.networkData.nodes?.find((n: any) => n.id === pipe.targetNodeId);
+      const sourceLabel = sourceNode?.label || `J${pipe.sourceNodeId}`;
+      const targetLabel = targetNode?.label || `J${pipe.targetNodeId}`;
+      const segmentName = `${sourceLabel} → ${targetLabel}`;
+
+      return {
+        pipeId: pipe.id,
+        segmentName: segmentName,
+        fixtureUnits: fu,
+        hunterGPM: rawTotalGPM,
+        baseHunterGPM: baseHunterGPM,
+        hoseBibbGPM: hoseBibbGPM,
+        waterFactorPercent: waterFactorPercent,
+        adjustedGPM: adjustedGPM,
+        flowRate: {
+          gpm: adjustedGPM,
+          lps: flowLPS,
+          m3s: flowM3S
+        },
+        currentSize: {
+          mm: currentSizeMM,
+          inches: sizeInfo.inches,
+          internalDiameter: internalDiameterM
+        },
+        pipeLength: pipeLength,
+        cFactor: cFactor,
+        velocity: velocity,
+        frictionLoss: frictionLoss,
+        majorLoss: majorLoss,
+        minorLoss: majorLoss * 0.3,
+        staticHead: 0,
+        totalLoss: majorLoss + majorLoss * 0.3,
+        status: status,
+        suggestedSize: null, // TODO: implement suggestion logic
+        suggestedVelocity: null,
+        suggestedFrictionLoss: null,
+        reason: status === "OK" ? "Velocity อยู่ในช่วงปกติ" : `Velocity ${velocity.toFixed(2)} m/s (ควร 1.2-2.4)`,
+        warnings: warnings,
+        isCriticalPath: pipe.isCriticalPath || false,
+        sourceNode: sourceNode || null,
+        targetNode: targetNode || null
+      };
+    });
+
+    const validPipes = analyzedPipes.filter((pipe) => pipe !== null);
+
+    if (validPipes.length === 0) {
+      toast.error("ไม่สามารถวิเคราะห์ข้อมูลท่อได้");
+      analyzing.value = false;
+      return;
+    }
+
+    // Separate into critical path and branch pipes
+    const criticalPath = validPipes.filter((p) => p.isCriticalPath === true);
+    const branchPipesData = validPipes.filter((p) => p.isCriticalPath !== true);
+
+    suggestions.value = [
+      ...criticalPath.map((p) => ({ ...p, pathType: "CRITICAL" })),
+      ...branchPipesData.map((p) => ({ ...p, pathType: "BRANCH" }))
+    ];
+
+    const criticalPathMajorLoss = criticalPath.reduce(
+      (sum, pipe) => sum + (pipe.majorLoss || 0),
+      0
+    );
+    emit("needMajorLoss", criticalPathMajorLoss);
+
+    // Emit summary
+    nextTick(() => {
+      if (suggestions.value.length > 0) {
+        const totalFU = suggestions.value.reduce((sum, s) => sum + (s.fixtureUnits || 0), 0);
+        const maxPipeSize = Math.max(...suggestions.value.map(s => s.currentSize?.mm || 0));
+        const criticalPathFlowRate = criticalPath.reduce((max, p) => {
+          const flow = p.flowRate?.gpm || 0;
+          return flow > max ? flow : max;
+        }, 0);
+
+        let totalFixtures = 0;
+        fixturesData.forEach((pipe: any) => {
+          if (pipe.fixtureGroups && Array.isArray(pipe.fixtureGroups)) {
+            pipe.fixtureGroups.forEach((group: any) => {
+              totalFixtures += group.count || 0;
+            });
+          }
+        });
+
+        const summary = {
+          criticalPath: criticalPath.map((p) => ({
+            segmentName: p.segmentName,
+            sizeMM: p.currentSize.mm,
+            sizeInches: p.currentSize.inches
+          })),
+          branch: branchPipesData.map((p) => ({
+            segmentName: p.segmentName,
+            sizeMM: p.currentSize.mm,
+            sizeInches: p.currentSize.inches
+          })),
+          stats: {
+            totalFixtures,
+            totalFU,
+            flowRate: criticalPathFlowRate.toFixed(2),
+            maxPipeSize: maxPipeSize + "mm"
+          }
+        };
+        emit("summaryChange", summary);
+      }
+    });
+
+    summary.value = {
+      total: validPipes.length,
+      ok: validPipes.filter(p => p.status === "OK").length,
+      warning: validPipes.filter(p => p.status === "WARNING").length,
+      critical: validPipes.filter(p => p.status === "CRITICAL").length,
+      needsUpsizing: validPipes.filter(p => p.status !== "OK").length
+    };
+
+    toast.success(
+      `วิเคราะห์เสร็จสิ้น ${validPipes.length} ท่อ (Critical: ${criticalPath.length}, Branch: ${branchPipesData.length})`
+    );
+  } catch (error: any) {
+    console.error("[AutoSuggest V2] Analysis error:", error);
+    toast.error(error.message || "วิเคราะห์ไม่สำเร็จ");
+  } finally {
+    analyzing.value = false;
+  }
+};
+
+// Auto-analyze on mount
+onMounted(() => {
+  console.log("[AutoSuggest] 🚀 Component mounted - networkId:", props.networkId, "versionId:", props.versionId, "projectId:", props.projectId, "isV2Mode:", isV2Mode.value);
+
+  // Clear criteria cache to ensure we get the latest PVC Class
+  if (props.projectId) {
+    projectStore.clearProject(props.projectId);
+    console.log(`[AutoSuggest] 🗑️ Cleared criteria cache for project ${props.projectId}`);
+  }
+
+  // 🛡️ Load staticHead from localStorage FIRST (browser-only, prevents hydration mismatch)
+  if (typeof window !== "undefined") {
+    const cacheKey = isV2Mode.value
+      ? `staticHead_ver_${props.versionId}`  // v2: use versionId
+      : `staticHead_net_${props.networkId}`;  // v1: use networkId
+
+    const cachedHead = localStorage.getItem(cacheKey);
+    if (cachedHead !== null) {
+      staticHeadM.value = parseFloat(cachedHead);
+      console.log(
+        `[AutoSuggest] 📦 Loaded staticHead from localStorage (onMounted): ${staticHeadM.value} (key: ${cacheKey})`
+      );
+    }
+  }
+
+  // Start analyzing based on mode
+  if (isV2Mode.value) {
+    console.log("[AutoSuggest] ✅ V2 mode detected, starting local analysis from networkData...");
+    analyzePipesV2();
+  } else if (props.networkId) {
+    console.log("[AutoSuggest] ✅ V1 mode detected, starting API analysis...");
     analyzePipes();
   } else {
-    console.log("[AutoSuggest] ❌ No networkId provided, skipping analysis");
+    console.log("[AutoSuggest] ❌ No networkId or networkData provided, skipping analysis");
   }
 });
 

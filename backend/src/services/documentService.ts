@@ -107,6 +107,94 @@ export class DocumentService {
   }
 
   /**
+   * Get all documents for a version (v2)
+   */
+  async getVersionDocuments(versionId: number) {
+    const documents = await prisma.document.findMany({
+      where: { versionId },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return documents.map(doc => ({
+      id: doc.id,
+      name: doc.fileName,
+      url: doc.filePath,
+      floor: doc.floor,
+      type: doc.type,
+      scale: doc.scale,
+      notes: doc.notes,
+      floorText: this.getFloorText(doc.floor),
+      typeText: this.getTypeText(doc.type),
+      createdAt: doc.createdAt,
+    }))
+  }
+
+  /**
+   * Upload a document to a version (v2)
+   */
+  async uploadVersionDocument(versionId: number, file: any, metadata: {
+    floor: string
+    type: string
+    scale: string
+  }) {
+    // Check if version exists
+    const version = await prisma.version.findUnique({
+      where: { id: versionId },
+    })
+
+    if (!version) {
+      throw new Error('Version not found')
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now()
+    const random = Math.floor(Math.random() * 1000000000)
+    const ext = path.extname(file.originalname || file.name)
+    const fileName = `blueprint-v${versionId}-${timestamp}-${random}${ext}`
+
+    // Save file to uploads directory
+    const uploadsDir = path.join(__dirname, '../../uploads')
+    await fs.mkdir(uploadsDir, { recursive: true })
+
+    const filePath = path.join(uploadsDir, fileName)
+
+    // Handle both multer file and base64
+    if (file.buffer) {
+      await fs.writeFile(filePath, file.buffer)
+    } else if (file.data) {
+      // Base64 string
+      const base64Data = file.data.replace(/^data:image\/\w+;base64,/, '')
+      await fs.writeFile(filePath, Buffer.from(base64Data, 'base64'))
+    }
+
+    // Save to database
+    const document = await prisma.document.create({
+      data: {
+        projectId: version.projectId,
+        versionId,
+        fileName,
+        filePath: `/uploads/${fileName}`,
+        floor: metadata.floor,
+        type: metadata.type,
+        scale: metadata.scale,
+      },
+    })
+
+    return {
+      id: document.id,
+      name: document.fileName,
+      url: document.filePath,
+      floor: document.floor,
+      type: document.type,
+      scale: document.scale,
+      notes: document.notes,
+      floorText: this.getFloorText(document.floor),
+      typeText: this.getTypeText(document.type),
+      createdAt: document.createdAt,
+    }
+  }
+
+  /**
    * Helper: Get floor display text
    */
   private getFloorText(floor: string): string {

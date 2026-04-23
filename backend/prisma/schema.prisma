@@ -202,11 +202,13 @@ model AuditLog {
 model Document {
   id        Int      @id @default(autoincrement())
   projectId Int
+  versionId Int?     // v2: Per-version documents
   fileName  String
   filePath  String
   floor     String
   type      String
   scale     String
+  notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)

@@ -104,4 +104,78 @@ export class DocumentController {
       })
     }
   }
+
+  /**
+   * Get all documents for a version (v2)
+   */
+  async getVersionDocuments(req: Request, res: Response) {
+    try {
+      const versionId = parseInt(req.params.versionId)
+
+      if (!versionId) {
+        return res.status(400).json({
+          error: { message: 'Version ID is required', status: 400 }
+        })
+      }
+
+      const documents = await documentService.getVersionDocuments(versionId)
+
+      res.json(documents)
+    } catch (error: any) {
+      console.error('Error fetching version documents:', error)
+      res.status(500).json({
+        error: { message: error.message || 'Failed to fetch version documents', status: 500 }
+      })
+    }
+  }
+
+  /**
+   * Upload a document to a version (v2)
+   */
+  async uploadVersionDocument(req: Request, res: Response) {
+    try {
+      console.log('📤 VERSION UPLOAD RECEIVED')
+      console.log('📤 Params:', req.params)
+      console.log('📤 Body:', req.body)
+      console.log('📤 File:', req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'NO FILE')
+
+      const versionId = parseInt(req.params.versionId)
+
+      if (!versionId) {
+        console.log('❌ Missing versionId')
+        return res.status(400).json({
+          error: { message: 'Version ID is required', status: 400 }
+        })
+      }
+
+      if (!req.file) {
+        console.log('❌ No file in request')
+        return res.status(400).json({
+          error: { message: 'No file uploaded', status: 400 }
+        })
+      }
+
+      const metadata = {
+        floor: req.body.floor || '1',
+        type: req.body.type || 'floor_plan',
+        scale: req.body.scale || '1:100',
+      }
+
+      console.log('📤 Metadata:', metadata)
+
+      const document = await documentService.uploadVersionDocument(
+        versionId,
+        req.file,
+        metadata
+      )
+
+      console.log('✅ Version upload successful:', document)
+      res.status(201).json(document)
+    } catch (error: any) {
+      console.error('❌ Error uploading version document:', error)
+      res.status(500).json({
+        error: { message: error.message || 'Failed to upload version document', status: 500 }
+      })
+    }
+  }
 }

@@ -50,4 +50,20 @@ router.post(
  */
 router.delete('/documents/:id', documentController.deleteDocument.bind(documentController))
 
+/**
+ * @route   GET /api/versions/:versionId/documents
+ * @desc    Get all documents for a version (v2)
+ */
+router.get('/versions/:versionId/documents', documentController.getVersionDocuments.bind(documentController))
+
+/**
+ * @route   POST /api/versions/:versionId/documents
+ * @desc    Upload a document to a version (v2)
+ */
+router.post(
+  '/versions/:versionId/documents',
+  upload.single('file'),
+  documentController.uploadVersionDocument.bind(documentController)
+)
+
 export default router

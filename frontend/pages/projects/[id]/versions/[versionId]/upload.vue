@@ -340,22 +340,8 @@
               </span>
             </div>
             <div class="flex gap-3">
-              <button
-                @click="goBack"
-                type="button"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                ยกเลิก
-              </button>
-
-              <button
-                v-if="blueprints.length > 0"
-                @click="goToNextStep"
-                type="button"
-                class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-              >
-                ถัดไป → Network Builder
-              </button>
+              <BackButton @click="goToPrevStep" />
+              <NextStepButton @click="goToNextStep" :disabled="blueprints.length === 0" />
             </div>
           </div>
         </div>
@@ -549,6 +535,8 @@
 </template>
 
 <script setup lang="ts">
+import BackButton from '~/components/navigation/BackButton.vue'
+import NextStepButton from '~/components/navigation/NextStepButton.vue'
 import { useVersionStore } from '~/stores/versionStore'
 import { documentsApi } from '~/composables/useApi'
 
@@ -846,6 +834,10 @@ const formatDateShort = (dateString: string) => {
 
 const goToNextStep = () => {
   router.push(`/projects/${route.params.id}/versions/${route.params.versionId}/network`)
+}
+
+const goToPrevStep = () => {
+  router.push(`/projects/${route.params.id}`)
 }
 
 const goBack = () => {

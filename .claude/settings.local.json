@@ -93,7 +93,9 @@
       "Bash(grep:*)",
       "Bash(rm -rf node_modules/.cache)",
       "Bash(rm -f .tsbuildinfo)",
-      "Bash(powershell \"Stop-Process -Id 51204 -Force\")"
+      "Bash(powershell \"Stop-Process -Id 51204 -Force\")",
+      "Bash(findstr :3004)",
+      "Bash(cmd //C \"taskkill /PID 33512 /F\" 2>&1)"
     ]
   }
 }

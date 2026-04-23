@@ -1,11 +1,5 @@
 # CW Pipe Calculator v2
 
-1. ✅ backend/.env → BACKEND_PORT=3004
-2. ✅ backend/src/main.ts → .listen(3004)
-3. ✅ frontend/.env → NUXT_PUBLIC_API_URL=http://localhost:3004
-4. ✅ frontend/nuxt.config.ts → port: 3003
-5. ✅ backend/prisma/schema.prisma → เปลี่ยนชื่อ database (ถ้าจำเป็น)
-
 ## 📋 วัตถุประสงค์
 
 **ปัญหาของ v1:**

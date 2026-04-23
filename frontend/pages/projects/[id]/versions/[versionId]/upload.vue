@@ -4,23 +4,38 @@
       <div class="px-4 py-6 sm:px-0">
         <div class="mb-6">
           <!-- Back & Title Row -->
-          <div class="flex items-center gap-4 mb-4">
-            <button
-              @click="goBack"
-              class="flex items-center text-sm text-gray-600 hover:text-gray-900"
-            >
-              <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-              ย้อนกลับ
-            </button>
-            <div>
-              <h1 class="text-3xl font-bold text-gray-900">
-                {{ version?.name || 'Version' }}
-              </h1>
-              <p class="text-sm text-gray-600">
-                Upload reference file (DXF blueprint)
-              </p>
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-4">
+              <button
+                @click="goBack"
+                class="flex items-center text-sm text-gray-600 hover:text-gray-900"
+              >
+                <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                ย้อนกลับ
+              </button>
+              <div>
+                <h1 class="text-3xl font-bold text-gray-900">อัปโหลด Blueprint</h1>
+                <p class="mt-1 text-sm text-gray-600">
+                  Upload reference file (DXF blueprint)
+                </p>
+              </div>
+            </div>
+
+            <!-- Version Badge -->
+            <div class="flex items-center gap-3">
+              <div class="bg-orange-100 border border-orange-200 rounded-lg px-4 py-2">
+                <div class="flex items-center gap-2">
+                  <svg class="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  <div>
+                    <p class="text-xs text-orange-600 font-medium">Version</p>
+                    <p class="text-lg font-bold text-orange-900">{{ version?.name || `Version ${version?.versionNumber || '-'}` }}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -600,9 +615,14 @@ const loadVersion = async () => {
 const loadFromAPI = async () => {
   try {
     const versionId = parseInt(route.params.versionId as string)
-    blueprints.value = await documentsApi.listByVersion(versionId)
+    console.log('📋 Loading blueprints for version:', versionId)
+    const loadedBlueprints = await documentsApi.listByVersion(versionId)
+    console.log('📋 Loaded blueprints:', loadedBlueprints)
+    blueprints.value = loadedBlueprints || []
+    console.log('📋 Blueprints state after load:', blueprints.value.length)
   } catch (error: any) {
     console.error('Failed to load blueprints from API:', error)
+    blueprints.value = []
   }
 }
 
@@ -833,7 +853,25 @@ const formatDateShort = (dateString: string) => {
 }
 
 const goToNextStep = () => {
-  router.push(`/projects/${route.params.id}/versions/${route.params.versionId}/network`)
+  console.log('🚀🚀🚀 goToNextStep CLICKED! 🚀🚀🚀')
+  console.log('📋 Blueprints count:', blueprints.value.length)
+  console.log('📋 Blueprints array:', blueprints.value)
+
+  if (blueprints.value.length === 0) {
+    console.error('❌ No blueprints, blocking navigation')
+    toast.error('กรุณาอัปโหลด Blueprint อย่างน้อย 1 รูป')
+    return
+  }
+
+  const targetUrl = `/projects/${route.params.id}/versions/${route.params.versionId}/network`
+  console.log('🎯 Navigating to:', targetUrl)
+
+  try {
+    router.push(targetUrl)
+    console.log('✅ Navigation initiated')
+  } catch (error) {
+    console.error('❌ Navigation failed:', error)
+  }
 }
 
 const goToPrevStep = () => {
@@ -885,8 +923,10 @@ const saveBlueprintEdit = () => {
 
 // Load version and blueprints on mount
 onMounted(async () => {
+  console.log('🔄 Page mounted, loading data...')
   await loadVersion()
   await loadFromAPI()
+  console.log('✅ Page mount complete, blueprints:', blueprints.value.length)
 })
 
 // Define page meta for layout

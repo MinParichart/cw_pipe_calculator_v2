@@ -2069,7 +2069,9 @@ import {
 
 const props = defineProps<{
   projectId: number;
+  versionId?: number; // v2: Per-version networks
   networkId?: number;
+  networkData?: any; // v2: Network snapshot (instead of networkId)
   blueprints?: any[];
   scale?: number; // pixels per meter
   systemType?: "FLUSH_TANK" | "FLUSH_VALVE";
@@ -2288,10 +2290,24 @@ watch(
           pipes.value[pipeIndex].cornerPoints = cornerPointsData;
         }
 
-        // Save to backend
-        await pipesApi.update(pipe.id, {
-          cornerPoints: cornerPointsData
-        });
+        // v2: Per-version network (snapshot mode) - emit change
+        if (props.networkData && props.versionId) {
+          // Pipe cornerPoints already updated in local state
+          // Emit debounced to avoid too frequent updates
+          nextTick(() => {
+            emit('networkChange', {
+              ...currentNetwork.value,
+              nodes: [...nodes.value],
+              pipes: [...pipes.value]
+            });
+          });
+        }
+        // v1: Legacy network from database - save to backend
+        else if (props.networkId) {
+          await pipesApi.update(pipe.id, {
+            cornerPoints: cornerPointsData
+          });
+        }
       } catch (error) {
         console.error(
           `Failed to update pipe ${pipe.id} after node move:`,
@@ -2304,13 +2320,36 @@ watch(
 );
 
 // Computed
+// v2: Support both networkData (snapshot) and networkId (legacy)
 const hasValidNetworkId = computed(() => {
+  // v2: networkData from version snapshot
+  if (props.networkData !== null && props.networkData !== undefined) {
+    return true
+  }
+  // v1: networkId from database
   const valid = props.networkId !== null && props.networkId !== undefined;
   if (!valid) {
-    console.warn("NetworkBuilder: networkId is invalid", props.networkId);
+    console.warn("NetworkBuilder: Neither networkData nor networkId provided");
   }
   return valid;
 });
+
+// v2: Current network data (from snapshot or API)
+const currentNetwork = computed(() => {
+  // v2: From snapshot
+  if (props.networkData) {
+    return props.networkData
+  }
+  // v1: Will be loaded from API
+  return null
+})
+
+// v2: Display network ID (for debugging/logs)
+const displayNetworkId = computed(() => {
+  if (props.versionId) return `version-${props.versionId}`
+  if (props.networkId) return props.networkId
+  return null
+})
 
 const selectedNodeTotalFU = computed(() => {
   return selectedNodeFixtures.value.reduce((sum, f) => {
@@ -2705,10 +2744,34 @@ const loadProjectParameters = async () => {
 const updateNodeLabel = async () => {
   if (!selectedNode.value) return;
   try {
-    await nodesApi.update(selectedNode.value.id, {
-      label: selectedNode.value.label || undefined
-    });
-    toast.success("บันทึกชื่อ Node เรียบร้อย");
+    const nodeId = selectedNode.value.id;
+    const newLabel = selectedNode.value.label || undefined;
+
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Update node in local state (no API call)
+      const nodeIndex = nodes.value.findIndex(n => n.id === nodeId);
+      if (nodeIndex >= 0) {
+        nodes.value[nodeIndex].label = newLabel;
+
+        // Emit change to parent
+        emit('networkChange', {
+          ...currentNetwork.value,
+          nodes: [...nodes.value]
+        });
+
+        toast.success("บันทึกชื่อ Node เรียบร้อย");
+        console.log("Node label updated (v2 snapshot mode)");
+      }
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      await nodesApi.update(nodeId, { label: newLabel });
+      toast.success("บันทึกชื่อ Node เรียบร้อย");
+    }
+    else {
+      toast.error("ไม่พบ Network ที่จะอัปเดต");
+    }
   } catch (error: any) {
     toast.error(error.message || "Failed to update node");
   }
@@ -2717,10 +2780,34 @@ const updateNodeLabel = async () => {
 const updateNodeElevation = async () => {
   if (!selectedNode.value) return;
   try {
-    await nodesApi.update(selectedNode.value.id, {
-      elevation: selectedNode.value.elevation
-    });
-    toast.success("บันทึกระดับความสูงเรียบร้อย");
+    const nodeId = selectedNode.value.id;
+    const newElevation = selectedNode.value.elevation;
+
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Update node in local state (no API call)
+      const nodeIndex = nodes.value.findIndex(n => n.id === nodeId);
+      if (nodeIndex >= 0) {
+        nodes.value[nodeIndex].elevation = newElevation;
+
+        // Emit change to parent
+        emit('networkChange', {
+          ...currentNetwork.value,
+          nodes: [...nodes.value]
+        });
+
+        toast.success("บันทึกระดับความสูงเรียบร้อย");
+        console.log("Node elevation updated (v2 snapshot mode)");
+      }
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      await nodesApi.update(nodeId, { elevation: newElevation });
+      toast.success("บันทึกระดับความสูงเรียบร้อย");
+    }
+    else {
+      toast.error("ไม่พบ Network ที่จะอัปเดต");
+    }
   } catch (error: any) {
     toast.error(error.message || "Failed to update node");
   }
@@ -2731,15 +2818,45 @@ const deleteSelectedNode = async () => {
   if (!confirm(`คุณต้องการลบ Node นี้?`)) return;
 
   try {
-    await nodesApi.delete(selectedNode.value.id);
-    nodes.value = nodes.value.filter((n) => n.id !== selectedNode.value.id);
-    pipes.value = pipes.value.filter(
-      (p) =>
-        p.sourceNodeId !== selectedNode.value.id &&
-        p.targetNodeId !== selectedNode.value.id
-    );
-    selectedNode.value = null;
-    toast.success("ลบ Node เรียบร้อย");
+    const nodeIdToDelete = selectedNode.value.id;
+
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Delete node from local state (no API call)
+      nodes.value = nodes.value.filter((n) => n.id !== nodeIdToDelete);
+      pipes.value = pipes.value.filter(
+        (p) =>
+          p.sourceNodeId !== nodeIdToDelete &&
+          p.targetNodeId !== nodeIdToDelete
+      );
+
+      selectedNode.value = null;
+
+      // Emit change to parent
+      emit('networkChange', {
+        ...currentNetwork.value,
+        nodes: [...nodes.value],
+        pipes: [...pipes.value]
+      });
+
+      toast.success("ลบ Node เรียบร้อย");
+      console.log("Node deleted successfully (v2 snapshot mode)");
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      await nodesApi.delete(nodeIdToDelete);
+      nodes.value = nodes.value.filter((n) => n.id !== nodeIdToDelete);
+      pipes.value = pipes.value.filter(
+        (p) =>
+          p.sourceNodeId !== nodeIdToDelete &&
+          p.targetNodeId !== nodeIdToDelete
+      );
+      selectedNode.value = null;
+      toast.success("ลบ Node เรียบร้อย");
+    }
+    else {
+      toast.error("ไม่พบ Network ที่จะลบ Node");
+    }
   } catch (error: any) {
     toast.error(error.message || "Failed to delete node");
   }
@@ -2755,10 +2872,35 @@ const selectPipe = (pipe: any) => {
 const updatePipeLength = async () => {
   if (!selectedPipe.value) return;
   try {
-    await pipesApi.update(selectedPipe.value.id, {
-      length: selectedPipe.value.length
-    });
-    toast.success("บันทึกความยาวท่อเรียบร้อย");
+    const pipeId = selectedPipe.value.id;
+    const newLength = selectedPipe.value.length;
+
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Update pipe in local state (no API call)
+      const pipeIndex = pipes.value.findIndex(p => p.id === pipeId);
+      if (pipeIndex >= 0) {
+        pipes.value[pipeIndex].length = newLength;
+
+        // Emit change to parent
+        emit('networkChange', {
+          ...currentNetwork.value,
+          nodes: [...nodes.value],
+          pipes: [...pipes.value]
+        });
+
+        toast.success("บันทึกความยาวท่อเรียบร้อย");
+        console.log("Pipe length updated (v2 snapshot mode)");
+      }
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      await pipesApi.update(pipeId, { length: newLength });
+      toast.success("บันทึกความยาวท่อเรียบร้อย");
+    }
+    else {
+      toast.error("ไม่พบ Network ที่จะอัปเดต");
+    }
   } catch (error: any) {
     toast.error(error.message || "Failed to update pipe");
   }
@@ -2767,10 +2909,35 @@ const updatePipeLength = async () => {
 const updatePipeSize = async () => {
   if (!selectedPipe.value) return;
   try {
-    await pipesApi.update(selectedPipe.value.id, {
-      nominalSize: selectedPipe.value.nominalSize
-    });
-    toast.success("บันทึกขนาดท่อเรียบร้อย");
+    const pipeId = selectedPipe.value.id;
+    const newNominalSize = selectedPipe.value.nominalSize;
+
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Update pipe in local state (no API call)
+      const pipeIndex = pipes.value.findIndex(p => p.id === pipeId);
+      if (pipeIndex >= 0) {
+        pipes.value[pipeIndex].nominalSize = newNominalSize;
+
+        // Emit change to parent
+        emit('networkChange', {
+          ...currentNetwork.value,
+          nodes: [...nodes.value],
+          pipes: [...pipes.value]
+        });
+
+        toast.success("บันทึกขนาดท่อเรียบร้อย");
+        console.log("Pipe size updated (v2 snapshot mode)");
+      }
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      await pipesApi.update(pipeId, { nominalSize: newNominalSize });
+      toast.success("บันทึกขนาดท่อเรียบร้อย");
+    }
+    else {
+      toast.error("ไม่พบ Network ที่จะอัปเดต");
+    }
   } catch (error: any) {
     toast.error(error.message || "Failed to update pipe");
   }
@@ -2787,11 +2954,40 @@ const updatePipeMaterial = async () => {
       PEX: 150
     };
 
-    await pipesApi.update(selectedPipe.value.id, {
-      material: selectedPipe.value.material,
-      cFactor: cFactors[selectedPipe.value.material] || 150
-    });
-    toast.success("บันทึกวัสดุเรียบร้อย");
+    const pipeId = selectedPipe.value.id;
+    const newMaterial = selectedPipe.value.material;
+    const newCFactor = cFactors[newMaterial] || 150;
+
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Update pipe in local state (no API call)
+      const pipeIndex = pipes.value.findIndex(p => p.id === pipeId);
+      if (pipeIndex >= 0) {
+        pipes.value[pipeIndex].material = newMaterial;
+        pipes.value[pipeIndex].cFactor = newCFactor;
+
+        // Emit change to parent
+        emit('networkChange', {
+          ...currentNetwork.value,
+          nodes: [...nodes.value],
+          pipes: [...pipes.value]
+        });
+
+        toast.success("บันทึกวัสดุเรียบร้อย");
+        console.log("Pipe material updated (v2 snapshot mode)");
+      }
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      await pipesApi.update(pipeId, {
+        material: newMaterial,
+        cFactor: newCFactor
+      });
+      toast.success("บันทึกวัสดุเรียบร้อย");
+    }
+    else {
+      toast.error("ไม่พบ Network ที่จะอัปเดต");
+    }
   } catch (error: any) {
     toast.error(error.message || "Failed to update pipe");
   }
@@ -2800,10 +2996,35 @@ const updatePipeMaterial = async () => {
 const updatePipeCFactor = async () => {
   if (!selectedPipe.value) return;
   try {
-    await pipesApi.update(selectedPipe.value.id, {
-      cFactor: selectedPipe.value.cFactor
-    });
-    toast.success("บันทึก C-Factor เรียบร้อย");
+    const pipeId = selectedPipe.value.id;
+    const newCFactor = selectedPipe.value.cFactor;
+
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Update pipe in local state (no API call)
+      const pipeIndex = pipes.value.findIndex(p => p.id === pipeId);
+      if (pipeIndex >= 0) {
+        pipes.value[pipeIndex].cFactor = newCFactor;
+
+        // Emit change to parent
+        emit('networkChange', {
+          ...currentNetwork.value,
+          nodes: [...nodes.value],
+          pipes: [...pipes.value]
+        });
+
+        toast.success("บันทึก C-Factor เรียบร้อย");
+        console.log("Pipe C-Factor updated (v2 snapshot mode)");
+      }
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      await pipesApi.update(pipeId, { cFactor: newCFactor });
+      toast.success("บันทึก C-Factor เรียบร้อย");
+    }
+    else {
+      toast.error("ไม่พบ Network ที่จะอัปเดต");
+    }
   } catch (error: any) {
     toast.error(error.message || "Failed to update pipe");
   }
@@ -2814,10 +3035,34 @@ const deleteSelectedPipe = async () => {
   if (!confirm(`คุณต้องการลบท่อนี้?`)) return;
 
   try {
-    await pipesApi.delete(selectedPipe.value.id);
-    pipes.value = pipes.value.filter((p) => p.id !== selectedPipe.value.id);
-    selectedPipe.value = null;
-    toast.success("ลบท่อเรียบร้อย");
+    const pipeIdToDelete = selectedPipe.value.id;
+
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Delete pipe from local state (no API call)
+      pipes.value = pipes.value.filter((p) => p.id !== pipeIdToDelete);
+      selectedPipe.value = null;
+
+      // Emit change to parent
+      emit('networkChange', {
+        ...currentNetwork.value,
+        nodes: [...nodes.value],
+        pipes: [...pipes.value]
+      });
+
+      toast.success("ลบท่อเรียบร้อย");
+      console.log("Pipe deleted successfully (v2 snapshot mode)");
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      await pipesApi.delete(pipeIdToDelete);
+      pipes.value = pipes.value.filter((p) => p.id !== pipeIdToDelete);
+      selectedPipe.value = null;
+      toast.success("ลบท่อเรียบร้อย");
+    }
+    else {
+      toast.error("ไม่พบ Network ที่จะลบท่อ");
+    }
   } catch (error: any) {
     toast.error(error.message || "Failed to delete pipe");
   }
@@ -2957,21 +3202,50 @@ const addNode = async (
   }
 
   try {
-    const node = await nodesApi.add(props.networkId, {
-      type: type as any,
-      x,
-      y,
-      elevation: 0 // Default elevation: 0m (user can update via Sidebar)
-    });
+    let node;
 
-    nodes.value.push({
-      ...node,
-      fixtures: [],
-      floor // Store floor for 2-floor mode
-    });
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Create node locally (no API call)
+      node = {
+        id: Date.now(), // Temporary ID
+        type: type as any,
+        x,
+        y,
+        elevation: 0,
+        fixtures: [],
+        floor
+      };
 
-    toast.success("เพิ่ม Node เรียบร้อย");
-    console.log("Node added successfully", node);
+      nodes.value.push(node);
+
+      // Emit change to parent
+      emit('networkChange', {
+        ...currentNetwork.value,
+        nodes: [...nodes.value]
+      });
+
+      toast.success("เพิ่ม Node เรียบร้อย");
+      console.log("Node added successfully (v2 snapshot mode)", node);
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      node = await nodesApi.add(props.networkId, {
+        type: type as any,
+        x,
+        y,
+        elevation: 0
+      });
+
+      nodes.value.push({
+        ...node,
+        fixtures: [],
+        floor
+      });
+
+      toast.success("เพิ่ม Node เรียบร้อย");
+      console.log("Node added successfully (v1 API mode)", node);
+    }
   } catch (error: any) {
     console.error("Failed to add node:", error);
     toast.error(error.message || "เพิ่ม Node ไม่สำเร็จ");
@@ -3015,6 +3289,16 @@ const selectNode = (node: any) => {
       // Normalize all fixtures from memory
       selectedNodeFixtures.value =
         selectedNode.value.fixtures.map(normalizeFixture);
+
+      // Initialize local input values with current quantities
+      selectedNodeFixtures.value.forEach((fixture) => {
+        fixtureInputValues[fixture.name] = fixture.quantity || 1;
+      });
+
+      // Force re-render
+      inputKeyVersion.value++;
+
+      console.log("Loaded fixtures from memory (v2 snapshot mode):", selectedNodeFixtures.value);
     } else {
       // Only load from API if we don't have data in memory
       loadNodeFixtures(node.id);
@@ -3033,13 +3317,26 @@ const selectNode = (node: any) => {
 // Load fixtures for a specific node
 const loadNodeFixtures = async (nodeId: number) => {
   try {
-    const fixtures = await nodesApi.getFixtures(nodeId);
+    let fixtures: any[] = [];
+
+    // v2: Per-version network (snapshot mode) - load from node.fixtures array
+    if (props.networkData && props.versionId) {
+      const node = nodes.value.find((n) => n.id === nodeId);
+      if (node && node.fixtures) {
+        fixtures = node.fixtures;
+        console.log("Loaded fixtures from node (v2 snapshot mode):", fixtures);
+      }
+    }
+    // v1: Legacy network from database - load from API
+    else if (props.networkId) {
+      fixtures = await nodesApi.getFixtures(nodeId);
+    }
 
     // Filter: Ensure fixtures belong to this node AND are not duplicates
     // Group by type to check for duplicates
     const fixturesByType = new Map<string, any[]>();
     fixtures.forEach((f: any) => {
-      if (f && typeof f === "object" && f.nodeId === nodeId) {
+      if (f && typeof f === "object") {
         const normalized = normalizeFixture(f);
         if (!fixturesByType.has(normalized.type)) {
           fixturesByType.set(normalized.type, []);
@@ -3117,14 +3414,32 @@ const startDragNode = (node: any, event: MouseEvent) => {
 
   const onMouseUp = async () => {
     if (draggingNode.value) {
-      // Update node position on server
+      // Update node position
       try {
-        await nodesApi.update(node.id, {
-          x: node.x,
-          y: node.y
-        });
+        const nodeId = node.id;
+        const newX = node.x;
+        const newY = node.y;
 
-        toast.success("บันทึกตำแหน่ง Node เรียบร้อย");
+        // v2: Per-version network (snapshot mode)
+        if (props.networkData && props.versionId) {
+          // Node position already updated in local state during drag
+          // Just emit change to parent
+          emit('networkChange', {
+            ...currentNetwork.value,
+            nodes: [...nodes.value]
+          });
+
+          toast.success("บันทึกตำแหน่ง Node เรียบร้อย");
+          console.log("Node position saved (v2 snapshot mode)");
+        }
+        // v1: Legacy network from database
+        else if (props.networkId) {
+          await nodesApi.update(nodeId, {
+            x: newX,
+            y: newY
+          });
+          toast.success("บันทึกตำแหน่ง Node เรียบร้อย");
+        }
       } catch (error: any) {
         toast.error(error.message || "Failed to update node");
       }
@@ -3275,12 +3590,27 @@ const startDragPipe = (pipe: any, event: MouseEvent) => {
             pipes.value[pipeIndex].cornerPoints = cornerPointsData;
           }
 
-          // 3. เซฟลง Database
-          await pipesApi.update(pipe.id, {
-            cornerPoints: cornerPointsData
-          });
+          // v2: Per-version network (snapshot mode)
+          if (props.networkData && props.versionId) {
+            // Pipe cornerPoints already updated in local state
+            // Just emit change to parent
+            emit('networkChange', {
+              ...currentNetwork.value,
+              nodes: [...nodes.value],
+              pipes: [...pipes.value]
+            });
 
-          toast.success("บันทึกตำแหน่งท่อเรียบร้อย");
+            toast.success("บันทึกตำแหน่งท่อเรียบร้อย");
+            console.log("Pipe position saved (v2 snapshot mode)");
+          }
+          // v1: Legacy network from database
+          else if (props.networkId) {
+            // 3. เซฟลง Database
+            await pipesApi.update(pipe.id, {
+              cornerPoints: cornerPointsData
+            });
+            toast.success("บันทึกตำแหน่งท่อเรียบร้อย");
+          }
         } catch (error: any) {
           initializePipeFixedSegment(pipe);
           toast.error(error.message || "Failed to update pipe position");
@@ -3363,33 +3693,71 @@ const addPipe = async (sourceId: number, targetId: number) => {
   });
 
   try {
-    console.log("Calling pipesApi.add with:", {
-      networkId: props.networkId,
-      sourceNodeId: sourceId,
-      targetNodeId: targetId,
-      length,
-      nominalSize: "15",
-      internalDiameter: 0.015,
-      material: "PVC",
-      cFactor: 150,
-      cornerPoints // ← ✅ Include cornerPoints
-    });
+    let pipe;
 
-    const pipe = await pipesApi.add(props.networkId, {
-      sourceNodeId: sourceId,
-      targetNodeId: targetId,
-      length,
-      nominalSize: "15",
-      internalDiameter: 0.015,
-      material: "PVC",
-      cFactor: 150,
-      cornerPoints // ← ✅ Send cornerPoints to backend
-    });
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Create pipe locally (no API call)
+      pipe = {
+        id: Date.now(), // Temporary ID
+        sourceNodeId: sourceId,
+        targetNodeId: targetId,
+        length,
+        nominalSize: "15",
+        internalDiameter: 0.015,
+        material: "PVC",
+        cFactor: 150,
+        cornerPoints,
+        isCriticalPath: false
+      };
 
-    console.log("✓ API response:", pipe);
-    pipes.value.push(pipe);
-    toast.success(`เชื่อมท่อเรียบร้อย (ความยาว: ${length.toFixed(2)}m)`);
-    console.log("=== addPipe SUCCESS ===");
+      pipes.value.push(pipe);
+
+      // Emit change to parent
+      emit('networkChange', {
+        ...currentNetwork.value,
+        nodes: [...nodes.value],
+        pipes: [...pipes.value]
+      });
+
+      console.log("✓ Pipe created (v2 snapshot mode):", pipe);
+      toast.success(`เชื่อมท่อเรียบร้อย (ความยาว: ${length.toFixed(2)}m)`);
+      console.log("=== addPipe SUCCESS (v2) ===");
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      console.log("Calling pipesApi.add with:", {
+        networkId: props.networkId,
+        sourceNodeId: sourceId,
+        targetNodeId: targetId,
+        length,
+        nominalSize: "15",
+        internalDiameter: 0.015,
+        material: "PVC",
+        cFactor: 150,
+        cornerPoints
+      });
+
+      pipe = await pipesApi.add(props.networkId, {
+        sourceNodeId: sourceId,
+        targetNodeId: targetId,
+        length,
+        nominalSize: "15",
+        internalDiameter: 0.015,
+        material: "PVC",
+        cFactor: 150,
+        cornerPoints
+      });
+
+      console.log("✓ API response:", pipe);
+      pipes.value.push(pipe);
+      toast.success(`เชื่อมท่อเรียบร้อย (ความยาว: ${length.toFixed(2)}m)`);
+      console.log("=== addPipe SUCCESS (v1) ===");
+    }
+    else {
+      toast.error("ไม่พบ Network ที่จะเชื่อมท่อ");
+      return;
+    }
   } catch (error: any) {
     console.error("=== addPipe FAILED ===", error);
     console.error("Error details:", {
@@ -3650,66 +4018,208 @@ const addFixture = async (type: string) => {
     if (existingFixture) {
       // Update existing fixture: increase quantity by 1
       const newQuantity = (existingFixture.quantity || 1) + 1;
-      const updatedFixture = await fixturesApi.update(existingFixture.id, {
-        quantity: newQuantity
-      });
 
-      // Update in selectedNodeFixtures array
-      const index = selectedNodeFixtures.value.findIndex(
-        (f) => f.id === existingFixture.id
-      );
-      if (index !== -1) {
-        selectedNodeFixtures.value[index] = {
-          ...selectedNodeFixtures.value[index],
-          ...updatedFixture,
-          quantity: newQuantity
-        };
+      // v2: Per-version network (snapshot mode)
+      if (props.networkData && props.versionId) {
+        // Update in local state (no API call)
+        const index = selectedNodeFixtures.value.findIndex(
+          (f) => f.id === existingFixture.id
+        );
+        if (index !== -1) {
+          selectedNodeFixtures.value[index].quantity = newQuantity;
+        }
+
+        // Update local input value
+        fixtureInputValues[existingFixture.name] = newQuantity;
+        delete tempFixtureInputValues[existingFixture.name];
+
+        // Force re-render
+        inputKeyVersion.value++;
+
+        // Update node fixtures in nodes array
+        const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+        if (node) {
+          node.fixtures = [...selectedNodeFixtures.value];
+
+          // Emit change to parent
+          emit('networkChange', {
+            ...currentNetwork.value,
+            nodes: [...nodes.value]
+          });
+        }
+
+        // Also update selectedNode
+        if (selectedNode.value) {
+          selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+        }
+
+        toast.success(
+          `เพิ่มจำนวน ${getFixtureName(type)} เรียบร้อย (รวม ${newQuantity} ชิ้น)`
+        );
+        console.log("Fixture quantity updated (v2 snapshot mode)");
       }
+      // v1: Legacy network from database
+      else if (props.networkId) {
+        const updatedFixture = await fixturesApi.update(existingFixture.id, {
+          quantity: newQuantity
+        });
 
-      // Update local input value
-      fixtureInputValues[existingFixture.name] = newQuantity;
-      delete tempFixtureInputValues[existingFixture.name];
+        // Update in selectedNodeFixtures array
+        const index = selectedNodeFixtures.value.findIndex(
+          (f) => f.id === existingFixture.id
+        );
+        if (index !== -1) {
+          selectedNodeFixtures.value[index] = {
+            ...selectedNodeFixtures.value[index],
+            ...updatedFixture,
+            quantity: newQuantity
+          };
+        }
 
-      // Force re-render
-      inputKeyVersion.value++;
+        // Update local input value
+        fixtureInputValues[existingFixture.name] = newQuantity;
+        delete tempFixtureInputValues[existingFixture.name];
 
-      // Update node fixtures in nodes array
+        // Force re-render
+        inputKeyVersion.value++;
+
+        // Update node fixtures in nodes array
+        const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+        if (node) {
+          node.fixtures = [...selectedNodeFixtures.value];
+        }
+
+        // Also update selectedNode
+        if (selectedNode.value) {
+          selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+        }
+
+        toast.success(
+          `เพิ่มจำนวน ${getFixtureName(type)} เรียบร้อย (รวม ${newQuantity} ชิ้น)`
+        );
+      }
+    } else {
+      // v2: Per-version network (snapshot mode)
+      if (props.networkData && props.versionId) {
+        // Create new fixture locally (no API call)
+        const newFixture = {
+          id: Date.now(), // Temporary ID
+          type: type,
+          name: getFixtureName(type),
+          fu: getFixtureFU(type),
+          quantity: 1
+        };
+
+        // Add to selectedNodeFixtures
+        selectedNodeFixtures.value.push(newFixture);
+
+        // Initialize local input value
+        fixtureInputValues[newFixture.name] = 1;
+
+        // Force re-render
+        inputKeyVersion.value++;
+
+        // Update node fixtures in nodes array
+        const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+        if (node) {
+          node.fixtures = [...selectedNodeFixtures.value];
+
+          // Emit change to parent
+          emit('networkChange', {
+            ...currentNetwork.value,
+            nodes: [...nodes.value]
+          });
+        }
+
+        // Also update selectedNode
+        if (selectedNode.value) {
+          selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+        }
+
+        toast.success(`เพิ่ม ${getFixtureName(type)} เรียบร้อย`);
+        console.log("Fixture added (v2 snapshot mode)");
+      }
+      // v1: Legacy network from database
+      else if (props.networkId) {
+        // Create new fixture
+        const savedFixture = await fixturesApi.add(selectedNode.value.id, {
+          type: type,
+          quantity: 1
+        });
+
+        // Add to selectedNodeFixtures with the saved ID
+        const newFixture = {
+          ...savedFixture,
+          name: getFixtureName(type),
+          fu: getFixtureFU(type),
+          quantity: 1
+        };
+        selectedNodeFixtures.value.push(newFixture);
+
+        // Initialize local input value
+        fixtureInputValues[newFixture.name] = 1;
+
+        // Force re-render
+        inputKeyVersion.value++;
+
+        // Update node fixtures in nodes array (use spread to create new array)
+        const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+        if (node) {
+          node.fixtures = [...selectedNodeFixtures.value];
+        }
+
+        // Also update selectedNode
+        if (selectedNode.value) {
+          selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+        }
+
+        toast.success(`เพิ่ม ${getFixtureName(type)} เรียบร้อย`);
+      }
+    }
+  } catch (error: any) {
+    console.error("Failed to add fixture:", error);
+    toast.error(error.message || "เพิ่มสุขภัณฑ์ไม่สำเร็จ");
+  }
+};
+
+const removeFixture = async (fixtureId: number) => {
+  try {
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Remove from local state (no API call)
+      selectedNodeFixtures.value = selectedNodeFixtures.value.filter(
+        (f) => f.id !== fixtureId
+      );
+
+      // Update node fixture count (use spread to create new array)
       const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
       if (node) {
         node.fixtures = [...selectedNodeFixtures.value];
+
+        // Emit change to parent
+        emit('networkChange', {
+          ...currentNetwork.value,
+          nodes: [...nodes.value]
+        });
       }
 
-      // Also update selectedNode
+      // Also update selectedNode (use spread to create new array)
       if (selectedNode.value) {
         selectedNode.value.fixtures = [...selectedNodeFixtures.value];
       }
 
-      toast.success(
-        `เพิ่มจำนวน ${getFixtureName(type)} เรียบร้อย (รวม ${newQuantity} ชิ้น)`
+      toast.success("ลบสุขภัณฑ์เรียบร้อย");
+      console.log("Fixture removed (v2 snapshot mode)");
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      // Remove from database
+      await fixturesApi.delete(fixtureId);
+      selectedNodeFixtures.value = selectedNodeFixtures.value.filter(
+        (f) => f.id !== fixtureId
       );
-    } else {
-      // Create new fixture
-      const savedFixture = await fixturesApi.add(selectedNode.value.id, {
-        type: type,
-        quantity: 1
-      });
 
-      // Add to selectedNodeFixtures with the saved ID
-      const newFixture = {
-        ...savedFixture,
-        name: getFixtureName(type),
-        fu: getFixtureFU(type),
-        quantity: 1
-      };
-      selectedNodeFixtures.value.push(newFixture);
-
-      // Initialize local input value
-      fixtureInputValues[newFixture.name] = 1;
-
-      // Force re-render
-      inputKeyVersion.value++;
-
-      // Update node fixtures in nodes array (use spread to create new array)
+      // Update node fixture count (use spread to create new array)
       const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
       if (node) {
         node.fixtures = [...selectedNodeFixtures.value];
@@ -3720,33 +4230,8 @@ const addFixture = async (type: string) => {
         selectedNode.value.fixtures = [...selectedNodeFixtures.value];
       }
 
-      toast.success(`เพิ่ม ${newFixture.name} เรียบร้อย`);
+      toast.success("ลบสุขภัณฑ์เรียบร้อย");
     }
-  } catch (error: any) {
-    toast.error(error.message || "Failed to add fixture");
-  }
-};
-
-const removeFixture = async (fixtureId: number) => {
-  // Remove from database immediately
-  try {
-    await fixturesApi.delete(fixtureId);
-    selectedNodeFixtures.value = selectedNodeFixtures.value.filter(
-      (f) => f.id !== fixtureId
-    );
-
-    // Update node fixture count (use spread to create new array)
-    const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
-    if (node) {
-      node.fixtures = [...selectedNodeFixtures.value];
-    }
-
-    // Also update selectedNode (use spread to create new array)
-    if (selectedNode.value) {
-      selectedNode.value.fixtures = [...selectedNodeFixtures.value];
-    }
-
-    toast.success("ลบสุขภัณฑ์เรียบร้อย");
   } catch (error: any) {
     toast.error(error.message || "Failed to remove fixture");
   }
@@ -3763,33 +4248,70 @@ const removeFixtureByName = async (fixtureName: string) => {
     );
     if (!fixture) return;
 
-    // Remove from database
-    await fixturesApi.delete(fixture.id);
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Remove from local state (no API call)
+      selectedNodeFixtures.value = selectedNodeFixtures.value.filter(
+        (f) => f.id !== fixture.id
+      );
 
-    // Remove from selectedNodeFixtures
-    selectedNodeFixtures.value = selectedNodeFixtures.value.filter(
-      (f) => f.id !== fixture.id
-    );
+      // Remove from local input values
+      delete fixtureInputValues[fixtureName];
+      delete tempFixtureInputValues[fixtureName];
 
-    // Remove from local input values
-    delete fixtureInputValues[fixtureName];
-    delete tempFixtureInputValues[fixtureName];
+      // Force re-render
+      inputKeyVersion.value++;
 
-    // Force re-render
-    inputKeyVersion.value++;
+      // Update node fixture count (use spread to create new array)
+      const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+      if (node) {
+        node.fixtures = [...selectedNodeFixtures.value];
 
-    // Update node fixture count (use spread to create new array)
-    const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
-    if (node) {
-      node.fixtures = [...selectedNodeFixtures.value];
+        // Emit change to parent
+        emit('networkChange', {
+          ...currentNetwork.value,
+          nodes: [...nodes.value]
+        });
+      }
+
+      // Also update selectedNode (use spread to create new array)
+      if (selectedNode.value) {
+        selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+      }
+
+      toast.success(`ลบ ${fixtureName} เรียบร้อย`);
+      console.log("Fixture removed by name (v2 snapshot mode)");
     }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      // Remove from database
+      await fixturesApi.delete(fixture.id);
 
-    // Also update selectedNode (use spread to create new array)
-    if (selectedNode.value) {
-      selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+      // Remove from selectedNodeFixtures
+      selectedNodeFixtures.value = selectedNodeFixtures.value.filter(
+        (f) => f.id !== fixture.id
+      );
+
+      // Remove from local input values
+      delete fixtureInputValues[fixtureName];
+      delete tempFixtureInputValues[fixtureName];
+
+      // Force re-render
+      inputKeyVersion.value++;
+
+      // Update node fixture count (use spread to create new array)
+      const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+      if (node) {
+        node.fixtures = [...selectedNodeFixtures.value];
+      }
+
+      // Also update selectedNode (use spread to create new array)
+      if (selectedNode.value) {
+        selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+      }
+
+      toast.success(`ลบ ${fixtureName} เรียบร้อย`);
     }
-
-    toast.success(`ลบ ${fixtureName} เรียบร้อย`);
   } catch (error: any) {
     toast.error(error.message || "Failed to remove fixture");
   }
@@ -3820,44 +4342,86 @@ const adjustFixtureQuantityByType = async (
     return;
   }
 
-  // Update in database
-  const updatedFixture = await fixturesApi.update(firstFixture.id, {
-    quantity: newQuantity
-  });
+  // v2: Per-version network (snapshot mode)
+  if (props.networkData && props.versionId) {
+    // Update in local state (no API call)
+    const index = selectedNodeFixtures.value.findIndex(
+      (f) => f.id === firstFixture.id
+    );
+    if (index !== -1) {
+      selectedNodeFixtures.value[index].quantity = newQuantity;
+    }
 
-  // Update in selectedNodeFixtures array
-  const index = selectedNodeFixtures.value.findIndex(
-    (f) => f.id === firstFixture.id
-  );
-  if (index !== -1) {
-    selectedNodeFixtures.value[index] = {
-      ...selectedNodeFixtures.value[index],
-      ...updatedFixture,
+    // Update local input value
+    fixtureInputValues[firstFixture.name] = newQuantity;
+    delete tempFixtureInputValues[firstFixture.name];
+
+    // Force re-render
+    inputKeyVersion.value++;
+
+    // Update node fixtures in nodes array
+    const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+    if (node) {
+      node.fixtures = [...selectedNodeFixtures.value];
+
+      // Emit change to parent
+      emit('networkChange', {
+        ...currentNetwork.value,
+        nodes: [...nodes.value]
+      });
+    }
+
+    // Also update selectedNode
+    if (selectedNode.value) {
+      selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+    }
+
+    toast.success(
+      `${delta > 0 ? "เพิ่ม" : "ลด"}จำนวน ${firstFixture.name} เรียบร้อย (รวม ${newQuantity} ชิ้น)`
+    );
+    console.log("Fixture quantity adjusted (v2 snapshot mode)");
+  }
+  // v1: Legacy network from database
+  else if (props.networkId) {
+    // Update in database
+    const updatedFixture = await fixturesApi.update(firstFixture.id, {
       quantity: newQuantity
-    };
+    });
+
+    // Update in selectedNodeFixtures array
+    const index = selectedNodeFixtures.value.findIndex(
+      (f) => f.id === firstFixture.id
+    );
+    if (index !== -1) {
+      selectedNodeFixtures.value[index] = {
+        ...selectedNodeFixtures.value[index],
+        ...updatedFixture,
+        quantity: newQuantity
+      };
+    }
+
+    // Update local input value
+    fixtureInputValues[firstFixture.name] = newQuantity;
+    delete tempFixtureInputValues[firstFixture.name];
+
+    // Force re-render
+    inputKeyVersion.value++;
+
+    // Update node fixtures in nodes array
+    const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+    if (node) {
+      node.fixtures = [...selectedNodeFixtures.value];
+    }
+
+    // Also update selectedNode
+    if (selectedNode.value) {
+      selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+    }
+
+    toast.success(
+      `${delta > 0 ? "เพิ่ม" : "ลด"}จำนวน ${firstFixture.name} เรียบร้อย (รวม ${newQuantity} ชิ้น)`
+    );
   }
-
-  // Update local input value
-  fixtureInputValues[firstFixture.name] = newQuantity;
-  delete tempFixtureInputValues[firstFixture.name];
-
-  // Force re-render
-  inputKeyVersion.value++;
-
-  // Update node fixtures in nodes array
-  const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
-  if (node) {
-    node.fixtures = [...selectedNodeFixtures.value];
-  }
-
-  // Also update selectedNode
-  if (selectedNode.value) {
-    selectedNode.value.fixtures = [...selectedNodeFixtures.value];
-  }
-
-  toast.success(
-    `${delta > 0 ? "เพิ่ม" : "ลด"}จำนวน ${firstFixture.name} เรียบร้อย (รวม ${newQuantity} ชิ้น)`
-  );
 };
 
 // Handle input change for grouped fixture type
@@ -3928,41 +4492,84 @@ const removeAllFixturesByType = async (fixtureType: string) => {
 
     if (fixturesToRemove.length === 0) return;
 
-    // Remove all from database
-    await Promise.all(
-      fixturesToRemove.map((fixture) => fixturesApi.delete(fixture.id))
-    );
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Remove from local state (no API call)
+      selectedNodeFixtures.value = selectedNodeFixtures.value.filter(
+        (f) => f.type !== fixtureType
+      );
 
-    // Remove from selectedNodeFixtures
-    selectedNodeFixtures.value = selectedNodeFixtures.value.filter(
-      (f) => f.type !== fixtureType
-    );
+      // Remove from local input values
+      const firstFixture = fixturesToRemove[0];
+      if (firstFixture) {
+        delete fixtureInputValues[firstFixture.name];
+        delete tempFixtureInputValues[firstFixture.name];
+      }
 
-    // Remove from local input values
-    const firstFixture = fixturesToRemove[0];
-    if (firstFixture) {
-      delete fixtureInputValues[firstFixture.name];
-      delete tempFixtureInputValues[firstFixture.name];
+      // Force re-render
+      inputKeyVersion.value++;
+
+      // Update node fixture count
+      const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+      if (node) {
+        node.fixtures = [...selectedNodeFixtures.value];
+
+        // Emit change to parent
+        emit('networkChange', {
+          ...currentNetwork.value,
+          nodes: [...nodes.value]
+        });
+      }
+
+      // Also update selectedNode
+      if (selectedNode.value) {
+        selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+      }
+
+      const fixtureName = firstFixture?.name || fixtureType;
+      toast.success(
+        `ลบ ${fixtureName} ทั้งหมด (${fixturesToRemove.length} ชิ้น) เรียบร้อย`
+      );
+      console.log("All fixtures of type removed (v2 snapshot mode)");
     }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      // Remove all from database
+      await Promise.all(
+        fixturesToRemove.map((fixture) => fixturesApi.delete(fixture.id))
+      );
 
-    // Force re-render
-    inputKeyVersion.value++;
+      // Remove from selectedNodeFixtures
+      selectedNodeFixtures.value = selectedNodeFixtures.value.filter(
+        (f) => f.type !== fixtureType
+      );
 
-    // Update node fixture count
-    const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
-    if (node) {
-      node.fixtures = [...selectedNodeFixtures.value];
+      // Remove from local input values
+      const firstFixture = fixturesToRemove[0];
+      if (firstFixture) {
+        delete fixtureInputValues[firstFixture.name];
+        delete tempFixtureInputValues[firstFixture.name];
+      }
+
+      // Force re-render
+      inputKeyVersion.value++;
+
+      // Update node fixture count
+      const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+      if (node) {
+        node.fixtures = [...selectedNodeFixtures.value];
+      }
+
+      // Also update selectedNode
+      if (selectedNode.value) {
+        selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+      }
+
+      const fixtureName = firstFixture?.name || fixtureType;
+      toast.success(
+        `ลบ ${fixtureName} ทั้งหมด (${fixturesToRemove.length} ชิ้น) เรียบร้อย`
+      );
     }
-
-    // Also update selectedNode
-    if (selectedNode.value) {
-      selectedNode.value.fixtures = [...selectedNodeFixtures.value];
-    }
-
-    const fixtureName = firstFixture?.name || fixtureType;
-    toast.success(
-      `ลบ ${fixtureName} ทั้งหมด (${fixturesToRemove.length} ชิ้น) เรียบร้อย`
-    );
   } catch (error: any) {
     toast.error(error.message || "Failed to remove fixtures");
   }
@@ -4065,50 +4672,99 @@ const updateFixtureQuantity = async (
     // If quantity hasn't changed, don't update
     if (currentQuantity === newQuantity) return;
 
-    // Update in database
-    const updatedFixture = await fixturesApi.update(fixture.id, {
-      quantity: newQuantity
-    });
+    // v2: Per-version network (snapshot mode)
+    if (props.networkData && props.versionId) {
+      // Update in local state (no API call)
+      const index = selectedNodeFixtures.value.findIndex(
+        (f) => f.id === fixture.id
+      );
+      if (index !== -1) {
+        selectedNodeFixtures.value[index].quantity = newQuantity;
+      }
 
-    // Update in selectedNodeFixtures array
-    const index = selectedNodeFixtures.value.findIndex(
-      (f) => f.id === fixture.id
-    );
-    if (index !== -1) {
-      selectedNodeFixtures.value[index] = {
-        ...selectedNodeFixtures.value[index],
-        ...updatedFixture,
+      // Update local input value (not temp)
+      fixtureInputValues[fixtureName] = newQuantity;
+      delete tempFixtureInputValues[fixtureName];
+
+      // Force re-render by incrementing key version
+      inputKeyVersion.value++;
+
+      // Update node fixtures in nodes array (use spread to create new array)
+      const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+      if (node) {
+        node.fixtures = [...selectedNodeFixtures.value];
+
+        // Emit change to parent
+        emit('networkChange', {
+          ...currentNetwork.value,
+          nodes: [...nodes.value]
+        });
+      }
+
+      // Also update selectedNode (use spread to create new array)
+      if (selectedNode.value) {
+        selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+      }
+
+      // Show appropriate message based on action
+      if (newQuantity > currentQuantity) {
+        toast.success(
+          `เพิ่มจำนวน ${fixtureName} เรียบร้อย (รวม ${newQuantity} ชิ้น)`
+        );
+      } else {
+        toast.success(
+          `ลดจำนวน ${fixtureName} เรียบร้อย (เหลือ ${newQuantity} ชิ้น)`
+        );
+      }
+      console.log("Fixture quantity updated (v2 snapshot mode)");
+    }
+    // v1: Legacy network from database
+    else if (props.networkId) {
+      // Update in database
+      const updatedFixture = await fixturesApi.update(fixture.id, {
         quantity: newQuantity
-      };
-    }
+      });
 
-    // Update local input value (not temp)
-    fixtureInputValues[fixtureName] = newQuantity;
-    delete tempFixtureInputValues[fixtureName];
-
-    // Force re-render by incrementing key version
-    inputKeyVersion.value++;
-
-    // Update node fixtures in nodes array (use spread to create new array)
-    const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
-    if (node) {
-      node.fixtures = [...selectedNodeFixtures.value];
-    }
-
-    // Also update selectedNode (use spread to create new array)
-    if (selectedNode.value) {
-      selectedNode.value.fixtures = [...selectedNodeFixtures.value];
-    }
-
-    // Show appropriate message based on action
-    if (newQuantity > currentQuantity) {
-      toast.success(
-        `เพิ่มจำนวน ${fixtureName} เรียบร้อย (รวม ${newQuantity} ชิ้น)`
+      // Update in selectedNodeFixtures array
+      const index = selectedNodeFixtures.value.findIndex(
+        (f) => f.id === fixture.id
       );
-    } else {
-      toast.success(
-        `ลดจำนวน ${fixtureName} เรียบร้อย (เหลือ ${newQuantity} ชิ้น)`
-      );
+      if (index !== -1) {
+        selectedNodeFixtures.value[index] = {
+          ...selectedNodeFixtures.value[index],
+          ...updatedFixture,
+          quantity: newQuantity
+        };
+      }
+
+      // Update local input value (not temp)
+      fixtureInputValues[fixtureName] = newQuantity;
+      delete tempFixtureInputValues[fixtureName];
+
+      // Force re-render by incrementing key version
+      inputKeyVersion.value++;
+
+      // Update node fixtures in nodes array (use spread to create new array)
+      const node = nodes.value.find((n) => n.id === selectedNode.value!.id);
+      if (node) {
+        node.fixtures = [...selectedNodeFixtures.value];
+      }
+
+      // Also update selectedNode (use spread to create new array)
+      if (selectedNode.value) {
+        selectedNode.value.fixtures = [...selectedNodeFixtures.value];
+      }
+
+      // Show appropriate message based on action
+      if (newQuantity > currentQuantity) {
+        toast.success(
+          `เพิ่มจำนวน ${fixtureName} เรียบร้อย (รวม ${newQuantity} ชิ้น)`
+        );
+      } else {
+        toast.success(
+          `ลดจำนวน ${fixtureName} เรียบร้อย (เหลือ ${newQuantity} ชิ้น)`
+        );
+      }
     }
   } catch (error: any) {
     toast.error(error.message || "Failed to update fixture quantity");

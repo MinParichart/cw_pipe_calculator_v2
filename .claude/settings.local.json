@@ -101,7 +101,9 @@
       "Bash(TaskStop b9wodpcpa:*)",
       "Bash(lsof -ti:3004)",
       "Bash(xargs kill:*)",
-      "Bash(ls -la pages/projects/[id]/versions/)"
+      "Bash(ls -la pages/projects/[id]/versions/)",
+      "Bash(ls:*)",
+      "Bash(findstr :3003)"
     ]
   }
 }

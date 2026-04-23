@@ -507,6 +507,66 @@ export class VersionService {
   }
 
   /**
+   * Save reference layer (DXF blueprint) to version
+   */
+  async saveReferenceLayer(versionId: number, userId: number, referenceData: {
+    fileName: string
+    filePath: string
+    scale?: string
+    floor?: string
+    nodes?: any[]
+    walls?: any[]
+  }) {
+    const version = await this.getVersionById(versionId, userId)
+
+    const updated = await prisma.version.update({
+      where: { id: versionId },
+      data: {
+        referenceLayer: JSON.stringify(referenceData),
+        updatedAt: new Date(),
+      },
+    })
+
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        projectId: version.projectId,
+        userId,
+        action: 'UPLOAD_REFERENCE',
+        entity: 'version',
+        entityId: versionId,
+        details: `Uploaded reference file: ${referenceData.fileName}`,
+      },
+    })
+
+    return updated
+  }
+
+  /**
+   * Get reference layer from version
+   */
+  async getReferenceLayer(versionId: number, userId: number) {
+    const version = await prisma.version.findUnique({
+      where: { id: versionId },
+      include: { project: true },
+    })
+
+    if (!version) {
+      throw new Error('Version not found')
+    }
+
+    if (version.project.ownerId !== userId) {
+      throw new Error('Access denied')
+    }
+
+    if (!version.referenceLayer) {
+      return null
+    }
+
+    return JSON.parse(version.referenceLayer)
+  }
+
+  /**
    * Helper: Verify project ownership
    */
   private async verifyProjectOwnership(projectId: number, userId: number) {

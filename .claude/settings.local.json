@@ -95,7 +95,12 @@
       "Bash(rm -f .tsbuildinfo)",
       "Bash(powershell \"Stop-Process -Id 51204 -Force\")",
       "Bash(findstr :3004)",
-      "Bash(cmd //C \"taskkill /PID 33512 /F\" 2>&1)"
+      "Bash(cmd //C \"taskkill /PID 33512 /F\" 2>&1)",
+      "Bash(cmd //C \"taskkill /PID 48000 /F\" 2>&1)",
+      "Bash(cmd //C \"taskkill /PID 31144 /F\")",
+      "Bash(TaskStop b9wodpcpa:*)",
+      "Bash(lsof -ti:3004)",
+      "Bash(xargs kill:*)"
     ]
   }
 }

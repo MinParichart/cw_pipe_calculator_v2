@@ -349,6 +349,101 @@ export class VersionController {
       })
     }
   }
+
+  /**
+   * Upload reference layer to version
+   * POST /api/versions/:versionId/reference
+   */
+  async uploadReference(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+        })
+      }
+
+      const versionId = parseInt(req.params.versionId)
+      if (isNaN(versionId)) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid version ID' },
+        })
+      }
+
+      const { fileName, filePath, scale, floor, nodes, walls } = req.body
+
+      if (!fileName || !filePath) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'fileName and filePath are required' },
+        })
+      }
+
+      const version = await versionService.saveReferenceLayer(versionId, req.user.userId, {
+        fileName,
+        filePath,
+        scale,
+        floor,
+        nodes,
+        walls,
+      })
+
+      res.json({
+        success: true,
+        data: version,
+        message: 'Reference layer uploaded successfully',
+      })
+    } catch (error: any) {
+      const statusCode = error.message === 'Version not found' ? 404 :
+                        error.message === 'Access denied' ? 403 : 500
+      res.status(statusCode).json({
+        success: false,
+        error: { code: statusCode === 404 ? 'NOT_FOUND' : 'FORBIDDEN', message: error.message },
+      })
+    }
+  }
+
+  /**
+   * Get reference layer from version
+   * GET /api/versions/:versionId/reference
+   */
+  async getReference(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+        })
+      }
+
+      const versionId = parseInt(req.params.versionId)
+      if (isNaN(versionId)) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid version ID' },
+        })
+      }
+
+      const reference = await versionService.getReferenceLayer(versionId, req.user.userId)
+
+      if (!reference) {
+        return res.status(404).json({
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'No reference layer found' },
+        })
+      }
+
+      res.json({ success: true, data: reference })
+    } catch (error: any) {
+      const statusCode = error.message === 'Version not found' ? 404 :
+                        error.message === 'Access denied' ? 403 : 500
+      res.status(statusCode).json({
+        success: false,
+        error: { code: statusCode === 404 ? 'NOT_FOUND' : 'FORBIDDEN', message: error.message },
+      })
+    }
+  }
 }
 
 export default new VersionController()

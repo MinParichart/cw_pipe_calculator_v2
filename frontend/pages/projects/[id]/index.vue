@@ -123,7 +123,7 @@
             <!-- Versions Card -->
             <div class="bg-white rounded-lg shadow-sm p-6">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">เวอร์ชัน</h3>
+                <h3 class="text-lg font-medium text-gray-900">Versions</h3>
                 <svg
                   class="h-5 w-5 text-gray-400"
                   fill="none"
@@ -140,7 +140,7 @@
               </div>
               <dl class="space-y-3 text-sm">
                 <div class="flex justify-between">
-                  <dt class="text-gray-600">จำนวนเวอร์ชัน:</dt>
+                  <dt class="text-gray-600">จำนวน Versions:</dt>
                   <dd class="font-medium text-gray-900">
                     {{ versions.length }}
                   </dd>
@@ -268,6 +268,26 @@
             />
           </div>
 
+          <!-- Versions List Section -->
+          <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <VersionList
+              :versions="versions"
+              :loading="loading"
+              @create="showCreateModal = true"
+              @continue="handleContinueVersion"
+              @duplicate="handleDuplicateVersion"
+              @delete="handleDeleteVersion"
+            />
+
+            <!-- Create Version Modal -->
+            <CreateVersionModal
+              :show="showCreateModal"
+              :project-id="parseInt(route.params.id)"
+              @close="showCreateModal = false"
+              @created="handleVersionCreated"
+            />
+          </div>
+
           <!-- Actions Card -->
           <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div class="flex items-center justify-between mb-4">
@@ -288,7 +308,6 @@
             </div>
             <div class="flex flex-wrap gap-3">
               <BackButton @click="$router.back()" />
-              <NextStepButton @click="goToNextStep" />
             </div>
           </div>
         </div>
@@ -329,15 +348,18 @@
 <script setup lang="ts">
 import CriteriaForm from "~/components/criteria/CriteriaForm.vue";
 import ProjectDetailsForm from "~/components/project/ProjectDetailsForm.vue";
-import NextStepButton from "~/components/navigation/NextStepButton.vue";
 import BackButton from "~/components/navigation/BackButton.vue";
+import VersionList from "~/components/version/VersionList.vue";
+import CreateVersionModal from "~/components/version/CreateVersionModal.vue";
 import { projectsApi } from "~/composables/useApi";
 import { useWorkflowStore } from "~/stores/workflowStore";
+import { useVersionStore } from "~/stores/versionStore";
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const workflowStore = useWorkflowStore();
+const versionStore = useVersionStore();
 
 // State
 const loading = ref(true);
@@ -346,6 +368,7 @@ const criteria = ref<any>(null);
 const versions = ref<any[]>([]);
 const editingCriteria = ref(false);
 const editingProjectDetails = ref(false);
+const showCreateModal = ref(false);
 
 // Helper functions
 const formatDate = (dateString: string) => {
@@ -419,10 +442,72 @@ const loadProject = async () => {
 const loadVersions = async () => {
   try {
     const projectId = parseInt(route.params.id as string);
-    // TODO: Load versions from API
-    versions.value = [];
+    const result = await versionStore.loadVersions(projectId);
+    if (result.success) {
+      versions.value = versionStore.versions;
+    }
   } catch (error: any) {
     console.error("Failed to load versions:", error);
+  }
+};
+
+// Version handlers
+const handleVersionCreated = (versionId: number) => {
+  // Navigate to Step 2: Documents
+  router.push(`/projects/${route.params.id}/versions/${versionId}/upload`);
+};
+
+const handleContinueVersion = (version: any) => {
+  versionStore.setCurrentVersion(version);
+
+  // Determine next step based on workflow
+  if (!version.referenceLayer) {
+    // Go to Step 2: Documents (upload reference)
+    router.push(`/projects/${route.params.id}/versions/${version.id}/upload`);
+  } else if (!version.snapshotNetwork) {
+    // Go to Step 3: Network
+    router.push(`/projects/${route.params.id}/versions/${version.id}/network`);
+  } else if (!version.snapshotFixtures) {
+    // Go to Step 4: Fixtures
+    router.push(`/projects/${route.params.id}/versions/${version.id}/fixtures`);
+  } else if (!version.snapshotResults) {
+    // Go to Step 5: Calculate
+    router.push(`/projects/${route.params.id}/versions/${version.id}/calculation`);
+  } else {
+    // All complete, view results
+    router.push(`/projects/${route.params.id}/versions/${version.id}/calculation`);
+  }
+};
+
+const handleDuplicateVersion = async (version: any) => {
+  try {
+    const result = await versionStore.duplicateVersion(version.id);
+    if (result.success) {
+      toast.success('คัดลอกเวอร์ชันสำเร็จ');
+      await loadVersions();
+    } else {
+      toast.error(result.error?.message || 'ล้มเหลือ');
+    }
+  } catch (error: any) {
+    toast.error(error.message || 'ล้มเหลือ');
+  }
+};
+
+const handleDeleteVersion = async (version: any) => {
+  if (!confirm(`ยืนยันที่จะลบเวอร์ชัน "${version.name}"?`)) {
+    return;
+  }
+
+  try {
+    const result = await versionStore.deleteVersion(version.id);
+    if (result.success) {
+      toast.success('ลบเวอร์ชันสำเร็จ');
+      await loadVersions();
+    } else {
+      toast.error(result.error?.message || 'ล้มเหลือ');
+    }
+  } catch (error: any) {
+    toast.error(error.message || 'ล้มเหลือ');
   }
 };
 
@@ -474,10 +559,6 @@ const saveProjectDetails = async (updatedProject: any) => {
   } catch (error: any) {
     toast.error(error.message || "Failed to save project details");
   }
-};
-
-const goToNextStep = () => {
-  router.push(`/projects/${route.params.id}/documents`);
 };
 
 // Load project on mount

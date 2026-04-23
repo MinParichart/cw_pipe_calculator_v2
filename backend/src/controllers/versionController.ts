@@ -142,11 +142,15 @@ export class VersionController {
         })
       }
 
-      const { name, description } = req.body
+      const { name, description, snapshotNetwork, snapshotFixtures, snapshotResults, referenceLayer } = req.body
 
       const version = await versionService.updateVersion(versionId, req.user.userId, {
         name,
         description,
+        snapshotNetwork,
+        snapshotFixtures,
+        snapshotResults,
+        referenceLayer,
       })
 
       res.json({

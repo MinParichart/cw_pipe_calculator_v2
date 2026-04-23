@@ -233,7 +233,7 @@
 import NetworkBuilder from '~/components/network/NetworkBuilder.vue'
 import NextStepButton from '~/components/navigation/NextStepButton.vue'
 import BackButton from '~/components/navigation/BackButton.vue'
-import { documentsApi } from '~/composables/useApi'
+import { documentsApi, versionsApi } from '~/composables/useApi'
 import { useVersionStore } from '~/stores/versionStore'
 
 const route = useRoute()
@@ -256,18 +256,25 @@ const selectedBlueprints = ref<any[]>([])
 
 // Methods
 const loadVersion = async () => {
+  loadingNetwork.value = true
   try {
     const versionId = parseInt(route.params.versionId as string)
-    const result = await versionStore.loadVersions(parseInt(route.params.id as string))
+    // Load version directly from database (not from cache)
+    const data = await versionsApi.get(versionId)
 
-    if (result.success) {
-      const found = versionStore.versions.find(v => v.id === versionId)
-      if (found) {
-        version.value = found
-      }
+    if (data) {
+      version.value = data
+      console.log('✅ Version loaded from database:', {
+        id: data.id,
+        name: data.name,
+        hasSnapshotNetwork: !!data.snapshotNetwork
+      })
     }
   } catch (err: any) {
     console.error('Failed to load version:', err)
+    toast.error('ไม่สามารถโหลด Version ได้')
+  } finally {
+    loadingNetwork.value = false
   }
 }
 
@@ -276,6 +283,13 @@ const loadNetworkFromVersion = () => {
   try {
     if (version.value?.snapshotNetwork) {
       networkData.value = JSON.parse(version.value.snapshotNetwork)
+      console.log('✅ Network loaded from snapshot:', {
+        nodes: networkData.value?.nodes?.length || 0,
+        pipes: networkData.value?.pipes?.length || 0
+      })
+    } else {
+      console.log('ℹ️ No snapshotNetwork found, networkData is null')
+      networkData.value = null
     }
   } catch (error) {
     console.error('Failed to parse network snapshot:', error)
@@ -306,18 +320,26 @@ const loadFixturesFromVersion = () => {
   }
 }
 
-const createNetwork = () => {
+const createNetwork = async () => {
   networkData.value = {
     nodes: [],
     pipes: []
   }
+  // Save to version snapshot immediately
+  await saveNetworkSnapshot()
   toast.success('สร้าง Network เรียบร้อย')
 }
 
-const onNetworkChange = (updatedNetwork: any) => {
+const onNetworkChange = async (updatedNetwork: any) => {
   networkData.value = updatedNetwork
   // Save to version snapshot
-  saveNetworkSnapshot()
+  try {
+    await saveNetworkSnapshot()
+    console.log('✅ Network snapshot saved')
+  } catch (error) {
+    console.error('❌ Failed to save network snapshot:', error)
+    toast.error('ไม่สามารถบันทึก Network ได้')
+  }
 }
 
 const saveNetworkSnapshot = async () => {
@@ -413,10 +435,21 @@ const toggleBlueprint = (blueprint: any) => {
 
 // Load data on mount
 onMounted(async () => {
+  // Load version from database first (must be first!)
   await loadVersion()
+
+  // Then load network/fixtures from version snapshot
   await loadNetworkFromVersion()
   await loadFixturesFromVersion()
+
+  // Load blueprints
   await loadBlueprints()
+
+  console.log('✅ All data loaded', {
+    hasNetworkData: !!networkData.value,
+    networkNodes: networkData.value?.nodes?.length || 0,
+    networkPipes: networkData.value?.pipes?.length || 0
+  })
 })
 
 // Define page meta for layout

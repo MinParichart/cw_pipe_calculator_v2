@@ -203,6 +203,10 @@ export class VersionService {
   async updateVersion(versionId: number, userId: number, data: {
     name?: string
     description?: string
+    snapshotNetwork?: string
+    snapshotFixtures?: string
+    snapshotResults?: string
+    referenceLayer?: string
   }) {
     const version = await prisma.version.findUnique({
       where: { id: versionId },

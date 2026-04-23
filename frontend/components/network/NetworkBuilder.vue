@@ -2278,7 +2278,7 @@ watch(
       // ✅ 1. Update in memory
       pipeFixedSegments.value.set(pipe.id, newFixed);
 
-      // ✅ 2. Save to database (update pipe cornerPoints)
+      // ✅ 2. Save to database (update pipe cornerPoints only, NOT length)
       try {
         const cornerPointsData = JSON.stringify([
           { x: newFixed.x, y: newFixed.y, length: newFixed.length }
@@ -4939,7 +4939,23 @@ watch(
       loadNetwork();
     }
   },
-  { immediate: true }
+  { immediate: false } // Don't trigger on mount, we handle it in onMounted
+);
+
+// Watch for networkData changes (v2 snapshot mode)
+watch(
+  () => props.networkData,
+  (newNetworkData) => {
+    if (newNetworkData && props.versionId) {
+      console.log("NetworkBuilder: networkData changed (v2 mode)", {
+        nodes: newNetworkData.nodes?.length || 0,
+        pipes: newNetworkData.pipes?.length || 0
+      });
+      nodes.value = newNetworkData.nodes || [];
+      pipes.value = newNetworkData.pipes || [];
+    }
+  },
+  { deep: true, immediate: false } // Don't trigger on mount, we handle it in onMounted
 );
 
 // Watch nodes for debugging
@@ -4973,7 +4989,22 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
 onMounted(() => {
   console.log("NetworkBuilder: Component mounted");
-  loadNetwork();
+
+  // v2: Load from networkData prop (snapshot mode)
+  if (props.networkData && props.versionId) {
+    console.log("NetworkBuilder: Loading from v2 snapshot mode", props.networkData);
+    nodes.value = props.networkData.nodes || [];
+    pipes.value = props.networkData.pipes || [];
+    console.log("✅ v2 data loaded:", {
+      nodes: nodes.value.length,
+      pipes: pipes.value.length
+    });
+  }
+  // v1: Load from API (legacy mode)
+  else if (props.networkId) {
+    loadNetwork();
+  }
+
   loadProjectParameters(); // Load project parameters from Step 1
   document.addEventListener("keydown", handleKeyDown);
 });

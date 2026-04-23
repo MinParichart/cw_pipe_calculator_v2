@@ -309,7 +309,14 @@ export const versionsApi = {
       body: JSON.stringify(data),
     }),
 
-  update: (versionId: number, data: { name?: string; description?: string }) =>
+  update: (versionId: number, data: {
+    name?: string
+    description?: string
+    snapshotNetwork?: string
+    snapshotFixtures?: string
+    snapshotResults?: string
+    referenceLayer?: string
+  }) =>
     apiRequest<any>(`/versions/${versionId}`, {
       method: 'PUT',
       body: JSON.stringify(data),

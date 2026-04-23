@@ -103,7 +103,8 @@
       "Bash(xargs kill:*)",
       "Bash(ls -la pages/projects/[id]/versions/)",
       "Bash(ls:*)",
-      "Bash(findstr :3003)"
+      "Bash(findstr :3003)",
+      "Bash(timeout 5)"
     ]
   }
 }

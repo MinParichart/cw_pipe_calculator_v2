@@ -96,6 +96,10 @@ export const useVersionStore = defineStore('version', {
     async updateVersion(versionId: number, versionData: {
       name?: string
       description?: string
+      snapshotNetwork?: string
+      snapshotFixtures?: string
+      snapshotResults?: string
+      referenceLayer?: string
     }) {
       this.loading = true
       this.error = null

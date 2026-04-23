@@ -3778,14 +3778,121 @@ const findCriticalPath = async () => {
   findingCriticalPath.value = true;
 
   try {
-    const result = await networksApi.findCriticalPath(props.networkId);
+    // v2: Per-version network (snapshot mode) - calculate critical path locally
+    if (props.networkData && props.versionId) {
+      // Find SOURCE node (starting point)
+      const sourceNode = nodes.value.find(n => n.type === 'SOURCE');
+      if (!sourceNode) {
+        toast.error('ไม่พบจุดเริ่มต้น (SOURCE node)');
+        return;
+      }
 
-    // Update pipes with critical path status
-    pipes.value.forEach((pipe) => {
-      pipe.isCriticalPath = result.pipeIds.includes(pipe.id);
-    });
+      // Build adjacency list for the graph
+      const graph = new Map<number, number[]>();
+      const pipeMap = new Map<string, number>(); // key: "sourceId-targetId", value: pipeId
 
-    toast.success(`Found critical path: ${result.totalLength.toFixed(1)}m`);
+      pipes.value.forEach(pipe => {
+        const key = `${pipe.sourceNodeId}-${pipe.targetNodeId}`;
+        pipeMap.set(key, pipe.id);
+
+        if (!graph.has(pipe.sourceNodeId)) {
+          graph.set(pipe.sourceNodeId, []);
+        }
+        graph.get(pipe.sourceNodeId)!.push(pipe.targetNodeId);
+      });
+
+      // Find longest path from SOURCE using BFS
+      const findLongestPath = (startNodeId: number) => {
+        const distances = new Map<number, number>();
+        const previous = new Map<number, number>(); // To track path
+        const queue: number[] = [startNodeId];
+        distances.set(startNodeId, 0);
+
+        while (queue.length > 0) {
+          const current = queue.shift()!;
+
+          if (graph.has(current)) {
+            graph.get(current)!.forEach(neighbor => {
+              // Find pipe length
+              const pipe = pipes.value.find(p =>
+                p.sourceNodeId === current && p.targetNodeId === neighbor
+              );
+              const edgeLength = pipe?.length || 0;
+
+              const newDist = distances.get(current)! + edgeLength;
+
+              if (!distances.has(neighbor) || newDist > distances.get(neighbor)!) {
+                distances.set(neighbor, newDist);
+                previous.set(neighbor, current);
+                queue.push(neighbor);
+              }
+            });
+          }
+        }
+
+        // Find node with maximum distance
+        let maxDist = 0;
+        let endNode = startNodeId;
+
+        distances.forEach((dist, nodeId) => {
+          if (dist > maxDist) {
+            maxDist = dist;
+            endNode = nodeId;
+          }
+        });
+
+        // Reconstruct path
+        const path: number[] = [];
+        let current = endNode;
+        while (current !== startNodeId && previous.has(current)) {
+          path.unshift(current);
+          current = previous.get(current)!;
+        }
+        path.unshift(startNodeId);
+
+        return { path, totalDistance: maxDist };
+      };
+
+      const result = findLongestPath(sourceNode.id);
+
+      // Get pipe IDs in critical path
+      const criticalPipeIds = new Set<number>();
+      for (let i = 0; i < result.path.length - 1; i++) {
+        const from = result.path[i];
+        const to = result.path[i + 1];
+        const pipe = pipes.value.find(p =>
+          p.sourceNodeId === from && p.targetNodeId === to
+        );
+        if (pipe) {
+          criticalPipeIds.add(pipe.id);
+        }
+      }
+
+      // Update pipes with critical path status
+      pipes.value.forEach(pipe => {
+        pipe.isCriticalPath = criticalPipeIds.has(pipe.id);
+      });
+
+      // Emit change to save critical path status
+      emit('networkChange', {
+        ...currentNetwork.value,
+        nodes: [...nodes.value],
+        pipes: [...pipes.value]
+      });
+
+      toast.success(`พบ Critical Path: ระยะทางรวม ${result.totalDistance.toFixed(1)}m (${criticalPipeIds.size} ท่อ)`);
+    }
+    // v1: Legacy network from database - use API
+    else if (props.networkId) {
+      const result = await networksApi.findCriticalPath(props.networkId);
+
+      // Update pipes with critical path status
+      pipes.value.forEach((pipe) => {
+        pipe.isCriticalPath = result.pipeIds.includes(pipe.id);
+      });
+
+      toast.success(`Found critical path: ${result.totalLength.toFixed(1)}m`);
+    }
   } catch (error: any) {
     console.error("Failed to find critical path:", error);
     toast.error(error.message || "Failed to find critical path");

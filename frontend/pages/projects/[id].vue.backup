@@ -1,0 +1,91 @@
+<template>
+  <div class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div class="px-4 py-6 sm:px-0">
+        <!-- Loading State -->
+        <div v-if="loading" class="flex items-center justify-center h-64">
+          <div class="text-center">
+            <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="mt-2 text-gray-600">กำลังโหลดโปรเจกต์...</p>
+          </div>
+        </div>
+
+        <!-- Redirect Message -->
+        <div v-else class="text-center py-12">
+          <svg class="mx-auto h-16 w-16 text-orange-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">
+            กำลังนำทางไปยังหน้า Parameters
+          </h2>
+          <p class="text-gray-600 mb-6">
+            หน้าโปรเจกต์ถูกย้ายไปยัง Workflow 10 ขั้นตอนใหม่
+          </p>
+          <div class="flex justify-center gap-3">
+            <button
+              @click="goToWorkflow"
+              class="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              ไปยัง Parameters
+            </button>
+            <button
+              @click="$router.back()"
+              class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+            >
+              ย้อนกลับ
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { projectsApi } from '~/composables/useApi'
+
+const route = useRoute()
+const router = useRouter()
+const toast = useToast()
+
+// State
+const loading = ref(true)
+const projectExists = ref(false)
+
+// Check if project exists
+const checkProject = async () => {
+  loading.value = true
+  try {
+    const projectId = parseInt(route.params.id as string)
+    await projectsApi.get(projectId)
+    projectExists.value = true
+
+    // Auto redirect after 1 second
+    setTimeout(() => {
+      goToWorkflow()
+    }, 1000)
+  } catch (error: any) {
+    toast.error(error.message || 'ไม่พบโปรเจกต์')
+    router.push('/projects')
+  } finally {
+    loading.value = false
+  }
+}
+
+const goToWorkflow = () => {
+  router.push(`/projects/${route.params.id}`)
+}
+
+// Check on mount
+onMounted(() => {
+  checkProject()
+})
+
+// Define page meta for layout
+definePageMeta({
+  layout: 'dashboard',
+})
+</script>

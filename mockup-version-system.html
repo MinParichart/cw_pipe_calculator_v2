@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CW Pipe Calculator - Version System Mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: #f3f4f6;
+        }
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .step.active {
+            background: #3b82f6;
+            color: white;
+        }
+        .step.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step.pending {
+            background: #d1d5db;
+            color: #6b7280;
+        }
+        .connector {
+            height: 2px;
+            flex: 1;
+            background: #d1d5db;
+        }
+        .connector.completed {
+            background: #10b981;
+        }
+        .version-card {
+            transition: all 0.3s ease;
+        }
+        .version-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .version-card.selected {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        .diff-cell {
+            position: relative;
+        }
+        .diff-cell.better {
+            background-color: #dcfce7;
+        }
+        .diff-cell.worse {
+            background-color: #fecaca;
+        }
+        .diff-cell.changed {
+            background-color: #fef9c3;
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Step 6: Versions</h1>
+                    <p class="text-sm text-gray-600 mt-1">บันทึกและเปรียบเทียบรุ่นของการออกแบบระบบท่อ</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                        ✨ บันทึก Version ใหม่
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step Indicator -->
+            <div class="step-indicator mb-6">
+                <div class="step completed">1</div>
+                <div class="connector completed"></div>
+                <div class="step completed">2</div>
+                <div class="connector completed"></div>
+                <div class="step completed">3</div>
+                <div class="connector completed"></div>
+                <div class="step completed">4</div>
+                <div class="connector completed"></div>
+                <div class="step completed">5</div>
+                <div class="connector completed"></div>
+                <div class="step active">6</div>
+                <div class="connector"></div>
+                <div class="step pending">7</div>
+            </div>
+
+            <!-- Step Labels -->
+            <div class="flex justify-between text-xs text-gray-600 px-2">
+                <span>Criteria</span>
+                <span>Documents</span>
+                <span>Network Builder</span>
+                <span>Fixtures</span>
+                <span>Calculate</span>
+                <span class="font-bold text-blue-600">Versions</span>
+                <span>Report</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left: Version List -->
+            <div class="lg:col-span-2 space-y-4">
+                <!-- Comparison Toolbar -->
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">เปรียบเทียบ Version</h2>
+                            <p class="text-sm text-gray-600">เลือก 2 version เพื่อเปรียบเทียบ</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium disabled:opacity-50">
+                                📊 เปรียบเทียบ
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Selected Versions -->
+                    <div class="mt-4 flex gap-3">
+                        <div class="flex-1 p-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                            <label class="text-xs text-gray-600">Version แรก</label>
+                            <select class="w-full mt-1 p-2 border border-gray-300 rounded text-sm">
+                                <option>Version 1: รุ่นแรก (15mm)</option>
+                                <option>Version 2: เพิ่มห้องน้ำ 2 (20mm)</option>
+                            </select>
+                        </div>
+                        <div class="flex-1 p-3 bg-orange-50 border-2 border-orange-300 rounded-lg">
+                            <label class="text-xs text-gray-600">Version หลัง</label>
+                            <select class="w-full mt-1 p-2 border border-gray-300 rounded text-sm">
+                                <option>Version 1: รุ่นแรก (15mm)</option>
+                                <option selected>Version 2: เพิ่มห้องน้ำ 2 (20mm)</option>
+                                <option>Version 3: ประหยัด (15mm)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparison Result -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">📊 ผลการเปรียบเทียบ</h3>
+                        <span class="text-sm text-gray-500">Version 1 → Version 2</span>
+                    </div>
+
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+                        <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                            <div class="text-2xl font-bold text-blue-600">+2</div>
+                            <div class="text-xs text-blue-700">ห้องน้ำ/สุขภัณฑ์</div>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                            <div class="text-2xl font-bold text-purple-600">+3</div>
+                            <div class="text-xs text-purple-700">ท่อเพิ่ม</div>
+                        </div>
+                        <div class="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                            <div class="text-2xl font-bold text-orange-600">+0.3</div>
+                            <div class="text-xs text-orange-700">bar (แรงดัน)</div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-3 border border-green-200">
+                            <div class="text-2xl font-bold text-green-600">+15%</div>
+                            <div class="text-xs text-green-700">ค่าวัสดุ</div>
+                        </div>
+                    </div>
+
+                    <!-- Comparison Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-900">รายการ</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-900">Version 1</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-900">Version 2</th>
+                                    <th class="px-4 py-3 text-center font-semibold text-gray-900">ผลต่าง</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <!-- Network Layout -->
+                                <tr>
+                                    <td class="px-4 py-3 font-medium text-gray-900">🔧 Network Layout</td>
+                                    <td class="px-4 py-3 text-center text-gray-600">
+                                        <div>• Source → J1 → Riser 1F</div>
+                                        <div>• Riser 1F → ห้องน้ำ, ครัว</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center text-gray-600">
+                                        <div>• Source → J1 → Riser 1F</div>
+                                        <div class="text-green-600 font-medium">• Riser 1F → Riser 2F (เพิ่ม)</div>
+                                        <div>• Riser 1F → ห้องน้ำ, ครัว</div>
+                                        <div class="text-green-600 font-medium">• Riser 2F → ห้องน้ำ 2 (เพิ่ม)</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">เพิ่ม Riser 2F + ห้องน้ำ 2</span>
+                                    </td>
+                                </tr>
+
+                                <!-- Fixtures -->
+                                <tr>
+                                    <td class="px-4 py-3 font-medium text-gray-900">📏 Fixtures</td>
+                                    <td class="px-4 py-3 text-center text-gray-600">
+                                        <div>• ห้องน้ำ: WC, Lavatory, Shower</div>
+                                        <div>• ครัว: Kitchen Sink</div>
+                                        <div class="font-bold">รวม 6 สุขภัณฑ์</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center text-gray-600">
+                                        <div>• ห้องน้ำ: WC, Lavatory, Shower</div>
+                                        <div>• ครัว: Kitchen Sink</div>
+                                        <div class="text-green-600 font-medium">• ห้องน้ำ 2: WC, Lavatory (เพิ่ม)</div>
+                                        <div class="font-bold text-green-600">รวม 9 สุขภัณฑ์ (+3)</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">+3 สุขภัณฑ์</span>
+                                    </td>
+                                </tr>
+
+                                <!-- Pipe Sizes -->
+                                <tr>
+                                    <td class="px-4 py-3 font-medium text-gray-900">📐 ขนาดท่อ</td>
+                                    <td class="px-4 py-3 text-center text-gray-600">
+                                        <div>Source → J1: 25mm</div>
+                                        <div>J1 → Riser 1F: 25mm</div>
+                                        <div>Riser 1F → ห้องน้ำ: 15mm</div>
+                                        <div>Riser 1F → ครัว: 20mm</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center text-gray-600">
+                                        <div>Source → J1: 25mm</div>
+                                        <div class="text-orange-600 font-medium">J1 → Riser 1F: 32mm (↑7mm)</div>
+                                        <div>Riser 1F → ห้องน้ำ: 15mm</div>
+                                        <div>Riser 1F → ครัว: 20mm</div>
+                                        <div class="text-green-600 font-medium">Riser 1F → Riser 2F: 20mm</div>
+                                        <div class="text-green-600 font-medium">Riser 2F → ห้องน้ำ 2: 15mm</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">เปลี่ยน 1 ท่อ + เพิ่ม 2 ท่อ</span>
+                                    </td>
+                                </tr>
+
+                                <!-- Calculation -->
+                                <tr>
+                                    <td class="px-4 py-3 font-medium text-gray-900">📊 ผลการคำนวณ</td>
+                                    <td class="px-4 py-3 text-center text-gray-600">
+                                        <div>ความเร็ว: 2.1 m/s</div>
+                                        <div>Friction: 1.8 m/100m</div>
+                                        <div>แรงดันต้นทาง: 2.5 bar</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center text-gray-600">
+                                        <div class="text-green-600 font-medium">ความเร็ว: 1.8 m/s (↓)</div>
+                                        <div class="text-orange-600 font-medium">Friction: 2.1 m/100m (↑)</div>
+                                        <div class="text-orange-600 font-medium">แรงดันต้นทาง: 2.8 bar (↑0.3)</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-medium">แรงดันต้องเพิ่ม</span>
+                                    </td>
+                                </tr>
+
+                                <!-- Cost -->
+                                <tr>
+                                    <td class="px-4 py-3 font-medium text-gray-900">💰 ค่าวัสดุ</td>
+                                    <td class="px-4 py-3 text-center text-gray-600">
+                                        <div class="font-bold">15,000 บาท</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center text-gray-600">
+                                        <div class="font-bold text-orange-600">17,250 บาท</div>
+                                        <div class="text-xs text-gray-500">(+2,250 บาท)</div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">+15%</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="mt-4 flex gap-4 text-xs">
+                        <div class="flex items-center gap-1">
+                            <span class="w-4 h-4 bg-green-100 rounded"></span>
+                            <span class="text-gray-600">เพิ่ม</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="w-4 h-4 bg-orange-100 rounded"></span>
+                            <span class="text-gray-600">เปลี่ยน</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="w-4 h-4 bg-yellow-100 rounded"></span>
+                            <span class="text-gray-600">ผลกระทบ</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="w-4 h-4 bg-red-100 rounded"></span>
+                            <span class="text-gray-600">แย่ลง</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Version List -->
+            <div class="space-y-4">
+                <!-- Version 3 (Selected) -->
+                <div class="version-card bg-white rounded-lg shadow-sm border-2 border-green-500 p-4 cursor-pointer">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold">
+                                3
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Version 3</h3>
+                                <p class="text-xs text-gray-600">ประหยัด - ท่อเล็กลง</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                            ปัจจุบัน
+                        </span>
+                    </div>
+
+                    <div class="space-y-2 text-sm">
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>📅 สร้าง:</span>
+                            <span class="font-medium">15 ม.ค. 2025</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>👤 โดย:</span>
+                            <span class="font-medium">Engineer</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>📊 ท่อ:</span>
+                            <span class="font-medium">7 ท่อ</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>📏 สุขภัณฑ์:</span>
+                            <span class="font-medium">6 สุขภัณฑ์</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 flex gap-2">
+                        <button class="flex-1 px-3 py-1.5 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700">
+                            ✅ ใช้งาน
+                        </button>
+                        <button class="px-3 py-1.5 border border-gray-300 rounded text-xs font-medium hover:bg-gray-50">
+                            📋 ดูประวัติ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Version 2 -->
+                <div class="version-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+                                2
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Version 2</h3>
+                                <p class="text-xs text-gray-600">เพิ่มห้องน้ำ 2 - ท่อขนาดใหญ่</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium">
+                            รุ่นก่อน
+                        </span>
+                    </div>
+
+                    <div class="space-y-2 text-sm">
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>📅 สร้าง:</span>
+                            <span class="font-medium">10 ม.ค. 2025</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>👤 โดย:</span>
+                            <span class="font-medium">Engineer</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>📊 ท่อ:</span>
+                            <span class="font-medium">9 ท่อ</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>📏 สุขภัณฑ์:</span>
+                            <span class="font-medium">9 สุขภัณฑ์</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 flex gap-2">
+                        <button class="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700">
+                            🔄 กู้คืน
+                        </button>
+                        <button class="px-3 py-1.5 border border-gray-300 rounded text-xs font-medium hover:bg-gray-50">
+                            📋 ดูประวัติ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Version 1 -->
+                <div class="version-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold">
+                                1
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">Version 1</h3>
+                                <p class="text-xs text-gray-600">รุ่นแรก - 15mm</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium">
+                            รุ่นแรกสุด
+                        </span>
+                    </div>
+
+                    <div class="space-y-2 text-sm">
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>📅 สร้าง:</span>
+                            <span class="font-medium">5 ม.ค. 2025</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>👤 โดย:</span>
+                            <span class="font-medium">Engineer</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>📊 ท่อ:</span>
+                            <span class="font-medium">4 ท่อ</span>
+                        </div>
+                        <div class="flex items-center justify-between text-gray-600">
+                            <span>📏 สุขภัณฑ์:</span>
+                            <span class="font-medium">6 สุขภัณฑ์</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 flex gap-2">
+                        <button class="flex-1 px-3 py-1.5 bg-purple-600 text-white rounded text-xs font-medium hover:bg-purple-700">
+                            🔄 กู้คืน
+                        </button>
+                        <button class="px-3 py-1.5 border border-gray-300 rounded text-xs font-medium hover:bg-gray-50">
+                            📋 ดูประวัติ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Log Section -->
+        <div class="mt-6 bg-white rounded-lg shadow-sm p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">📋 Audit Log - Version 3</h3>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-4 py-3 text-left font-semibold text-gray-900">เวลา</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-900">ผู้ใช้</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-900">Action</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-900">รายละเอียด</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-4 py-3 text-gray-600 whitespace-nowrap">15/01/2025 14:30</td>
+                            <td class="px-4 py-3 text-gray-900">engineer@company.com</td>
+                            <td class="px-4 py-3"><span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">CREATE_VERSION</span></td>
+                            <td class="px-4 py-3 text-gray-600">สร้าง Version 3: "ประหยัด - ท่อเล็กลง"</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-gray-600 whitespace-nowrap">15/01/2025 14:35</td>
+                            <td class="px-4 py-3 text-gray-900">engineer@company.com</td>
+                            <td class="px-4 py-3"><span class="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-medium">UPDATE_PIPE_SIZE</span></td>
+                            <td class="px-4 py-3 text-gray-600">
+                                <div>• Pipe #12 (J1 → Riser 1F): 32mm → 25mm</div>
+                                <div>• Pipe #15 (Riser 1F → ห้องน้ำ): 15mm → 12mm</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-gray-600 whitespace-nowrap">15/01/2025 15:00</td>
+                            <td class="px-4 py-3 text-gray-900">owner@company.com</td>
+                            <td class="px-4 py-3"><span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">APPROVE</span></td>
+                            <td class="px-4 py-3 text-gray-600">อนุมัติใช้ Version 3 นี้</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 text-gray-600 whitespace-nowrap">16/01/2025 09:00</td>
+                            <td class="px-4 py-3 text-gray-900">engineer@company.com</td>
+                            <td class="px-4 py-3"><span class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">RESTORE</span></td>
+                            <td class="px-4 py-3 text-gray-600">กู้คืนจาก Version 2 มาใช้</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

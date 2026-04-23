@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  name      String?
+  role      String     @default("USER")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  auditLogs AuditLog[]
+  projects  Project[]
+
+  @@map("users")
+}
+
+model Project {
+  id          Int             @id @default(autoincrement())
+  name        String
+  description String?
+  type        String          @default("RESIDENTIAL")
+  status      String          @default("DRAFT")
+  ownerId     Int
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  auditLogs   AuditLog[]
+  criteria    DesignCriteria?
+  documents   Document[]
+  networks    Network[]
+  owner       User            @relation(fields: [ownerId], references: [id])
+  versions    Version[]
+
+  @@map("projects")
+}
+
+model DesignCriteria {
+  id                  Int      @id @default(autoincrement())
+  projectId           Int      @unique
+  velocityMin         Float    @default(0.6)
+  velocityRecommended Float    @default(1.8)
+  velocityMax         Float    @default(3.0)
+  velocityWarning     Float    @default(3.0)
+  pressureMin         Float    @default(0.5)
+  pressureWarning     Float    @default(1.0)
+  cFactor             Int      @default(150)
+  pvcClass            Float    @default(7)
+  systemType          String   @default("FLUSH_TANK")
+  demandMode          String   @default("FLUSH_TANK")
+  buildingType        String   @default("APARTMENT")
+  floors              Int      @default(1)
+  minorLossFactor     Int      @default(15)
+  blueprintUrl        String?
+  blueprintScale      Float?
+  staticHead          Float    @default(0.0)
+  residualPressure    Float    @default(0.35)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("design_criteria")
+}
+
+model Network {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  name      String
+  versionId Int?
+  isCurrent Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Version? @relation(fields: [versionId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  nodes     Node[]
+  pipes     Pipe[]
+
+  @@map("networks")
+}
+
+model Node {
+  id            Int       @id @default(autoincrement())
+  networkId     Int
+  type          String
+  x             Float
+  y             Float
+  elevation     Float     @default(0)
+  label         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  fixtures      Fixture[]
+  network       Network   @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  pipesAsTarget Pipe[]    @relation("TargetNode")
+  pipesAsSource Pipe[]    @relation("SourceNode")
+
+  @@map("nodes")
+}
+
+model Fixture {
+  id        Int      @id @default(autoincrement())
+  nodeId    Int
+  type      String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  node      Node     @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@map("fixtures")
+}
+
+model Pipe {
+  id               Int                 @id @default(autoincrement())
+  networkId        Int
+  sourceNodeId     Int
+  targetNodeId     Int
+  length           Float
+  nominalSize      String
+  internalDiameter Float
+  material         String              @default("PVC")
+  cFactor          Int                 @default(150)
+  isCriticalPath   Boolean             @default(false)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  cornerPoints     String?             @default("")
+  calculations     CalculationResult[]
+  targetNode       Node                @relation("TargetNode", fields: [targetNodeId], references: [id])
+  sourceNode       Node                @relation("SourceNode", fields: [sourceNodeId], references: [id])
+  network          Network             @relation(fields: [networkId], references: [id], onDelete: Cascade)
+
+  @@map("pipes")
+}
+
+model CalculationResult {
+  id                Int      @id @default(autoincrement())
+  pipeId            Int
+  fixtureUnitsTotal Float
+  flowRateGPM       Float
+  flowRateLPS       Float
+  flowRateM3S       Float
+  velocity          Float
+  velocityHead      Float
+  frictionLossRate  Float
+  majorLoss         Float
+  minorLoss         Float
+  staticHead        Float @default(0)
+  totalLoss         Float
+  suggestedSize     String?
+  status            String
+  warnings          String?
+  createdAt         DateTime @default(now())
+  pipe              Pipe     @relation(fields: [pipeId], references: [id], onDelete: Cascade)
+
+  @@map("calculation_results")
+}
+
+model Version {
+  id               Int       @id @default(autoincrement())
+  projectId        Int
+  name             String
+  description      String?
+  versionNumber    Int
+  isCurrent        Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  createdBy        Int?
+  snapshotCriteria String?
+  snapshotNetwork  String?
+  snapshotResults  String?
+  networks         Network[]
+  project          Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, versionNumber])
+  @@map("versions")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  userId    Int?
+  action    String
+  entity    String
+  entityId  Int?
+  details   String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Document {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  fileName  String
+  filePath  String
+  floor     String
+  type      String
+  scale     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}

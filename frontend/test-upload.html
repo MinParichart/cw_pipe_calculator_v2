@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Upload</title>
+</head>
+<body>
+  <h1>Test File Upload</h1>
+  <form action="http://localhost:3002/api/projects/8/documents" method="POST" enctype="multipart/form-data">
+    <p>
+      Floor: <input type="text" name="floor" value="1" required>
+    </p>
+    <p>
+      Type: <input type="text" name="type" value="floor_plan" required>
+    </p>
+    <p>
+      Scale: <input type="text" name="scale" value="1:100" required>
+    </p>
+    <p>
+      File: <input type="file" name="file" required>
+    </p>
+    <button type="submit">Upload</button>
+  </form>
+</body>
+</html>

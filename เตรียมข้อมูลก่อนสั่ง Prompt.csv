@@ -1,0 +1,66 @@
+﻿ฉันต้องการสร้างโปรแกรมคำนวณขนาดท่อน้ำดีสำหรับที่พักอาศัยไม่เกิน 2 ชั้น ,,
+เนื่องจากฉันต้องการให้มีการเก็บและ,,
+โดยที่ฉันต้องการคำนวณเฉพาะท่อน้ำดีเท่านั้น,,
+โดยฟีเจอรทั้งหมดที่ฉันต้องการเป็นดังนี้ ,,
+,,
+ฟีเจอร์ทั้งหมดที่ควรมี (Phase แรกตาม requirement),,
+,,
+A) Account & Security,,
+ลำดับ,Feature,รายละเอียด
+1,Authentication,ระบบ Login/Logout เพื่อเข้าใช้งานพื้นที่ส่วนตัว
+2,Authorization (Owner),ระบบจำกัดสิทธิ์การเข้าถึง เห็นและแก้ไขได้เฉพาะโปรเจกต์ของตัวเอง
+,,
+B) Project & Workspace Setup,,
+ลำดับ,Feature,รายละเอียด
+3,Project Management (CRUD),"สร้าง, ดู, แก้ไข, ลบ และ Duplicate Project (คัดลอกเฉพาะข้อมูลพื้นฐาน ไม่รวมผลลัพธ์)"
+4,Design Criteria Settings,"ตั้งค่าเกณฑ์คำนวณ: $v$ (min/max), Pressure (min/warn), C-Factor, และสถานะการทำงาน (Tank/Valve)"
+5,Reference Data (read-only),เปิดดูตารางอ้างอิงที่ระบบใช้คำนวณ (FU→Flow / Flow→Pipe size / C-factor) แบบอ่านอย่างเดียว
+,,
+C) Versioning & Traceability,,
+ลำดับ,Feature,รายละเอียด
+6,Version CRUD (ภายในโปรเจกต์เดิม),"สร้างเวอร์ชันใหม่จาก snapshot, แก้ชื่อ/โน้ตเวอร์ชัน, ลบ/เก็บเวอร์ชัน, และ “Duplicate Version” ภายในโปรเจกต์เดียวกัน"
+7,Save Version (Snapshot),กดบันทึกสถานะทั้งโปรเจกต์ (criteria/network/fixtures/results) เป็นเวอร์ชัน
+8,View Version History,ดูรายการเวอร์ชันทั้งหมด (เรียงใหม่→เก่า)
+9,Compare Versions,เทียบความต่าง 2 เวอร์ชัน (criteria/fixtures/network/results)
+10,Audit Log,"ดูประวัติการกระทำสำคัญ เช่น calculate, apply suggestion, save version, edit network"
+,,
+D) Interactive Network Builder (Canvas),,
+ลำดับ,Feature,รายละเอียด
+11,Blueprint Calibration,อัปโหลดรูปภาพ/PDF และลากเส้นอ้างอิงบนภาพเพื่อระบุสเกล (Pixel per Meter)
+12,Visual Node Builder,"วาง Node (Source, Junction, Fixture, Riser) ลงบนแปลนแบบ Drag-and-Drop"
+13,Smart Pipe Drawing,ลากเส้นท่อเชื่อม Node พร้อมระบบ Snapping และคำนวณความยาวจริง ($L$) อัตโนมัติจากภาพ
+14,Pathfinding & Critical Path,ระบบวิ่งหาเส้นทางที่ไกลและสูงที่สุดอัตโนมัติ (Auto-Critical Path Detection)
+,,
+E) Fixtures & Engineering Catalogs,,
+ลำดับ,Feature,รายละเอียด
+15,Smart Fixture Mapping,เลือกสุขภัณฑ์ลงบน Node (ไอคอนเปลี่ยนตามประเภท) พร้อมดึงค่า FU และแรงดันที่ต้องการอัตโนมัติ
+16,Pipe Specs Catalog (Prisma),"ฐานข้อมูลท่อละเอียด: ขนาด Nominal, Internal Diameter (รูใน), และ Pressure Class"
+17,FU Summary,รวม FU ต่อ node และรวมทั้งระบบ เพื่อเช็คความถูกต้องก่อนคำนวณ
+18,Hunter's Curve Engine,ระบบแปลง FU เป็น Flow ($Q$) โดยใช้ตารางอ้างอิงและการทำ Interpolation (Tank/Valve)
+,,
+F) Hydraulic Sizing & Verification,,
+ลำดับ,Feature,รายละเอียด
+19,Hybrid Pipe Sizing,เลือกขนาดท่ออัตโนมัติ: Table 2.6 (ท่อทั่วไป) และ Hazen-Williams (ท่อวิกฤต)
+20,Hydraulic Verification,"ตรวจสอบ $v$, $h_f$, Minor Loss, Static Head, และ Residual Pressure (bar/m)"
+,,
+G) Optimization & Results,,
+ลำดับ,Feature,รายละเอียด
+21,Auto-Suggest Upsizing,ระบบแนะนำการปรับขนาดท่อในจุดที่เป็นคอขวด (Bottleneck) เมื่อค่าแรงดันหรือความเร็วไม่ผ่านเกณฑ์
+22,Apply Suggestion (Override),ปุ่มกดเลือกขนาดท่อตามที่ระบบแนะนำ เพื่อปรับแก้และคำนวณใหม่ทันที
+23,Results Dashboard,"สรุปผลราย Segment, สเปคปั๊มที่เหมาะสม (TDH), และตารางสรุปสถานะ Pass/Fail"
+,,
+Flow ลำดับใช้งานจริงของระบบ,,
+,,
+1.Login,,
+2.Project List → สร้าง/เลือกโปรเจกต์,,
+3.ตั้งค่า Hydraulic Parameters (เกณฑ์คำนวณ) + ดู Reference Data,,
+4.Upload Blueprint + ใส่ Manual Note/Label,,
+5.Build Network (Tree) + เลือก Critical Endpoint,,
+6.Fixture Catalog → Assign Fixtures → ดู FU Summary,,
+7.Water Demand Calculation (FU→Flow),,
+8.Pipe Sizing (เลือก DN จาก Table 2.6),,
+9.Hydraulic Verification (velocity/headloss/static/residual),,
+10.Results Dashboard (PASS/WARN/FAIL),,
+11.(ถ้าต้องปรับ) Auto-suggest Upsizing → Apply Suggestion (Override DN) → คำนวณใหม่,,
+12.Save Version → View History → Compare Versions,,
+13.ดู Audit Log (ใครทำอะไรเมื่อไหร่),,

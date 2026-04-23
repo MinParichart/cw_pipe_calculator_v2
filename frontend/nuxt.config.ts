@@ -34,8 +34,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      // Backend API runs on port 3002
-      apiBase: process.env.API_BASE_URL || 'http://localhost:3002/api',
+      // Backend API runs on port 3004
+      apiBase: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3004/api',
     },
   },
 
@@ -57,7 +57,7 @@ export default defineNuxtConfig({
       // Proxy uploads folder to backend
       proxy: {
         '/uploads': {
-          target: 'http://localhost:3002',
+          target: 'http://localhost:3004',
           changeOrigin: true,
         },
       },

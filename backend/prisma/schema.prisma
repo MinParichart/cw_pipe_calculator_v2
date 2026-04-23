@@ -147,7 +147,7 @@ model CalculationResult {
   frictionLossRate  Float
   majorLoss         Float
   minorLoss         Float
-  staticHead        Float @default(0)
+  staticHead        Float    @default(0)
   totalLoss         Float
   suggestedSize     String?
   status            String

@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
 
   devServer: {
-    port: 3001, // Frontend runs on 3001
+    port: 3003, // Frontend runs on 3003
     host: 'localhost'
   },
 

@@ -1,13 +1,21 @@
 # CW Pipe Calculator v2
 
+1. ✅ backend/.env → BACKEND_PORT=3004
+2. ✅ backend/src/main.ts → .listen(3004)
+3. ✅ frontend/.env → NUXT_PUBLIC_API_URL=http://localhost:3004
+4. ✅ frontend/nuxt.config.ts → port: 3003
+5. ✅ backend/prisma/schema.prisma → เปลี่ยนชื่อ database (ถ้าจำเป็น)
+
 ## 📋 วัตถุประสงค์
 
 **ปัญหาของ v1:**
+
 - Network ผูกติดกับ Project (1:1)
 - ทำให้ Version ต่างๆ ไม่สามารถมี Network Diagram ที่แตกต่างกันได้
 - Version ไม่มีเอกลัดของตัวเอง → เปรียบเทียบได้ยาก
 
 **วัตถุประสงค์ของ v2:**
+
 - ✅ **Version-Centric Architecture** - แต่ละ Version มี Network, Fixtures, Calculation Results เป็นของตัวเอง
 - ✅ **Snapshot System** - เก็บสถานะของ Network ทุกจุดเปลี่ยน
 - ✅ **Version Comparison** - เปรียบเทียบ Network Diagram, Fixtures, Calculation ระหว่าง 2 Versions ได้
@@ -20,6 +28,7 @@
 ### **Database Architecture**
 
 #### **v1 (Project-Centric)**
+
 ```
 Project (1)
 └── Network (1)
@@ -27,6 +36,7 @@ Project (1)
 ```
 
 #### **v2 (Version-Centric)**
+
 ```
 Project (1)
 ├── Criteria (1:1)
@@ -42,6 +52,7 @@ Project (1)
 ### **Workflow ใหม่**
 
 #### **v1 Workflow**
+
 ```
 Step 1: Parameters → เก็บที่ Project
 Step 2: Upload
@@ -52,6 +63,7 @@ Step 6: Versions → User กด save version เอง
 ```
 
 #### **v2 Workflow**
+
 ```
 1. Create Project
 2. Set Design Criteria (ระดับ Project - ใช้ร่วมกันทุก Version)
@@ -169,6 +181,7 @@ model AuditLog {
 ## 📐 Implementation Phases
 
 ### **Phase 1: Database Schema Migration**
+
 - [ ] Create `Version` model
 - [ ] Update `Project` model (remove Network)
 - [ ] Update `Criteria` model (add to Project)
@@ -178,6 +191,7 @@ model AuditLog {
 - [ ] Migrate to v2 schema
 
 ### **Phase 2: Backend API Changes**
+
 - [ ] Create `versionsApi` endpoints
   - `POST /projects/:id/versions` - Create version
   - `GET /projects/:id/versions` - List all versions
@@ -200,6 +214,7 @@ model AuditLog {
 ### **Phase 3: Frontend Changes**
 
 #### **3.1 Update Routes**
+
 ```typescript
 // pages/projects/[id]/
 ├── index.vue              // Set criteria + list versions
@@ -216,6 +231,7 @@ model AuditLog {
 ```
 
 #### **3.2 Components**
+
 - [ ] `VersionSelector.vue` - Dropdown เลือก version ที่จะทำงาน
 - [ ] `VersionCard.vue` - Card แสดง version list
 - [ ] `NetworkBuilder.vue` - Update รองรับ versionId
@@ -223,6 +239,7 @@ model AuditLog {
 - [ ] `VersionSwitcher.vue` - Switch ระหว่าง versions
 
 ### **Phase 4: Frontend State Management**
+
 ```typescript
 // stores/versionStore.ts
 export const useVersionStore = defineStore('version', {
@@ -247,6 +264,7 @@ export const useVersionStore = defineStore('version', {
 ## 🚀 New Features in v2
 
 ### **1. Version Management**
+
 - ✅ Create multiple versions per project
 - ✅ Clone existing version
 - ✅ Delete version
@@ -254,12 +272,14 @@ export const useVersionStore = defineStore('version', {
 - ✅ Switch between versions
 
 ### **2. Snapshot System**
+
 - ✅ Auto-save network diagram after each change
 - ✅ Auto-save fixtures after each change
 - ✅ Auto-save calculation results
 - ✅ Manually save checkpoint
 
 ### **3. Version Comparison**
+
 - ✅ Select 2 versions to compare
 - ✅ Side-by-side network diagram
 - ✅ Diff fixtures (added/removed/changed)
@@ -267,6 +287,7 @@ export const useVersionStore = defineStore('version', {
 - ✅ Diff summary (total pipes, total fixtures, etc.)
 
 ### **4. Reference File per Version**
+
 - ✅ แต่ละ Version มี reference file (DXF) เป็นของตัวเอง
 - ✅ Upload reference หลายไฟล์ต่อ version
 - ✅ Import reference ใหม่เมื่อ clone version
@@ -314,11 +335,13 @@ export const useVersionStore = defineStore('version', {
 ## 🎯 Key Decisions
 
 ### **Decision 1: Snapshot Format**
+
 - **Store as JSON** (not binary)
 - **Pros:** ง่ายต่อการ migrate, query, แก้ไข
 - **Cons:** ไฟล์ใหญ่ถ้า network ใหญ่มาก
 
 ### **Decision 2: Auto-Versioning**
+
 - **Optional auto-save** ทุก step หรือ **manual save**?
 - **Recommendation:** Manual save เท่าน เพราะ:
   - User ควบคุมได้ว่าจะ save version เมื่อไหร่
@@ -326,6 +349,7 @@ export const useVersionStore = defineStore('version', {
   - ประหยัด database space
 
 ### **Decision 3: Reference File**
+
 - **Per-version reference** หรือ **shared reference**?
 - **Decision:** Per-version reference (Version.ReferenceLayer)
 - **Why:** แต่ละ version มี reference เป็นของตัวเองเต็มที่
@@ -385,6 +409,7 @@ BACKEND_PORT=3003
 คุณคือ **Claude Code** - AI Programming Assistant
 
 เป้าหมายของคุณ:
+
 - ช่วยออกแบบ database schema
 - ช่วยเขียน API endpoints
 - ช่วยสร้าง frontend components
@@ -392,6 +417,7 @@ BACKEND_PORT=3003
 - ช่วย optimize performance
 
 **คำถาม:**
+
 - ระบบ version control ทำงานอย่างไร?
 - อยากเปรียบเทียบ version อย่างไร?
 - มี bug ตรงไหน ช่วยดูหน่อย

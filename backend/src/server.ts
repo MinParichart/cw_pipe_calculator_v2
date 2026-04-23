@@ -14,10 +14,10 @@ const PORT = process.env.PORT
 // CORS middleware - MUST be before helmet!
 app.use(cors({
   origin: [
-    'http://localhost:3001', // Frontend
+    'http://localhost:3003', // Frontend
     'http://localhost:3000',
     'http://localhost:5173', // Nuxt default
-    'http://localhost:3002', // Backend itself
+    'http://localhost:3004', // Backend itself
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

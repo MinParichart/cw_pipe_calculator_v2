@@ -419,15 +419,44 @@ const getPipeAngle = (pipe: any) => {
 
 const formatPipeSize = (size: any) => {
   if (!size) return '-'
-  if (typeof size === 'string') {
-    // If it's already a string like "15mm" or "1/2\"", return as is
-    return size
+
+  const strSize = String(size).trim();
+
+  // 1. ถ้ารูปแบบถูกส่งมาเป็นแบบมี นิ้ว และ วงเล็บมิลลิเมตรอยู่แล้ว ให้คืนค่าเลย
+  if (strSize.includes('"') && strSize.includes('(')) {
+    return strSize;
   }
-  if (typeof size === 'number') {
-    const inches = (size / 25.4).toFixed(2)
-    return `${size}mm (${inches}")`
+
+  // 2. ดึงเฉพาะตัวเลขออกมา เผื่อฐานข้อมูลส่งมาเป็น "15", "15mm" หรือ 15
+  const mmMatch = strSize.match(/^[\d.]+/);
+  if (!mmMatch) return strSize; // ถ้าหาตัวเลขไม่เจอเลย ให้แสดงค่าเดิมที่ส่งมา
+
+  const numSize = parseFloat(mmMatch[0]);
+
+  // 3. ตารางแปลงมิลลิเมตร (Nominal Size) เป็นขนาดนิ้วมาตรฐานท่อประปา
+  const sizeMap: Record<number, string> = {
+    15: '1/2"',
+    20: '3/4"',
+    25: '1"',
+    32: '1 1/4"',
+    40: '1 1/2"',
+    50: '2"',
+    65: '2 1/2"',
+    80: '3"',
+    100: '4"',
+    150: '6"',
+    200: '8"'
+  };
+
+  // 4. จัดรูปแบบการแสดงผล: ขนาดนิ้ว" (ขนาดมิลลิเมตรmm)
+  if (sizeMap[numSize]) {
+    return `${sizeMap[numSize]} (${numSize}mm)`;
   }
-  return String(size)
+
+  // 5. กรณีตัวเลขไม่อยู่ในตารางมาตรฐาน ให้คำนวณหาร 25.4 เอง
+  const inches = (numSize / 25.4).toFixed(2);
+  // ตัด .00 ออกถ้าเป็นจำนวนเต็มเป๊ะๆ เพื่อความสวยงาม
+  return `${inches.replace(/\.00$/, '')}" (${numSize}mm)`;
 }
 
 const zoomIn = () => {

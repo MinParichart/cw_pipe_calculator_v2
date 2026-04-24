@@ -122,27 +122,37 @@ export const useWorkflowStore = defineStore('workflow', {
      * ดึง step จาก path
      */
     getStepFromPath(path: string): ProjectStep | VersionStep {
-      const pathToStep: Record<string, ProjectStep | VersionStep> = {
-        // Project steps
-        '': 'parameters',
-        'documents': 'documents',
-        'network': 'network',
-        'fixtures': 'fixtures',
-        'calculation': 'calculation',
-        'versions': 'versions',
-        // Version steps
-        'upload': 'versionUpload',
-        'network': 'versionNetwork',
-        'fixtures': 'versionFixtures',
-        'calculation': 'versionCalculation',
-        'compare': 'versionCompare',
-      }
-
-      // ลบ / นำหน้าออก
+      // Remove leading /
       const cleanPath = path.startsWith('/') ? path.slice(1) : path
-      const lastSegment = cleanPath.split('/').pop() || ''
+      const segments = cleanPath.split('/').filter(s => s)
 
-      return pathToStep[lastSegment] || 'parameters'
+      // Check if we're in a version path (projects/[id]/versions/[versionId]/...)
+      const versionIndex = segments.indexOf('versions')
+      const isVersionPath = versionIndex !== -1 && versionIndex + 2 < segments.length
+
+      if (isVersionPath) {
+        // We're in a version path, return the step after 'versions/[versionId]'
+        const versionStep = segments[versionIndex + 2] || ''
+        const versionStepMap: Record<string, VersionStep> = {
+          'upload': 'versionUpload',
+          'network': 'versionNetwork',
+          'fixtures': 'versionFixtures',
+          'calculation': 'versionCalculation',
+        }
+        return versionStepMap[versionStep] || 'versionNetwork'
+      } else {
+        // We're in a project path
+        const lastSegment = segments[segments.length - 1] || ''
+        const projectStepMap: Record<string, ProjectStep> = {
+          '': 'parameters',
+          'documents': 'documents',
+          'network': 'network',
+          'fixtures': 'fixtures',
+          'calculation': 'calculation',
+          'versions': 'versions',
+        }
+        return projectStepMap[lastSegment] || 'parameters'
+      }
     },
   },
 })

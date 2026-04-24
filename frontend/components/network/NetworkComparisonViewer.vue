@@ -97,6 +97,7 @@
         class="absolute inset-0 w-full h-full pointer-events-none"
         style="z-index: 1"
         overflow="visible"
+        shape-rendering="crispEdges"
       >
         <g
           v-for="pipe in networkData.pipes"
@@ -108,11 +109,9 @@
           <polyline
             :points="getOrthogonalPathPoints(pipe)"
             fill="none"
-            :stroke="isCriticalPath(pipe) ? '#EF4444' : pipeColor"
+            :stroke="isCriticalPath(pipe) ? '#F59E0B' : pipeColor"
             :stroke-width="isCriticalPath(pipe) ? 3 : 2"
-            :stroke-dasharray="isCriticalPath(pipe) ? '0' : '5,5'"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+            stroke-dasharray="5,5"
           />
 
           <!-- Arrow -->
@@ -121,7 +120,7 @@
           >
             <polygon
               points="-6,-5 8,0 -6,5"
-              :fill="isCriticalPath(pipe) ? '#EF4444' : pipeColor"
+              :fill="isCriticalPath(pipe) ? '#F59E0B' : pipeColor"
             />
           </g>
 
@@ -140,8 +139,7 @@
             v-if="pipe.nominalSize"
             :x="getOrthogonalMidpoint(pipe).x"
             :y="getOrthogonalMidpoint(pipe).y + 20"
-            class="text-xs font-bold"
-            :fill="isCriticalPath(pipe) ? '#EF4444' : pipeColor"
+            class="text-xs fill-blue-600 font-bold"
             text-anchor="middle"
             style="text-shadow: 1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white;"
           >
@@ -153,7 +151,8 @@
             v-if="isCriticalPath(pipe)"
             :x="getOrthogonalMidpoint(pipe).x"
             :y="getOrthogonalMidpoint(pipe).y + 35"
-            class="text-[10px] font-bold fill-red-600"
+            class="text-[10px] font-bold"
+            fill="#F59E0B"
             text-anchor="middle"
           >
             Critical
@@ -314,11 +313,27 @@ const isCriticalPath = (pipe: any) => {
 }
 
 const getFromNode = (pipe: any) => {
-  return props.networkData?.nodes?.find((n: any) => n.id === pipe.sourceNodeId || n.id === pipe.fromNode)
+  const node = props.networkData?.nodes?.find((n: any) => n.id === pipe.sourceNodeId)
+  if (!node) {
+    console.warn('[getFromNode] Node not found for pipe:', {
+      pipeId: pipe.id,
+      sourceNodeId: pipe.sourceNodeId,
+      availableNodes: props.networkData?.nodes?.map((n: any) => n.id)
+    })
+  }
+  return node
 }
 
 const getToNode = (pipe: any) => {
-  return props.networkData?.nodes?.find((n: any) => n.id === pipe.targetNodeId || n.id === pipe.toNode)
+  const node = props.networkData?.nodes?.find((n: any) => n.id === pipe.targetNodeId)
+  if (!node) {
+    console.warn('[getToNode] Node not found for pipe:', {
+      pipeId: pipe.id,
+      targetNodeId: pipe.targetNodeId,
+      availableNodes: props.networkData?.nodes?.map((n: any) => n.id)
+    })
+  }
+  return node
 }
 
 const getOrthogonalPathPoints = (pipe: any) => {
@@ -326,12 +341,6 @@ const getOrthogonalPathPoints = (pipe: any) => {
   const toNode = getToNode(pipe)
 
   if (!fromNode || !toNode) {
-    console.log('[getOrthogonalPathPoints] Missing nodes for pipe:', pipe.id, {
-      from: pipe.sourceNodeId || pipe.fromNode,
-      to: pipe.targetNodeId || pipe.toNode,
-      fromFound: !!fromNode,
-      toFound: !!toNode
-    })
     return ''
   }
 
@@ -364,10 +373,19 @@ const getOrthogonalMidpoint = (pipe: any) => {
   const x2 = toNode.x || 0
   const y2 = toNode.y || 0
 
-  return {
+  const midpoint = {
     x: (x1 + x2) / 2,
     y: (y1 + y2) / 2
   }
+
+  console.log('[getOrthogonalMidpoint]', {
+    pipeId: pipe.id,
+    fromNode: { id: fromNode.id, x: x1, y: y1 },
+    toNode: { id: toNode.id, x: x2, y: y2 },
+    midpoint
+  })
+
+  return midpoint
 }
 
 const getPipeAngle = (pipe: any) => {
@@ -376,12 +394,22 @@ const getPipeAngle = (pipe: any) => {
 
   if (!fromNode || !toNode) return 0
 
-  const x1 = fromNode.x || 0
-  const y1 = fromNode.y || 0
-  const x2 = toNode.x || 0
-  const y2 = toNode.y || 0
+  const dx = (toNode.x || 0) - (fromNode.x || 0)
+  const dy = (toNode.y || 0) - (fromNode.y || 0)
+  const isVertical = Math.abs(dy) > Math.abs(dx)
 
-  const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI
+  const angle = isVertical
+    ? (dy > 0 ? 90 : -90) // ท่อตั้ง: ไหลลง = 90, ไหลขึ้น = -90
+    : (dx > 0 ? 0 : 180) // ท่อนอน: ไหลขวา = 0, ไหลซ้าย = 180
+
+  // Debug log (ลบออกได้หลังจากแก้ไขเสร็จ)
+  console.log('[getPipeAngle]', {
+    pipeId: pipe.id,
+    fromNode: { id: fromNode.id, x: fromNode.x, y: fromNode.y },
+    toNode: { id: toNode.id, x: toNode.x, y: toNode.y },
+    dx, dy, isVertical, angle
+  })
+
   return angle
 }
 

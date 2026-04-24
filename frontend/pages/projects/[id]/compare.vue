@@ -5,25 +5,6 @@
         <!-- Header -->
         <div class="mb-6">
           <div class="flex items-center gap-4 mb-4">
-            <button
-              @click="goBack"
-              class="flex items-center text-sm text-gray-600 hover:text-gray-900"
-            >
-              <svg
-                class="h-4 w-4 mr-1"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              ย้อนกลับ
-            </button>
             <div>
               <h1 class="text-3xl font-bold text-gray-900">เปรียบเทียบ Version</h1>
               <p class="mt-1 text-sm text-gray-600">
@@ -309,17 +290,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Floating Back Button (Bottom Right) -->
-  <button
-    @click="router.push(`/projects/${route.params.id}`)"
-    class="fixed bottom-6 right-6 flex items-center px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-50"
-  >
-    <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-    </svg>
-    <span>ย้อนกลับ</span>
-  </button>
 </template>
 
 <script setup lang="ts">

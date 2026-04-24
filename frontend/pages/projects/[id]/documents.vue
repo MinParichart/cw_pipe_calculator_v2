@@ -5,15 +5,6 @@
         <div class="mb-6">
           <!-- Back & Title Row -->
           <div class="flex items-center gap-4 mb-4">
-            <button
-              @click="$router.back()"
-              class="flex items-center text-sm text-gray-600 hover:text-gray-900"
-            >
-              <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-              ย้อนกลับ
-            </button>
             <h1 class="text-3xl font-bold text-gray-900">Documents & Reference</h1>
           </div>
           <p class="text-sm text-gray-600">

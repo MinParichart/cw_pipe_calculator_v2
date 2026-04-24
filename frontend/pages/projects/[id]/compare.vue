@@ -189,15 +189,11 @@
                     {{ versionA?.name || `Version ${versionA?.versionNumber}` }}
                   </h4>
                 </div>
-                <div class="p-4 bg-gray-50" style="height: 600px;">
+                <div class="p-0 bg-gray-50 h-screen">
                   <NetworkComparisonViewer
                     v-if="versionAData?.snapshotNetwork"
                     :network-data="versionAData.snapshotNetwork"
                     :blueprints="versionABlueprints"
-                    :scale="versionAData?.scale || 50"
-                    :canvas-width="versionAData?.canvasWidth"
-                    :canvas-height="versionAData?.canvasHeight"
-                    :color="'blue'"
                   />
                   <div v-else class="flex items-center justify-center h-full text-gray-400">
                     <div class="text-center">
@@ -217,15 +213,11 @@
                     {{ versionB?.name || `Version ${versionB?.versionNumber}` }}
                   </h4>
                 </div>
-                <div class="p-4 bg-gray-50" style="height: 600px;">
+                <div class="p-0 bg-gray-50 h-screen">
                   <NetworkComparisonViewer
                     v-if="versionBData?.snapshotNetwork"
                     :network-data="versionBData.snapshotNetwork"
                     :blueprints="versionBBlueprints"
-                    :scale="versionBData?.scale || 50"
-                    :canvas-width="versionBData?.canvasWidth"
-                    :canvas-height="versionBData?.canvasHeight"
-                    :color="'orange'"
                   />
                   <div v-else class="flex items-center justify-center h-full text-gray-400">
                     <div class="text-center">
@@ -427,22 +419,12 @@ const parseVersionData = (version: any) => {
       snapshotNetwork: network,
       snapshotFixtures: version.snapshotFixtures ? JSON.parse(version.snapshotFixtures) : null,
       snapshotResults: version.snapshotResults ? JSON.parse(version.snapshotResults) : null,
-      // Extract blueprint settings from network
-      blueprints: network?.blueprints || null,
-      scale: network?.scale || 50, // Default 50px/m if not set
-      canvasWidth: network?.canvasWidth,
-      canvasHeight: network?.canvasHeight,
     }
 
     console.log('[parseVersionData] Parsed data:', {
       hasNetwork: !!data.snapshotNetwork,
       nodes: data.snapshotNetwork?.nodes?.length || 0,
-      pipes: data.snapshotNetwork?.pipes?.length || 0,
-      scale: data.scale,
-      canvasWidth: data.canvasWidth,
-      canvasHeight: data.canvasHeight,
-      hasBlueprints: !!data.blueprints,
-      blueprintsCount: data.blueprints?.length || 0
+      pipes: data.snapshotNetwork?.pipes?.length || 0
     })
 
     return data

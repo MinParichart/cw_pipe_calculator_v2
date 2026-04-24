@@ -106,7 +106,9 @@
       "Bash(findstr :3003)",
       "Bash(timeout 5)",
       "Bash(awk 'NR>=4765 && NR<=4775' NetworkBuilder.vue)",
-      "Bash(findstr node:*)"
+      "Bash(findstr node:*)",
+      "Bash(if exist:*)",
+      "Bash(powershell -Command \"if \\(Test-Path .nuxt\\) { Remove-Item -Recurse -Force .nuxt; Write-Host ''Deleted .nuxt folder'' } else { Write-Host ''.nuxt folder not found'' }\")"
     ]
   }
 }

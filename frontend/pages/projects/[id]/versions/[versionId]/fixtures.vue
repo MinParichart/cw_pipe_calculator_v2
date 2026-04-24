@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Version Steps Indicator -->
+    <VersionSteps :version-id="versionId" />
+
     <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div class="px-4 py-6 sm:px-0">
         <div class="mb-6">
@@ -203,15 +206,21 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import VersionSteps from "~/components/workflow/VersionSteps.vue";
 import PipeFUCard from "~/components/calculator/PipeFUCard.vue";
 import NextStepButton from "~/components/navigation/NextStepButton.vue";
 import BackButton from "~/components/navigation/BackButton.vue";
 import { versionsApi } from "~/composables/useApi";
+import { useWorkflowStore } from "~/stores/workflowStore";
 import { calculateUPCGPM } from "~/shared/constants/hunterCurve";
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const workflowStore = useWorkflowStore();
+
+// Computed
+const versionId = computed(() => parseInt(route.params.versionId as string));
 
 // State
 const version = ref<any>(null);
@@ -682,6 +691,9 @@ onMounted(async () => {
 
   // Load network from version snapshot
   loadNetworkFromVersion();
+
+  // Set current step in workflow
+  workflowStore.setCurrentStep('versionFixtures');
 
   console.log("✅ [Step 4 - V2] Data loaded");
 });

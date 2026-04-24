@@ -8,6 +8,13 @@ export type ProjectStep =
   | 'calculation'
   | 'versions'
 
+export type VersionStep =
+  | 'versionUpload'
+  | 'versionNetwork'
+  | 'versionFixtures'
+  | 'versionCalculation'
+  | 'versionCompare'
+
 export const useWorkflowStore = defineStore('workflow', {
   state: () => ({
     currentStep: 'parameters' as ProjectStep,
@@ -18,22 +25,22 @@ export const useWorkflowStore = defineStore('workflow', {
     /**
      * ตรวจสอบว่า step นั้น completed หรือยัง
      */
-    isStepCompleted: (state) => (step: ProjectStep) => {
+    isStepCompleted: (state) => (step: ProjectStep | VersionStep) => {
       return state.completedSteps.includes(step)
     },
 
     /**
      * ตรวจสอบว่า step นั้นเป็น step ปัจจุบันหรือไม่
      */
-    isCurrentStep: (state) => (step: ProjectStep) => {
+    isCurrentStep: (state) => (step: ProjectStep | VersionStep) => {
       return state.currentStep === step
     },
 
     /**
      * ดึง step number จาก step name
      */
-    getStepNumber: () => (step: ProjectStep): number => {
-      const steps: ProjectStep[] = [
+    getStepNumber: () => (step: ProjectStep | VersionStep): number => {
+      const projectSteps: ProjectStep[] = [
         'parameters',
         'documents',
         'network',
@@ -41,20 +48,36 @@ export const useWorkflowStore = defineStore('workflow', {
         'calculation',
         'versions',
       ]
+      const versionSteps: VersionStep[] = [
+        'versionUpload',
+        'versionNetwork',
+        'versionFixtures',
+        'versionCalculation',
+        'versionCompare',
+      ]
+
+      const steps = [...projectSteps, ...versionSteps]
       return steps.indexOf(step) + 1
     },
 
     /**
      * ดึง path จาก step
      */
-    getStepPath: () => (step: ProjectStep): string => {
-      const paths: Record<ProjectStep, string> = {
+    getStepPath: () => (step: ProjectStep | VersionStep): string => {
+      const paths: Record<string, string> = {
+        // Project steps
         parameters: '',
         documents: 'documents',
         network: 'network',
         fixtures: 'fixtures',
         calculation: 'calculation',
         versions: 'versions',
+        // Version steps
+        versionUpload: 'upload',
+        versionNetwork: 'network',
+        versionFixtures: 'fixtures',
+        versionCalculation: 'calculation',
+        versionCompare: 'compare',
       }
       return paths[step]
     },
@@ -64,14 +87,14 @@ export const useWorkflowStore = defineStore('workflow', {
     /**
      * ตั้งค่า step ปัจจุบัน
      */
-    setCurrentStep(step: ProjectStep) {
+    setCurrentStep(step: ProjectStep | VersionStep) {
       this.currentStep = step
     },
 
     /**
      * ทำเครื่องหมายว่า step นั้นเสร็จแล้ว
      */
-    markStepComplete(step: ProjectStep) {
+    markStepComplete(step: ProjectStep | VersionStep) {
       if (!this.completedSteps.includes(step)) {
         this.completedSteps.push(step)
       }
@@ -80,7 +103,7 @@ export const useWorkflowStore = defineStore('workflow', {
     /**
      * ถอนเครื่องหมายว่า step นั้นเสร็จแล้ว
      */
-    unmarkStepComplete(step: ProjectStep) {
+    unmarkStepComplete(step: ProjectStep | VersionStep) {
       const index = this.completedSteps.indexOf(step)
       if (index > -1) {
         this.completedSteps.splice(index, 1)
@@ -98,14 +121,21 @@ export const useWorkflowStore = defineStore('workflow', {
     /**
      * ดึง step จาก path
      */
-    getStepFromPath(path: string): ProjectStep {
-      const pathToStep: Record<string, ProjectStep> = {
+    getStepFromPath(path: string): ProjectStep | VersionStep {
+      const pathToStep: Record<string, ProjectStep | VersionStep> = {
+        // Project steps
         '': 'parameters',
         'documents': 'documents',
         'network': 'network',
         'fixtures': 'fixtures',
         'calculation': 'calculation',
         'versions': 'versions',
+        // Version steps
+        'upload': 'versionUpload',
+        'network': 'versionNetwork',
+        'fixtures': 'versionFixtures',
+        'calculation': 'versionCalculation',
+        'compare': 'versionCompare',
       }
 
       // ลบ / นำหน้าออก

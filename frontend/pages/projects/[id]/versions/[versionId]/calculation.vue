@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Version Steps Indicator -->
+    <VersionSteps :version-id="versionId" />
+
     <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div class="px-4 py-6 sm:px-0">
         <div class="mb-6">
@@ -225,6 +228,7 @@
 </template>
 
 <script setup lang="ts">
+import VersionSteps from "~/components/workflow/VersionSteps.vue";
 import AutoSuggestUpsizing from "~/components/calculator/AutoSuggestUpsizing.vue";
 import HybridPipeSizing from "~/components/calculator/HybridPipeSizing.vue";
 import RequiredInletPressure from "~/components/calculator/RequiredInletPressure.vue";
@@ -395,7 +399,7 @@ onMounted(async () => {
   loadNetworkFromVersion();
   await loadCalculationSummary();
 
-  workflowStore.setCurrentStep("calculation");
+  workflowStore.setCurrentStep("versionCalculation");
 
   console.log("✅ [Step 5 - V2] Data loaded");
 });

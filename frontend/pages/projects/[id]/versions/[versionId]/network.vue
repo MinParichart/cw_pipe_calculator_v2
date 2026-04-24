@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Version Steps Indicator -->
+    <VersionSteps :version-id="versionId" />
+
     <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div class="px-4 py-6 sm:px-0">
         <!-- Header -->
@@ -256,16 +259,23 @@
 </template>
 
 <script setup lang="ts">
+import { computed, watch } from "vue";
+import VersionSteps from "~/components/workflow/VersionSteps.vue";
 import BackButton from "~/components/navigation/BackButton.vue";
 import NextStepButton from "~/components/navigation/NextStepButton.vue";
 import NetworkBuilder from "~/components/network/NetworkBuilder.vue";
 import { documentsApi, versionsApi } from "~/composables/useApi";
 import { useVersionStore } from "~/stores/versionStore";
+import { useWorkflowStore } from "~/stores/workflowStore";
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const versionStore = useVersionStore();
+const workflowStore = useWorkflowStore();
+
+// Computed
+const versionId = computed(() => parseInt(route.params.versionId as string));
 
 // State
 const version = ref<any>(null);
@@ -481,6 +491,9 @@ onMounted(async () => {
 
   // Load blueprints
   await loadBlueprints();
+
+  // Set current step in workflow
+  workflowStore.setCurrentStep('versionNetwork');
 
   console.log("✅ All data loaded", {
     hasNetworkData: !!networkData.value,

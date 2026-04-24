@@ -105,10 +105,10 @@ const toast = useToast()
 const sidebarOpen = ref(true)
 const isMobile = ref(false)
 
-// Computed - แสดง ProjectSteps เฉพาะใน project pages
+// Computed - v2: ไม่แสดง ProjectSteps เลย (ใช้แต่ VersionSteps ระดับ version)
 const showProjectSteps = computed(() => {
-  const path = route.path
-  return path.match(/^\/projects\/\d+/)
+  // v2 architecture: No project-level step indicator, only version-level
+  return false
 })
 
 // Computed - ดึง projectId จาก URL

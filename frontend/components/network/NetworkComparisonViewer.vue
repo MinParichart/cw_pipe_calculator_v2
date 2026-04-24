@@ -125,14 +125,14 @@
           </g>
 
           <!-- Length label -->
-          <text
-            :x="getOrthogonalMidpoint(pipe).x"
-            :y="getOrthogonalMidpoint(pipe).y - 12"
-            class="text-xs fill-gray-600 font-medium"
-            text-anchor="middle"
-          >
-            {{ ((pipe.length || 0)).toFixed(1) }}m
-          </text>
+<text
+  :x="getOrthogonalMidpoint(pipe).x"
+  :y="getOrthogonalMidpoint(pipe).y - 12"
+  class="text-xs fill-gray-600 font-medium"
+  text-anchor="middle"
+>
+  {{ Number(pipe.length || 0).toFixed(1) }}m
+</text>
 
           <!-- Pipe size label -->
           <text
@@ -261,7 +261,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 const props = defineProps<{
   networkData?: any
@@ -269,6 +269,21 @@ const props = defineProps<{
 }>()
 
 const zoom = ref(1)
+
+// Watch networkData changes
+watch(() => props.networkData, (newData) => {
+  console.log('[NetworkComparisonViewer] networkData changed:', newData)
+  if (newData?.pipes) {
+    console.log('[NetworkComparisonViewer] Total pipes:', newData.pipes.length)
+    newData.pipes.forEach((pipe: any, index: number) => {
+      console.log(`[NetworkComparisonViewer] Pipe ${index}:`, {
+        id: pipe.id,
+        sourceNodeId: pipe.sourceNodeId,
+        targetNodeId: pipe.targetNodeId
+      })
+    })
+  }
+}, { immediate: true, deep: true })
 
 // Computed colors
 const pipeColor = computed(() => {
@@ -340,24 +355,20 @@ const getOrthogonalPathPoints = (pipe: any) => {
   const fromNode = getFromNode(pipe)
   const toNode = getToNode(pipe)
 
-  if (!fromNode || !toNode) {
-    return ''
-  }
+  if (!fromNode || !toNode) return ''
 
-  const x1 = fromNode.x || 0
-  const y1 = fromNode.y || 0
-  const x2 = toNode.x || 0
-  const y2 = toNode.y || 0
+  // ครอบ Number() ให้หมดเพื่อป้องกัน String Concatenation
+  const x1 = Number(fromNode.x) || 0
+  const y1 = Number(fromNode.y) || 0
+  const x2 = Number(toNode.x) || 0
+  const y2 = Number(toNode.y) || 0
 
-  // Create orthogonal path (same as NetworkBuilder)
   const midX = (x1 + x2) / 2
   const midY = (y1 + y2) / 2
 
   if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) {
-    // Horizontal first, then vertical
     return `${x1},${y1} ${midX},${y1} ${midX},${y2} ${x2},${y2}`
   } else {
-    // Vertical first, then horizontal
     return `${x1},${y1} ${x1},${midY} ${x2},${midY} ${x2},${y2}`
   }
 }
@@ -368,24 +379,21 @@ const getOrthogonalMidpoint = (pipe: any) => {
 
   if (!fromNode || !toNode) return { x: 0, y: 0 }
 
-  const x1 = fromNode.x || 0
-  const y1 = fromNode.y || 0
-  const x2 = toNode.x || 0
-  const y2 = toNode.y || 0
+  const x1 = Number(fromNode.x) || 0
+  const y1 = Number(fromNode.y) || 0
+  const x2 = Number(toNode.x) || 0
+  const y2 = Number(toNode.y) || 0
 
-  const midpoint = {
-    x: (x1 + x2) / 2,
-    y: (y1 + y2) / 2
+  const midX = (x1 + x2) / 2
+  const midY = (y1 + y2) / 2
+
+  if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) {
+    // วางลูกศรไว้กึ่งกลางของ "ท่อนแรก" (แนวนอน)
+    return { x: (x1 + midX) / 2, y: y1 }
+  } else {
+    // วางลูกศรไว้กึ่งกลางของ "ท่อนแรก" (แนวตั้ง)
+    return { x: x1, y: (y1 + midY) / 2 }
   }
-
-  console.log('[getOrthogonalMidpoint]', {
-    pipeId: pipe.id,
-    fromNode: { id: fromNode.id, x: x1, y: y1 },
-    toNode: { id: toNode.id, x: x2, y: y2 },
-    midpoint
-  })
-
-  return midpoint
 }
 
 const getPipeAngle = (pipe: any) => {
@@ -394,23 +402,19 @@ const getPipeAngle = (pipe: any) => {
 
   if (!fromNode || !toNode) return 0
 
-  const dx = (toNode.x || 0) - (fromNode.x || 0)
-  const dy = (toNode.y || 0) - (fromNode.y || 0)
-  const isVertical = Math.abs(dy) > Math.abs(dx)
+  const x1 = Number(fromNode.x) || 0
+  const y1 = Number(fromNode.y) || 0
+  const x2 = Number(toNode.x) || 0
+  const y2 = Number(toNode.y) || 0
 
-  const angle = isVertical
-    ? (dy > 0 ? 90 : -90) // ท่อตั้ง: ไหลลง = 90, ไหลขึ้น = -90
-    : (dx > 0 ? 0 : 180) // ท่อนอน: ไหลขวา = 0, ไหลซ้าย = 180
+  const dx = x2 - x1
+  const dy = y2 - y1
 
-  // Debug log (ลบออกได้หลังจากแก้ไขเสร็จ)
-  console.log('[getPipeAngle]', {
-    pipeId: pipe.id,
-    fromNode: { id: fromNode.id, x: fromNode.x, y: fromNode.y },
-    toNode: { id: toNode.id, x: toNode.x, y: toNode.y },
-    dx, dy, isVertical, angle
-  })
-
-  return angle
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx > 0 ? 0 : 180
+  } else {
+    return dy > 0 ? 90 : -90
+  }
 }
 
 const formatPipeSize = (size: any) => {

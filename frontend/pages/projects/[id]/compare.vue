@@ -309,6 +309,17 @@
       </div>
     </div>
   </div>
+
+  <!-- Floating Back Button (Bottom Right) -->
+  <button
+    @click="router.push(`/projects/${route.params.id}`)"
+    class="fixed bottom-6 right-6 flex items-center px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-50"
+  >
+    <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+    </svg>
+    <span>ย้อนกลับ</span>
+  </button>
 </template>
 
 <script setup lang="ts">

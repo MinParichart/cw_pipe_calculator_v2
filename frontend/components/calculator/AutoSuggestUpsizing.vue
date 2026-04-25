@@ -2880,9 +2880,16 @@ const analyzePipesV2 = async () => {
     const criticalPath = validPipes.filter((p) => p.isCriticalPath === true);
     const branchPipesData = validPipes.filter((p) => p.isCriticalPath !== true);
 
+    // ✅ Sort pipes from end (fixtures) to start (source) - SAME LOGIC AS FIXTURES PAGE
+    const sortedCriticalPath = sortPipesFromEndToStart(criticalPath);
+    const sortedBranchPipes = sortPipesFromEndToStart(branchPipesData);
+
+    console.log(`✅ [V2] Sorted ${sortedCriticalPath.length} critical pipes (farthest → nearest)`);
+    console.log(`✅ [V2] Sorted ${sortedBranchPipes.length} branch pipes (farthest → nearest)`);
+
     suggestions.value = [
-      ...criticalPath.map((p) => ({ ...p, pathType: "CRITICAL" })),
-      ...branchPipesData.map((p) => ({ ...p, pathType: "BRANCH" }))
+      ...sortedCriticalPath.map((p) => ({ ...p, pathType: "CRITICAL" })),
+      ...sortedBranchPipes.map((p) => ({ ...p, pathType: "BRANCH" }))
     ];
 
     const criticalPathMajorLoss = criticalPath.reduce(

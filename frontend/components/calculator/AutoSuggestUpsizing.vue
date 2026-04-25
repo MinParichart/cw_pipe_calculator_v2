@@ -1212,6 +1212,7 @@ const emit = defineEmits<{
   suggestionChange: [];
   summaryChange: [summary: any];
   needMajorLoss: [majorLossBar: number];
+  networkChange: [networkData: any];
 }>();
 
 const toast = useToast();
@@ -1681,8 +1682,21 @@ const selectSimulatedSize = async (pipeId: number, simSize: any) => {
   applying.value = pipeId;
 
   try {
-    // Call API to save the new size to database (with custom size parameter)
-    await autoSuggestApi.applySingle(props.networkId, pipeId, simSize.mm);
+    // v2 mode: Update networkData directly (no API call)
+    if (isV2Mode.value && props.networkData) {
+      // Find and update the pipe in networkData
+      const pipe = props.networkData.pipes.find((p: any) => p.id === pipeId);
+      if (pipe) {
+        pipe.nominalSize = simSize.mm;
+        console.log(`[V2] Updated pipe ${pipeId} size to ${simSize.mm}mm in networkData`);
+      }
+
+      // Emit event to parent to save to version snapshot
+      emit('networkChange', props.networkData);
+    } else {
+      // v1 mode: Call API to save the new size to database
+      await autoSuggestApi.applySingle(props.networkId, pipeId, simSize.mm);
+    }
 
     // Update current size in local state
     const sizeInfo =
@@ -2488,7 +2502,10 @@ const calculateSummary = (pipes: any[]) => {
 
 // Apply single suggestion
 const applySingleSuggestion = async (suggestion: any) => {
-  if (!props.networkId || !suggestion.suggestedSize) return;
+  // v1 mode: Check networkId
+  // v2 mode: Check networkData
+  if (!suggestion.suggestedSize) return;
+  if (!isV2Mode.value && !props.networkId) return;
 
   applying.value = suggestion.pipeId;
 
@@ -2498,36 +2515,42 @@ const applySingleSuggestion = async (suggestion: any) => {
       `[applySingleSuggestion] Pipe ${suggestion.pipeId}: Changing to ${targetSize}mm`
     );
 
-    // ✅ FIX 1: Send size explicitly to backend
-    await autoSuggestApi.applySingle(
-      props.networkId,
-      suggestion.pipeId,
-      targetSize
-    );
+    if (isV2Mode.value && props.networkData) {
+      // v2 mode: Update networkData directly
+      const pipe = props.networkData.pipes.find((p: any) => p.id === suggestion.pipeId);
+      if (pipe) {
+        pipe.nominalSize = targetSize;
+        console.log(`[V2] Updated pipe ${suggestion.pipeId} size to ${targetSize}mm in networkData`);
+      }
 
-    console.log(
-      `[applySingleSuggestion] Pipe ${suggestion.pipeId}: API call successful`
-    );
+      // Recalculate analysis locally
+      await analyzePipesV2();
 
-    // ✅ FIX 2: Reload analysis from backend to get actual velocity/friction
-    console.log(
-      `[applySingleSuggestion] Pipe ${suggestion.pipeId}: Reloading analysis...`
-    );
-    await analyzePipes();
+      // Emit event to parent to save to version snapshot
+      emit('networkChange', props.networkData);
 
-    // Find and update the pipe in the reloaded suggestions
-    const updatedPipe = suggestions.value.find(
-      (s) => s.pipeId === suggestion.pipeId
-    );
-    if (updatedPipe) {
+      toast.success(
+        `ปรับขนาดท่อ #${suggestion.pipeId} เป็น ${targetSize}mm เรียบร้อย`
+      );
+    } else {
+      // v1 mode: Call API
+      await autoSuggestApi.applySingle(
+        props.networkId,
+        suggestion.pipeId,
+        targetSize
+      );
+
       console.log(
-        `[applySingleSuggestion] Pipe ${suggestion.pipeId} reloaded: velocity=${updatedPipe.velocity.toFixed(2)}, status=${updatedPipe.status}`
+        `[applySingleSuggestion] Pipe ${suggestion.pipeId}: API call successful`
+      );
+
+      // Reload analysis from backend
+      await analyzePipes();
+
+      toast.success(
+        `ปรับขนาดท่อ #${suggestion.pipeId} เป็น ${targetSize}mm เรียบร้อย`
       );
     }
-
-    toast.success(
-      `ปรับขนาดท่อ #${suggestion.pipeId} เป็น ${targetSize}mm เรียบร้อย`
-    );
   } catch (error: any) {
     console.error(
       `[applySingleSuggestion] Pipe ${suggestion.pipeId}: ERROR`,
@@ -2541,17 +2564,42 @@ const applySingleSuggestion = async (suggestion: any) => {
 
 // Apply all suggestions
 const applyAllSuggestions = async () => {
-  if (!props.networkId) return;
+  // v1 mode: Check networkId
+  // v2 mode: Check networkData
+  if (!isV2Mode.value && !props.networkId) return;
 
   applyingAll.value = true;
 
   try {
-    const updatedPipes = await autoSuggestApi.applyAll(props.networkId);
+    if (isV2Mode.value && props.networkData) {
+      // v2 mode: Update all pipes in networkData
+      const pipesToUpdate = suggestions.value.filter(s => s.suggestedSize);
 
-    // Refresh analysis
-    await analyzePipes();
+      for (const suggestion of pipesToUpdate) {
+        const pipe = props.networkData.pipes.find((p: any) => p.id === suggestion.pipeId);
+        if (pipe) {
+          pipe.nominalSize = suggestion.suggestedSize.mm;
+        }
+      }
 
-    toast.success(`ปรับปรุงท่อทั้งหมด ${updatedPipes.length} ท่อเรียบร้อย`);
+      console.log(`[V2] Updated ${pipesToUpdate.length} pipes in networkData`);
+
+      // Recalculate analysis locally
+      await analyzePipesV2();
+
+      // Emit event to parent to save to version snapshot
+      emit('networkChange', props.networkData);
+
+      toast.success(`ปรับปรุงท่อทั้งหมด ${pipesToUpdate.length} ท่อเรียบร้อย`);
+    } else {
+      // v1 mode: Call API
+      const updatedPipes = await autoSuggestApi.applyAll(props.networkId);
+
+      // Refresh analysis
+      await analyzePipes();
+
+      toast.success(`ปรับปรุงท่อทั้งหมด ${updatedPipes.length} ท่อเรียบร้อย`);
+    }
   } catch (error: any) {
     toast.error(error.message || "บันทึกไม่สำเร็จ");
   } finally {

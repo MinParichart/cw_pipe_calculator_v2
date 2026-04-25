@@ -62,6 +62,7 @@
               @suggestion-change="onSuggestionChange"
               @summary-change="onSummaryChange"
               @need-major-loss="onNeedMajorLoss"
+              @network-change="onNetworkChange"
             />
             <div v-else class="text-center py-8 text-gray-500">
               <p class="text-sm">ไม่พบข้อมูล Network</p>
@@ -376,6 +377,22 @@ const onNeedMajorLoss = (majorLossBar: number) => {
   // Pass to RequiredInletPressure component
   if (requiredInletPressureRef.value) {
     requiredInletPressureRef.value.onNeedMajorLoss(majorLossBar);
+  }
+};
+
+// Handle network changes from AutoSuggestUpsizing (v2 mode)
+const onNetworkChange = async (updatedNetwork: any) => {
+  networkData.value = updatedNetwork;
+
+  // Save to version snapshot
+  try {
+    await versionsApi.update(versionId.value, {
+      snapshotNetwork: JSON.stringify(updatedNetwork)
+    });
+    console.log('✅ Network snapshot saved after size change');
+  } catch (error) {
+    console.error('Failed to save network snapshot:', error);
+    toast.error('ไม่สามารถบันทึก Network ได้');
   }
 };
 

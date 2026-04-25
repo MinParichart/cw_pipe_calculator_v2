@@ -433,13 +433,14 @@
             Calculation Results
           </p>
         </div>
-
-        <!-- Actions Card -->
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">การจัดการ</h3>
+        <!-- Back Button -->
+        <div class="mb-6 mt-4">
+          <button
+            @click="goBack"
+            class="flex items-center px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors"
+          >
             <svg
-              class="h-5 w-5 text-gray-400"
+              class="mr-2 h-4 w-4"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -448,31 +449,11 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                d="M15 19l-7-7 7-7"
               />
             </svg>
-          </div>
-          <div class="flex flex-wrap gap-3">
-            <button
-              @click="goBack"
-              class="flex items-center px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors"
-            >
-              <svg
-                class="mr-2 h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              <span>ย้อนกลับ</span>
-            </button>
-          </div>
+            <span>ย้อนกลับ</span>
+          </button>
         </div>
       </div>
     </div>

@@ -1,66 +1,98 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useProjectStore } from '../../stores/projectStore'
+import { computed } from "vue";
+import { useProjectStore } from "../../stores/projectStore";
 
 const props = defineProps<{
-  criteria?: any
-  projectId?: number
-}>()
+  criteria?: any;
+  projectId?: number;
+}>();
 
 const emit = defineEmits<{
-  submit: [criteria: any]
-  cancel: []
-}>()
+  submit: [criteria: any];
+  cancel: [];
+}>();
 
-const projectStore = useProjectStore()
+const projectStore = useProjectStore();
 
 const form = ref({
-  curveMode: 'HUNTER', // ล็อคเป็น Hunter Curve เสมอ
-  demandMode: props.criteria?.demandMode || 'FLUSH_TANK',
+  curveMode: "HUNTER", // ล็อคเป็น Hunter Curve เสมอ
+  demandMode: props.criteria?.demandMode || "FLUSH_TANK",
   minorLossFactor: props.criteria?.minorLossFactor || 15,
   cFactor: props.criteria?.cFactor || 150,
-  pvcClass: props.criteria?.pvcClass || 7, // Default PVC Class เป็น 7
+  pvcClass: props.criteria?.pvcClass || 7 // Default PVC Class เป็น 7
   // Critical Endpoint ระบุอัตโนมัติ - ไม่ต้อง input
-})
+});
 
 const cFactorOptions = [
-  { value: 150, label: 'PVC (150)', desc: 'ท่อ PVC ทั่วไป - มาตรฐานสำหรับท่อน้ำดี' },
-  { value: 130, label: 'Copper (130)', desc: 'ท่อทองแดง - ทนทานต่อน้ำร้อน/เย็น' },
-  { value: 100, label: 'Steel (Galvanized) (100)', desc: 'ท่อเหล็กชุบสังกะสี - แข็งแรง' },
-  { value: 150, label: 'CPVC (150)', desc: 'ท่อ CPVC - สำหรับน้ำร้อน' },
-  { value: 150, label: 'PEX (150)', desc: 'ท่อ PEX - ยืดหยุ่นสูง' },
-]
+  {
+    value: 150,
+    label: "PVC (150)",
+    desc: "ท่อ PVC ทั่วไป - มาตรฐานสำหรับท่อน้ำดี"
+  },
+  {
+    value: 130,
+    label: "Copper (130)",
+    desc: "ท่อทองแดง - ทนทานต่อน้ำร้อน/เย็น"
+  },
+  {
+    value: 100,
+    label: "Steel (Galvanized) (100)",
+    desc: "ท่อเหล็กชุบสังกะสี - แข็งแรง"
+  },
+  { value: 150, label: "CPVC (150)", desc: "ท่อ CPVC - สำหรับน้ำร้อน" },
+  { value: 150, label: "PEX (150)", desc: "ท่อ PEX - ยืดหยุ่นสูง" }
+];
 
 const demandModeOptions = [
-  { value: 'FLUSH_TANK', label: 'Flush Tank Only' },
-  { value: 'FLUSH_VALVE', label: 'Flush Valve Only' },
-  { value: 'MIXED', label: 'Flush Tank + Flush Valve' },
-]
+  { value: "FLUSH_TANK", label: "Flush Tank Only" },
+  { value: "FLUSH_VALVE", label: "Flush Valve Only" },
+  { value: "MIXED", label: "Flush Tank + Flush Valve" }
+];
 
 const pvcClassOptions = [
-  { value: 5, label: 'PVC 5 (5 bar)', desc: 'ท่อ PVC ชั้นคุณภาพ 5 (ความดัน 5 bar)' },
-  { value: 7, label: 'PVC 7 (7 bar)', desc: 'ท่อ PVC ชั้นคุณภาพ 7 (ความดัน 7 bar)' },
-  { value: 8.5, label: 'PVC 8.5 (8.5 bar)', desc: 'ท่อ PVC ชั้นคุณภาพ 8.5 (ความดัน 8.5 bar)' },
-  { value: 10.5, label: 'PVC 10.5 (10.5 bar)', desc: 'ท่อ PVC ชั้นคุณภาพ 10.5 (ความดัน 10.5 bar)' },
-  { value: 13.5, label: 'PVC 13.5 (13.5 bar)', desc: 'ท่อ PVC ชั้นคุณภาพ 13.5 (ความดัน 13.5 bar)' },
-]
+  {
+    value: 5,
+    label: "PVC 5 (5 bar)",
+    desc: "ท่อ PVC ชั้นคุณภาพ 5 (ความดัน 5 bar)"
+  },
+  {
+    value: 7,
+    label: "PVC 7 (7 bar)",
+    desc: "ท่อ PVC ชั้นคุณภาพ 7 (ความดัน 7 bar)"
+  },
+  {
+    value: 8.5,
+    label: "PVC 8.5 (8.5 bar)",
+    desc: "ท่อ PVC ชั้นคุณภาพ 8.5 (ความดัน 8.5 bar)"
+  },
+  {
+    value: 10.5,
+    label: "PVC 10.5 (10.5 bar)",
+    desc: "ท่อ PVC ชั้นคุณภาพ 10.5 (ความดัน 10.5 bar)"
+  },
+  {
+    value: 13.5,
+    label: "PVC 13.5 (13.5 bar)",
+    desc: "ท่อ PVC ชั้นคุณภาพ 13.5 (ความดัน 13.5 bar)"
+  }
+];
 
 // ตรวจสอบว่าเลือกท่อ PVC หรือไม่ (cFactor = 150)
-const isPVC = computed(() => form.value.cFactor === 150)
+const isPVC = computed(() => form.value.cFactor === 150);
 
 const handleSubmit = () => {
   const formData = {
     ...form.value,
-    criticalEndpoint: 'AUTO', // ระบุอัตโนมัติเสมอ
-  }
+    criticalEndpoint: "AUTO" // ระบุอัตโนมัติเสมอ
+  };
 
   // Save to store if projectId is provided
   if (props.projectId) {
-    projectStore.setCriteria(props.projectId, formData)
+    projectStore.setCriteria(props.projectId, formData);
   }
 
-  emit('submit', formData)
-}
+  emit("submit", formData);
+};
 </script>
 
 <template>
@@ -77,20 +109,31 @@ const handleSubmit = () => {
 
     <!-- Velocity Settings -->
     <div class="space-y-3">
-      <h4 class="text-sm font-semibold text-gray-700">เกณฑ์ความเร็วน้ำในท่อ (มาตรฐานระบบ)</h4>
+      <h4 class="text-sm font-semibold text-gray-700">
+        เกณฑ์ความเร็วน้ำในท่อ (มาตรฐานระบบ)
+      </h4>
 
       <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
         <!-- ✅ OK Range -->
         <div class="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
           <div class="flex items-center gap-2 mb-2">
-            <span class="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-sm">✓</span>
+            <span
+              class="inline-flex items-center justify-center w-6 h-6 bg-green-600 text-white rounded-full text-sm"
+              >✓</span
+            >
             <div>
-              <span class="text-sm font-bold text-green-900">1.2 - 2.4 m/s</span>
-              <span class="ml-2 text-xs bg-green-600 text-white px-2 py-0.5 rounded-full">ปกติดี (OK)</span>
+              <span class="text-sm font-bold text-green-900"
+                >1.2 - 2.4 m/s</span
+              >
+              <span
+                class="ml-2 text-xs bg-green-600 text-white px-2 py-0.5 rounded-full"
+                >ปกติดี (OK)</span
+              >
             </div>
           </div>
           <p class="text-xs text-green-800 ml-8">
-            ความเร็วที่เหมาะสมที่สุด • ท่อทำงานได้อย่างมีประสิทธิภาพ • ไม่เกิดปัญหา
+            ความเร็วที่เหมาะสมที่สุด • ท่อทำงานได้อย่างมีประสิทธิภาพ •
+            ไม่เกิดปัญหา
           </p>
         </div>
 
@@ -100,8 +143,13 @@ const handleSubmit = () => {
             <div class="flex items-center gap-2 mb-1">
               <span class="text-lg">⚠️</span>
               <div>
-                <span class="text-sm font-bold text-yellow-900">0.6 - 1.2 m/s</span>
-                <span class="ml-1 text-xs bg-yellow-600 text-white px-2 py-0.5 rounded-full">ต่ำ</span>
+                <span class="text-sm font-bold text-yellow-900"
+                  >0.6 - 1.2 m/s</span
+                >
+                <span
+                  class="ml-1 text-xs bg-yellow-600 text-white px-2 py-0.5 rounded-full"
+                  >ต่ำ</span
+                >
               </div>
             </div>
             <p class="text-xs text-yellow-800">
@@ -113,8 +161,13 @@ const handleSubmit = () => {
             <div class="flex items-center gap-2 mb-1">
               <span class="text-lg">⚠️</span>
               <div>
-                <span class="text-sm font-bold text-yellow-900">2.4 - 3.0 m/s</span>
-                <span class="ml-1 text-xs bg-yellow-600 text-white px-2 py-0.5 rounded-full">สูง</span>
+                <span class="text-sm font-bold text-yellow-900"
+                  >2.4 - 3.0 m/s</span
+                >
+                <span
+                  class="ml-1 text-xs bg-yellow-600 text-white px-2 py-0.5 rounded-full"
+                  >สูง</span
+                >
               </div>
             </div>
             <p class="text-xs text-yellow-800">
@@ -130,7 +183,10 @@ const handleSubmit = () => {
               <span class="text-lg">❌</span>
               <div>
                 <span class="text-sm font-bold text-red-900">&lt; 0.6 m/s</span>
-                <span class="ml-1 text-xs bg-red-600 text-white px-2 py-0.5 rounded-full">วิกฤต</span>
+                <span
+                  class="ml-1 text-xs bg-red-600 text-white px-2 py-0.5 rounded-full"
+                  >วิกฤต</span
+                >
               </div>
             </div>
             <p class="text-xs text-red-800">
@@ -143,7 +199,10 @@ const handleSubmit = () => {
               <span class="text-lg">❌</span>
               <div>
                 <span class="text-sm font-bold text-red-900">&gt; 3.0 m/s</span>
-                <span class="ml-1 text-xs bg-red-600 text-white px-2 py-0.5 rounded-full">วิกฤต</span>
+                <span
+                  class="ml-1 text-xs bg-red-600 text-white px-2 py-0.5 rounded-full"
+                  >วิกฤต</span
+                >
               </div>
             </div>
             <p class="text-xs text-red-800">
@@ -155,13 +214,26 @@ const handleSubmit = () => {
         <!-- Info Note -->
         <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <div class="flex items-start gap-2">
-            <svg class="h-4 w-4 text-blue-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              class="h-4 w-4 text-blue-600 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <div class="flex-1">
-              <p class="text-xs text-blue-900 font-semibold mb-1">มาตรฐานระบบ (System Constants)</p>
+              <p class="text-xs text-blue-900 font-semibold mb-1">
+                มาตรฐานระบบ (System Constants)
+              </p>
               <p class="text-xs text-blue-800">
-                ค่าเหล่านี้เป็นค่าคงที่ของระบบ ไม่สามารถแก้ไขได้ • อ้างอิงจากมาตรฐานวิศวกรรมท่อประปา
+                ค่าเหล่านี้เป็นค่าคงที่ของระบบ ไม่สามารถแก้ไขได้ •
+                อ้างอิงจากมาตรฐานวิศวกรรมท่อประปา
               </p>
             </div>
           </div>
@@ -180,7 +252,9 @@ const handleSubmit = () => {
           disabled
           class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed text-sm"
         />
-        <span class="absolute right-3 top-2 text-xs text-gray-400">🔒 ล็อค</span>
+        <span class="absolute right-3 top-2 text-xs text-gray-400"
+          >🔒 ล็อค</span
+        >
       </div>
     </div>
 
@@ -227,21 +301,31 @@ const handleSubmit = () => {
       </select>
       <div class="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
         <div class="flex items-center gap-2">
-          <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            class="h-4 w-4 text-blue-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <span class="text-xs text-blue-800">
             <strong>PVC Class:</strong> {{ form.pvcClass }} bar
           </span>
         </div>
         <p class="text-xs text-blue-700 mt-1">
-          {{ pvcClassOptions.find(opt => opt.value === form.pvcClass)?.desc }}
+          {{ pvcClassOptions.find((opt) => opt.value === form.pvcClass)?.desc }}
         </p>
       </div>
     </div>
 
     <!-- Demand Mode -->
-    <div>
+    <!-- <div>
       <label class="block text-sm font-medium text-gray-700 mb-1">
         โหมด Demand
       </label>
@@ -258,7 +342,7 @@ const handleSubmit = () => {
           {{ option.label }}
         </option>
       </select>
-    </div>
+    </div> -->
 
     <!-- Minor Loss Factor -->
     <div>
@@ -286,14 +370,22 @@ const handleSubmit = () => {
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
       <div class="flex items-start gap-2">
         <div class="text-blue-500 mt-0.5">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
         </div>
         <div class="flex-1">
-          <h4 class="text-sm font-semibold text-blue-900">
-            Critical Endpoint
-          </h4>
+          <h4 class="text-sm font-semibold text-blue-900">Critical Endpoint</h4>
           <p class="text-xs text-blue-700 mt-1">
             ระบบจะระบุจุดวิกฤตโดยอัตโนมัติ
           </p>

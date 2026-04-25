@@ -118,7 +118,7 @@ export class DocumentService {
     return documents.map(doc => ({
       id: doc.id,
       name: doc.fileName,
-      url: doc.filePath,
+      url: `${process.env.API_BASE_URL || 'http://localhost:3004'}${doc.filePath}`,
       floor: doc.floor,
       type: doc.type,
       scale: doc.scale,
@@ -183,7 +183,7 @@ export class DocumentService {
     return {
       id: document.id,
       name: document.fileName,
-      url: document.filePath,
+      url: `${process.env.API_BASE_URL || 'http://localhost:3004'}${document.filePath}`,
       floor: document.floor,
       type: document.type,
       scale: document.scale,

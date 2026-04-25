@@ -2322,6 +2322,10 @@ watch(
 // Computed
 // v2: Support both networkData (snapshot) and networkId (legacy)
 const hasValidNetworkId = computed(() => {
+  // v2: If versionId exists, allow creating network from scratch
+  if (props.versionId !== null && props.versionId !== undefined) {
+    return true
+  }
   // v2: networkData from version snapshot
   if (props.networkData !== null && props.networkData !== undefined) {
     return true
@@ -3192,8 +3196,12 @@ const addNode = async (
   type: string,
   floor: number = 0
 ) => {
-  if (!hasValidNetworkId.value) {
-    toast.error("กรุณาสร้าง Network ก่อน (networkId ไม่มีค่า)");
+  // v2: Allow creating nodes without existing network (create on first node)
+  if (!hasValidNetworkId.value && props.versionId) {
+    console.log("Creating first node - initializing network data");
+    // Just continue - will create node in local state
+  } else if (!hasValidNetworkId.value) {
+    toast.error("กรุณาสร้าง Network ก่อน");
     console.error("addNode: networkId is missing", {
       networkId: props.networkId,
       projectId: props.projectId
@@ -3205,7 +3213,7 @@ const addNode = async (
     let node;
 
     // v2: Per-version network (snapshot mode)
-    if (props.networkData && props.versionId) {
+    if (props.versionId) {
       // Create node locally (no API call)
       node = {
         id: Date.now(), // Temporary ID
@@ -3630,8 +3638,12 @@ const startDragPipe = (pipe: any, event: MouseEvent) => {
 const addPipe = async (sourceId: number, targetId: number) => {
   console.log("=== addPipe START ===", { sourceId, targetId });
 
-  if (!hasValidNetworkId.value) {
-    toast.error("กรุณาสร้าง Network ก่อน (networkId ไม่มีค่า)");
+  // v2: Allow creating pipes without existing network
+  if (!hasValidNetworkId.value && props.versionId) {
+    console.log("Creating pipe - initializing network data");
+    // Just continue - will create pipe in local state
+  } else if (!hasValidNetworkId.value) {
+    toast.error("กรุณาสร้าง Network ก่อน");
     console.error("addPipe: networkId is missing", {
       networkId: props.networkId,
       projectId: props.projectId

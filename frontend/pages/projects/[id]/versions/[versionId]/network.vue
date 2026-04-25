@@ -181,7 +181,7 @@
         </div>
 
         <!-- Network Builder -->
-        <div v-if="networkData && !loadingNetwork" class="mb-6">
+        <div v-if="selectedBlueprints.length > 0 && !loadingNetwork" class="mb-6">
           <NetworkBuilder
             :project-id="parseInt(route.params.id as string)"
             :version-id="parseInt(route.params.versionId as string)"
@@ -202,7 +202,7 @@
           <p class="text-gray-600">กำลังโหลด Network...</p>
         </div>
 
-        <!-- No Network Message -->
+        <!-- No Blueprint Selected Message -->
         <div v-else class="mb-6 bg-white rounded-lg shadow-sm p-8 text-center">
           <svg
             class="h-16 w-16 mx-auto mb-4 text-gray-300"
@@ -214,19 +214,13 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
           </svg>
           <h3 class="text-lg font-medium text-gray-900 mb-2">
-            ยังไม่มี Network
+            ยังไม่ได้เลือก Blueprint
           </h3>
-          <p class="text-gray-600 mb-4">เริ่มต้นวาดแผนภาพระบบท่อน้ำดีของคุณ</p>
-          <button
-            @click="createNetwork"
-            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            สร้าง Network
-          </button>
+          <p class="text-gray-600 mb-4">กรุณาเลือก Blueprint จากด้านบนก่อนเริ่มวาด Network</p>
         </div>
 
         <!-- Navigation Buttons -->

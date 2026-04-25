@@ -75,9 +75,57 @@ export class VersionService {
       },
     })
 
-    // Verify network data is fresh
+    // If no network exists, create an empty version (v2 architecture: version-centric)
     if (!currentNetwork) {
-      throw new Error('No current network found. Please create a network first.')
+      console.log(`[VersionService] No current network found for project ${projectId}, creating empty version`)
+
+      // Get design criteria
+      const criteria = await prisma.designCriteria.findUnique({
+        where: { projectId },
+      })
+
+      // Get latest version number
+      const latestVersion = await prisma.version.findFirst({
+        where: { projectId },
+        orderBy: { versionNumber: 'desc' },
+      })
+
+      const newVersionNumber = (latestVersion?.versionNumber || 0) + 1
+
+      // Set previous versions to non-current
+      await prisma.version.updateMany({
+        where: { projectId, isCurrent: true },
+        data: { isCurrent: false },
+      })
+
+      // Create empty version (no network yet)
+      const version = await prisma.version.create({
+        data: {
+          projectId,
+          name: data.name,
+          description: data.description,
+          versionNumber: newVersionNumber,
+          isCurrent: true,
+          createdBy: userId,
+          snapshotCriteria: criteria ? JSON.stringify(criteria) : null,
+          snapshotNetwork: null, // Empty for now
+          snapshotFixtures: null, // Empty for now
+          snapshotResults: null, // Empty for now
+        },
+      })
+
+      // Create audit log
+      await prisma.auditLog.create({
+        data: {
+          projectId,
+          userId,
+          action: 'CREATE_VERSION',
+          entity: 'version',
+          entityId: version.id,
+        },
+      })
+
+      return version
     }
 
     // Verify network has nodes and fixtures

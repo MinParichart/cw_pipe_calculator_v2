@@ -35,6 +35,7 @@
               v-if="network"
               :network-id="network.id"
               :project-id="projectId"
+              :pipe-gpm-data="pipeGPMData"
               @suggestion-change="onSuggestionChange"
               @summary-change="onSummaryChange"
               @need-major-loss="onNeedMajorLoss"
@@ -197,9 +198,7 @@
           <div class="mt-6 flex justify-between items-center">
             <div class="flex gap-3">
               <BackButton @click="goToPrevStep" />
-              <NextStepButton
-                @click="goToNextStep"
-              />
+              <NextStepButton @click="goToNextStep" />
             </div>
           </div>
         </div>
@@ -233,6 +232,7 @@ const calculationSummary = ref<any>({
   maxPipeSize: "-"
 });
 const pipeSizesSummary = ref<any>(null);
+const pipeGPMData = ref<any[]>([]); // 👈 เพิ่มบรรทัดนี้เพื่อเก็บข้อมูล GPM
 
 // Methods
 const loadNetwork = async () => {
@@ -247,15 +247,29 @@ const loadNetwork = async () => {
 
 const loadCalculationSummary = async () => {
   try {
-    // TODO: Implement this API endpoint in backend
-    // const summary = await calculationsApi.getSummary(projectId.value)
-    // if (summary) {
-    //   calculationSummary.value = summary
-    //   hasCalculated.value = true
-    // }
-    hasCalculated.value = false;
+    // ตรวจสอบว่ารันอยู่บน Client (เบราว์เซอร์)
+    if (process.client) {
+      // ใช้ Key เดียวกับที่เซฟในหน้า fixtures.vue
+      const storageKey = `pipeGPMData_${projectId.value}`;
+      const savedData = localStorage.getItem(storageKey);
+
+      if (savedData) {
+        pipeGPMData.value = JSON.parse(savedData);
+        console.log(
+          "📥 [Step 5] ดึงข้อมูล GPM จาก LocalStorage สำเร็จ:",
+          pipeGPMData.value.length,
+          "เส้นท่อ"
+        );
+
+        // ปรับสถานะเป็น true เพื่อให้การ์ด "สรุปขนาดท่อ" เลิกแสดงคำว่า "ยังไม่มีการคำนวณ"
+        hasCalculated.value = true;
+      } else {
+        console.warn("⚠️ [Step 5] ไม่พบข้อมูลท่อใน LocalStorage");
+        hasCalculated.value = false;
+      }
+    }
   } catch (error) {
-    // No calculation yet
+    console.error("Failed to load calculation summary:", error);
     hasCalculated.value = false;
   }
 };
@@ -287,7 +301,10 @@ const onSummaryChange = (summary: any) => {
       flowRate: summary.stats.flowRate || 0,
       maxPipeSize: summary.stats.maxPipeSize || "-"
     };
-    console.log("[Calculation] Calculation summary updated:", calculationSummary.value);
+    console.log(
+      "[Calculation] Calculation summary updated:",
+      calculationSummary.value
+    );
   }
 
   console.log("[Calculation] Pipe sizes summary received:", summary);

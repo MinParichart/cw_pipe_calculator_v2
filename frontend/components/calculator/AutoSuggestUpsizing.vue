@@ -1203,6 +1203,7 @@ const props = defineProps<{
   networkId?: number;      // v1 mode: network ID from database
   networkData?: any;       // v2 mode: network data from version snapshot
   versionId?: number;      // v2 mode: version ID
+  versionData?: any;       // v2 mode: version object (for snapshotFixtures)
   systemType?: "FLUSH_TANK" | "FLUSH_VALVE";
   projectId?: number; // 🔥 FIX: Add projectId for localStorage key consistency
 }>();
@@ -2667,19 +2668,47 @@ const analyzePipesV2 = async () => {
     await loadProjectCriteria();
     console.log("[AutoSuggest V2] ✅ Criteria loaded:", projectCriteria.value);
 
-    // Load fixtures data from version.snapshotFixtures
+    // Load fixtures data from version.snapshotFixtures (v2 mode)
     let fixturesData: any[] = [];
-    if (typeof window !== "undefined" && props.projectId) {
+
+    // First try to load from versionData prop (preferred v2 method)
+    if (props.versionData?.snapshotFixtures) {
+      try {
+        const fixturesSnapshot = JSON.parse(props.versionData.snapshotFixtures);
+        // Extract pipe data from fixtures snapshot - pipes array is at root level
+        if (fixturesSnapshot.pipes && Array.isArray(fixturesSnapshot.pipes)) {
+          fixturesData = fixturesSnapshot.pipes.map((pipe: any) => ({
+            pipeId: pipe.pipeId,
+            totalFU: pipe.totalFU || 0,
+            hunterGPM: pipe.hunterGPM || 0,
+            hoseBibbGPM: pipe.hoseBibbGPM || 0,
+            fixtureGroups: pipe.fixtureGroups || []
+          }));
+          console.log(`✅ [V2] Loaded fixtures data from version.snapshotFixtures (${fixturesData.length} ท่อ)`);
+        } else {
+          console.warn("⚠️ [V2] snapshotFixtures.pipes not found or not an array");
+        }
+      } catch (e) {
+        console.error("❌ [V2] Failed to parse version.snapshotFixtures:", e);
+      }
+    }
+
+    // Fallback: Try localStorage (for backward compatibility)
+    if (fixturesData.length === 0 && typeof window !== "undefined" && props.projectId) {
       const storageKey = `pipeGPMData_${props.projectId}`;
       const savedData = localStorage.getItem(storageKey);
       if (savedData) {
         try {
           fixturesData = JSON.parse(savedData);
-          console.log(`✅ [V2] Loaded fixtures data from Step 4 (${fixturesData.length} ท่อ)`);
+          console.log(`✅ [V2] Loaded fixtures data from localStorage fallback (${fixturesData.length} ท่อ)`);
         } catch (e) {
           console.error("❌ [V2] ไม่สามารถอ่านข้อมูลจาก Step 4 ได้:", e);
         }
       }
+    }
+
+    if (fixturesData.length === 0) {
+      console.warn("⚠️ [V2] No fixtures data found - analysis will have zero FU/GPM values");
     }
 
     // Process pipes from networkData

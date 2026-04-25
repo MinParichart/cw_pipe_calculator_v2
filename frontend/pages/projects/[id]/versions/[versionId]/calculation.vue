@@ -57,6 +57,7 @@
               v-if="networkData"
               :network-data="networkData"
               :version-id="versionId"
+              :version-data="version"
               :project-id="projectId"
               @suggestion-change="onSuggestionChange"
               @summary-change="onSummaryChange"

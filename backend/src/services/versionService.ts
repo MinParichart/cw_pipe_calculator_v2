@@ -256,6 +256,14 @@ export class VersionService {
     snapshotResults?: string
     referenceLayer?: string
   }) {
+    // 🔍 DEBUG: Log received data
+    console.log('📝 [VersionService] updateVersion called')
+    console.log('📝 [VersionService] versionId:', versionId)
+    console.log('📝 [VersionService] data keys:', Object.keys(data))
+    console.log('📝 [VersionService] has snapshotFixtures:', !!data.snapshotFixtures)
+    console.log('📝 [VersionService] has snapshotNetwork:', !!data.snapshotNetwork)
+    console.log('📝 [VersionService] has snapshotResults:', !!data.snapshotResults)
+
     const version = await prisma.version.findUnique({
       where: { id: versionId },
       include: { project: true },
@@ -269,18 +277,97 @@ export class VersionService {
       throw new Error('Access denied')
     }
 
+    // 🔥 Calculate BEFORE state (for diff)
+    const oldFixturesCount = version.snapshotFixtures
+      ? JSON.parse(version.snapshotFixtures).nodes?.reduce((sum: number, node: any) =>
+          sum + (node.fixtures?.length || 0), 0) || 0
+      : 0
+
+    const oldNetwork = version.snapshotNetwork
+      ? JSON.parse(version.snapshotNetwork)
+      : { nodes: [], pipes: [] }
+    const oldNodeCount = oldNetwork.nodes?.length || 0
+    const oldPipeCount = oldNetwork.pipes?.length || 0
+
     // Determine the appropriate action based on what's being updated
+    // Priority: UPDATE_FIXTURES > CALCULATE > UPDATE_NETWORK > UPLOAD_BLUEPRINT > UPDATE
+    // ⚠️ FIX: fixtures เมื่อเพิ่มสุภัณฑ์ต้องมาก่อน calculate
     let action = 'UPDATE'
+    let detailsContent: string | undefined
+
+    // 🔥 CHECK FIXTURES FIRST
     if (data.snapshotFixtures) {
       action = 'UPDATE_FIXTURES'
-    } else if (data.snapshotNetwork) {
-      action = 'UPDATE_NETWORK'
+      // 🔥 Calculate fixtures diff (BEFORE vs AFTER)
+      try {
+        const fixtures = JSON.parse(data.snapshotFixtures)
+        const newFixturesCount = fixtures.nodes?.reduce((sum: number, node: any) =>
+          sum + (node.fixtures?.length || 0), 0) || 0
+
+        const diff = newFixturesCount - oldFixturesCount
+        if (diff > 0) {
+          detailsContent = `เพิ่ม ${diff} สุภัณฑ์ (${oldFixturesCount} → ${newFixturesCount})`
+        } else if (diff < 0) {
+          detailsContent = `ลบ ${Math.abs(diff)} สุภัณฑ์ (${oldFixturesCount} → ${newFixturesCount})`
+        } else {
+          detailsContent = `แก้ไข ${newFixturesCount} สุภัณฑ์`
+        }
+      } catch {
+        detailsContent = 'แก้ไขสุภัณฑ์'
+      }
     } else if (data.snapshotResults) {
       action = 'CALCULATE'
+      // Generate calculation summary
+      try {
+        const results = JSON.parse(data.snapshotResults)
+        const pipeCount = results.pipes?.length || 0
+        const failCount = results.pipes?.filter((p: any) => p.velocity > 2.4).length || 0
+        detailsContent = `คำนวณ ${pipeCount} ท่อ${failCount > 0 ? `, ${failCount} ท่อเร็วเกินไป ⚠️` : ' ✅'}`
+      } catch {
+        detailsContent = 'คำนวณระบบท่อ'
+      }
+    } else if (data.snapshotNetwork) {
+      action = 'UPDATE_NETWORK'
+      // 🔥 Calculate network diff (BEFORE vs AFTER)
+      try {
+        const network = JSON.parse(data.snapshotNetwork)
+        const newNodeCount = network.nodes?.length || 0
+        const newPipeCount = network.pipes?.length || 0
+
+        const nodeDiff = newNodeCount - oldNodeCount
+        const pipeDiff = newPipeCount - oldPipeCount
+
+        let changes: string[] = []
+        if (nodeDiff > 0) changes.push(`เพิ่ม ${nodeDiff} จุดเชื่อมต่อ`)
+        else if (nodeDiff < 0) changes.push(`ลบ ${Math.abs(nodeDiff)} จุดเชื่อมต่อ`)
+
+        if (pipeDiff > 0) changes.push(`เพิ่ม ${pipeDiff} ท่อ`)
+        else if (pipeDiff < 0) changes.push(`ลบ ${Math.abs(pipeDiff)} ท่อ`)
+
+        if (changes.length > 0) {
+          detailsContent = changes.join(', ')
+        } else {
+          detailsContent = `${newNodeCount} จุดเชื่อมต่อ, ${newPipeCount} ท่อ`
+        }
+      } catch {
+        detailsContent = 'แก้ไขแผนภาพท่อ'
+      }
     } else if (data.referenceLayer) {
-      action = 'UPLOAD_REFERENCE'
+      action = 'UPLOAD_BLUEPRINT'
+      // Check if deleting (empty) or uploading/replacing
+      const hasOldBlueprint = !!version.referenceLayer
+      const hasNewBlueprint = !!data.referenceLayer && data.referenceLayer !== 'null' && data.referenceLayer !== ''
+
+      if (!hasNewBlueprint && hasOldBlueprint) {
+        detailsContent = 'ลบ blueprint'
+      } else if (hasOldBlueprint && hasNewBlueprint) {
+        detailsContent = 'แทนที่ blueprint'
+      } else {
+        detailsContent = 'อัปโหลด blueprint'
+      }
     } else if (data.name || data.description) {
-      action = 'UPDATE' // Generic update for name/description changes
+      action = 'UPDATE'
+      detailsContent = data.name ? `เปลี่ยนชื่อเป็น "${data.name}"` : 'แก้ไขรายละเอียด'
     }
 
     const updated = await prisma.version.update({
@@ -288,7 +375,7 @@ export class VersionService {
       data,
     })
 
-    // Create audit log with specific action
+    // Create audit log with specific action and generated details
     await prisma.auditLog.create({
       data: {
         projectId: version.projectId,
@@ -297,7 +384,7 @@ export class VersionService {
         action,
         entity: 'version',
         entityId: versionId,
-        details: Object.keys(data).length > 0 ? JSON.stringify(data) : undefined,
+        details: detailsContent || (Object.keys(data).length > 0 ? JSON.stringify(data) : undefined),
       },
     })
 

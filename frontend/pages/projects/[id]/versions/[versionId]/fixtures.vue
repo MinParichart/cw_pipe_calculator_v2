@@ -501,6 +501,14 @@ const saveFixturesSnapshot = async (fixturesData: any[]) => {
       pipes: fixturesData
     };
 
+    console.log('🔍 [DEBUG] Sending to backend:', {
+      versionId,
+      hasSnapshotFixtures: !!snapshotFixtures,
+      data: {
+        snapshotFixtures: JSON.stringify(snapshotFixtures)
+      }
+    });
+
     await versionsApi.update(versionId, {
       snapshotFixtures: JSON.stringify(snapshotFixtures)
     });

@@ -112,7 +112,8 @@
       "Bash(cmd //c taskkill //F //PID 40576)",
       "Bash(cmd //c taskkill //F //PID 21692)",
       "Bash(cmd //c taskkill //F //PID 45852)",
-      "Bash(cmd //c taskkill //F //IM node.exe)"
+      "Bash(cmd //c taskkill //F //IM node.exe)",
+      "Bash(timeout 5 bash -c \"while ! curl -s http://localhost:3004/api > /dev/null; do sleep 1; done && echo ''Backend is ready!''\")"
     ]
   }
 }

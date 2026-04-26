@@ -74,6 +74,7 @@ const VERSION_STEPS: Step[] = [
   { id: 'versionNetwork', label: 'Network', order: 2, path: 'network' },
   { id: 'versionFixtures', label: 'Fixtures', order: 3, path: 'fixtures' },
   { id: 'versionCalculation', label: 'Calculate', order: 4, path: 'calculation' },
+  { id: 'versionAudit', label: 'Audit', order: 5, path: 'audit' },
 ]
 
 const props = defineProps<{

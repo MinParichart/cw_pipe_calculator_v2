@@ -203,7 +203,7 @@ import NextStepButton from "~/components/navigation/NextStepButton.vue";
 import BackButton from "~/components/navigation/BackButton.vue";
 import { versionsApi } from "~/composables/useApi";
 import { useWorkflowStore } from "~/stores/workflowStore";
-import { calculateUPCGPM } from "~/shared/constants/hunterCurve";
+import { calculateUPCGPM } from "~/shared/constants/hunterCurve.ts";
 
 const route = useRoute();
 const router = useRouter();
@@ -211,7 +211,15 @@ const toast = useToast();
 const workflowStore = useWorkflowStore();
 
 // Computed
-const versionId = computed(() => parseInt(route.params.versionId as string));
+const versionId = computed(() => {
+  const id = route.params.versionId;
+  if (typeof id === 'number') return id;
+  if (typeof id === 'string') {
+    const parsed = parseInt(id, 10);
+    return isNaN(parsed) ? null : parsed;
+  }
+  return null;
+});
 
 // State
 const version = ref<any>(null);

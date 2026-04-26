@@ -1193,7 +1193,7 @@ import {
   ref,
   watch
 } from "vue";
-import { calculatePVCInternalDiameterWorstCase } from "../../../shared/constants/pipes";
+import { calculatePVCInternalDiameterWorstCase } from "../../../shared/constants/pipes.ts";
 import { useProjectStore } from "../../stores/projectStore";
 
 const { autoSuggestApi } = useApi();

@@ -183,7 +183,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { calculateUPCGPM, fuToGPM } from "~/shared/constants/hunterCurve";
+import { calculateUPCGPM, fuToGPM } from "~/shared/constants/hunterCurve.ts";
 
 const props = defineProps<{
   pipeLoad: {

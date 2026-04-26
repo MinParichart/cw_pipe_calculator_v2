@@ -177,7 +177,7 @@ import PipeFUCard from "~/components/calculator/PipeFUCard.vue";
 import BackButton from "~/components/navigation/BackButton.vue";
 import NextStepButton from "~/components/navigation/NextStepButton.vue";
 import { networksApi } from "~/composables/useApi";
-import { calculateUPCGPM } from "~/shared/constants/hunterCurve";
+import { calculateUPCGPM } from "~/shared/constants/hunterCurve.ts";
 import { useWorkflowStore } from "~/stores/workflowStore";
 
 const route = useRoute();

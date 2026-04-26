@@ -108,7 +108,11 @@
       "Bash(awk 'NR>=4765 && NR<=4775' NetworkBuilder.vue)",
       "Bash(findstr node:*)",
       "Bash(if exist:*)",
-      "Bash(powershell -Command \"if \\(Test-Path .nuxt\\) { Remove-Item -Recurse -Force .nuxt; Write-Host ''Deleted .nuxt folder'' } else { Write-Host ''.nuxt folder not found'' }\")"
+      "Bash(powershell -Command \"if \\(Test-Path .nuxt\\) { Remove-Item -Recurse -Force .nuxt; Write-Host ''Deleted .nuxt folder'' } else { Write-Host ''.nuxt folder not found'' }\")",
+      "Bash(cmd //c taskkill //F //PID 40576)",
+      "Bash(cmd //c taskkill //F //PID 21692)",
+      "Bash(cmd //c taskkill //F //PID 45852)",
+      "Bash(cmd //c taskkill //F //IM node.exe)"
     ]
   }
 }

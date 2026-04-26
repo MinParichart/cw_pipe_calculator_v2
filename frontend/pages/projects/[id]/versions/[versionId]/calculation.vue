@@ -246,7 +246,15 @@ const workflowStore = useWorkflowStore();
 
 // State
 const projectId = computed(() => parseInt(route.params.id as string));
-const versionId = computed(() => parseInt(route.params.versionId as string));
+const versionId = computed(() => {
+  const id = route.params.versionId;
+  if (typeof id === 'number') return id;
+  if (typeof id === 'string') {
+    const parsed = parseInt(id, 10);
+    return isNaN(parsed) ? null : parsed;
+  }
+  return null;
+});
 const version = ref<any>(null);
 const networkData = ref<any>(null);
 const hasCalculated = ref(false);

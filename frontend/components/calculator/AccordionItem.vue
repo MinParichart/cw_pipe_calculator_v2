@@ -138,7 +138,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { fuToGPM, calculateUPCGPM } from '../../../shared/constants/hunterCurve'
+import { fuToGPM, calculateUPCGPM } from '../../../shared/constants/hunterCurve.ts'
 
 const props = defineProps<{
   item: {

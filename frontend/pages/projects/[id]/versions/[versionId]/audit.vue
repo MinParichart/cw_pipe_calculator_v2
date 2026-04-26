@@ -1,62 +1,89 @@
 <template>
-  <div class="min-h-screen bg-slate-50">
+  <div class="min-h-screen bg-gray-50">
     <!-- Version Steps Indicator -->
     <VersionSteps :version-id="versionId" />
 
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 py-6">
-      <!-- Version Header -->
-      <div v-if="version" class="mb-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="flex items-center gap-3">
-              <h1 class="text-3xl font-bold text-slate-800">
-                {{ version.name }}
-              </h1>
-              <span
-                class="px-3 py-1 text-xs font-medium rounded-full"
-                :class="version.isCurrent ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'"
-              >
-                {{ version.isCurrent ? 'Current Version' : `Version ${version.versionNumber}` }}
-              </span>
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div class="px-4 py-6 sm:px-0">
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-4">
+              <div>
+                <h1 class="text-3xl font-bold text-gray-900">
+                  Audit Log
+                </h1>
+                <p class="mt-1 text-sm text-gray-600">
+                  ประวัติการเปลี่ยนแปลงของ Version
+                </p>
+              </div>
             </div>
-            <p v-if="version.description" class="text-slate-600 mt-1">
-              {{ version.description }}
-            </p>
-          </div>
 
-          <div class="flex items-center gap-3">
-            <NuxtLink
-              :to="`/projects/${projectId}/versions/${versionId}`"
-              class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors text-sm font-medium"
-            >
-              ← Back to Version
-            </NuxtLink>
+            <!-- Version Badge -->
+            <div class="flex items-center gap-3">
+              <div class="bg-orange-100 border border-orange-200 rounded-lg px-4 py-2">
+                <div class="flex items-center gap-2">
+                  <svg class="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  <div>
+                    <p class="text-xs text-orange-600 font-medium">Version</p>
+                    <p class="text-lg font-bold text-orange-900">{{ version?.name || `Version ${version?.versionNumber || '-'}` }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Audit Log Component -->
-      <VersionAuditLog />
+        <!-- Audit Log Component -->
+        <VersionAuditLog />
+
+        <!-- Navigation Buttons -->
+        <div class="mt-6 flex gap-3">
+          <BackButton @click="goToPrevStep" />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { versionsApi } from '~/composables/useApi'
 import VersionSteps from '~/components/workflow/VersionSteps.vue'
 import VersionAuditLog from '~/components/version/VersionAuditLog.vue'
+import BackButton from '~/components/navigation/BackButton.vue'
 
 const route = useRoute()
-const projectId = computed(() => route.params.id as string)
-const versionId = computed(() => route.params.versionId as string)
+const router = useRouter()
 
+// Computed
+const projectId = computed(() => {
+  const id = route.params.id;
+  if (typeof id === 'number') return id;
+  if (typeof id === 'string') {
+    const parsed = parseInt(id, 10);
+    return isNaN(parsed) ? null : parsed;
+  }
+  return null;
+})
+const versionId = computed(() => {
+  const id = route.params.versionId;
+  if (typeof id === 'number') return id;
+  if (typeof id === 'string') {
+    const parsed = parseInt(id, 10);
+    return isNaN(parsed) ? null : parsed;
+  }
+  return null;
+})
+
+// State
 const version = ref<any>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+// Methods
 const loadVersion = async () => {
   try {
     loading.value = true
@@ -71,7 +98,17 @@ const loadVersion = async () => {
   }
 }
 
+const goToPrevStep = () => {
+  router.push(`/projects/${route.params.id}/versions/${route.params.versionId}/calculation`)
+}
+
 onMounted(() => {
   loadVersion()
+})
+</script>
+
+<script lang="ts">
+definePageMeta({
+  layout: "dashboard"
 })
 </script>

@@ -398,18 +398,59 @@ const getToNode = (pipe: any) => {
   return node;
 };
 
+// ฟังก์ชันสำหรับอ่านค่าพิกัดจุดหักศอกที่ถูกบันทึกมาจากฝั่ง Builder
+const getFixedPoint = (pipe: any) => {
+  if (!pipe.cornerPoints) return null;
+  
+  try {
+    let points = pipe.cornerPoints;
+    // ป้องกันกรณีที่ Backend คืนค่ามาเป็น String ซ้อนกัน
+    if (typeof points === "string") {
+      points = JSON.parse(points);
+      if (typeof points === "string") points = JSON.parse(points);
+    }
+    
+    if (Array.isArray(points) && points.length > 0) {
+      const fixedData = points[0];
+      return {
+        x: Number(fixedData.x),
+        y: Number(fixedData.y)
+      };
+    }
+  } catch (e) {
+    console.warn(`[NetworkComparisonViewer] Failed to parse cornerPoints for pipe ${pipe.id}:`, e);
+  }
+  return null;
+};
+
 const getOrthogonalPathPoints = (pipe: any) => {
   const fromNode = getFromNode(pipe);
   const toNode = getToNode(pipe);
 
   if (!fromNode || !toNode) return "";
 
-  // ครอบ Number() ให้หมดเพื่อป้องกัน String Concatenation
   const x1 = Number(fromNode.x) || 0;
   const y1 = Number(fromNode.y) || 0;
   const x2 = Number(toNode.x) || 0;
   const y2 = Number(toNode.y) || 0;
 
+  // ลองดึงจุดดัด (Elbow) ที่เซฟมาจาก Builder
+  const fixed = getFixedPoint(pipe);
+
+  if (fixed) {
+    const dx = Math.abs(x2 - x1);
+    const dy = Math.abs(y2 - y1);
+    const isVertical = dy > dx;
+
+    // วาดเส้นหักศอกตามตำแหน่งที่ดึงไว้
+    if (isVertical) {
+      return `${x1},${y1} ${fixed.x},${y1} ${fixed.x},${y2} ${x2},${y2}`;
+    } else {
+      return `${x1},${y1} ${x1},${fixed.y} ${x2},${fixed.y} ${x2},${y2}`;
+    }
+  }
+
+  // Fallback: กรณีท่อนี้ยังไม่เคยถูกดึง ให้วาดผ่านจุดกึ่งกลางแบบเดิม
   const midX = (x1 + x2) / 2;
   const midY = (y1 + y2) / 2;
 
@@ -431,14 +472,19 @@ const getOrthogonalMidpoint = (pipe: any) => {
   const x2 = Number(toNode.x) || 0;
   const y2 = Number(toNode.y) || 0;
 
+  // ถ้ามีจุดดัด ให้ใช้ตำแหน่งนั้นเป็นตำแหน่งกึ่งกลางสำหรับวาง Label / ลูกศร
+  const fixed = getFixedPoint(pipe);
+  if (fixed) {
+    return { x: fixed.x, y: fixed.y };
+  }
+
+  // Fallback: คำนวณจุดกึ่งกลางแบบ Default
   const midX = (x1 + x2) / 2;
   const midY = (y1 + y2) / 2;
 
   if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) {
-    // วางลูกศรไว้กึ่งกลางของ "ท่อนแรก" (แนวนอน)
     return { x: (x1 + midX) / 2, y: y1 };
   } else {
-    // วางลูกศรไว้กึ่งกลางของ "ท่อนแรก" (แนวตั้ง)
     return { x: x1, y: (y1 + midY) / 2 };
   }
 };

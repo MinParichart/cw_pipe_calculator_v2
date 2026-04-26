@@ -54,9 +54,11 @@ import { versionsApi } from '~/composables/useApi'
 import VersionSteps from '~/components/workflow/VersionSteps.vue'
 import VersionAuditLog from '~/components/version/VersionAuditLog.vue'
 import BackButton from '~/components/navigation/BackButton.vue'
+import { useWorkflowStore } from '~/stores/workflowStore'
 
 const route = useRoute()
 const router = useRouter()
+const workflowStore = useWorkflowStore()
 
 // Computed
 const projectId = computed(() => {
@@ -104,6 +106,7 @@ const goToPrevStep = () => {
 
 onMounted(() => {
   loadVersion()
+  workflowStore.setCurrentStep('versionAudit')
 })
 </script>
 

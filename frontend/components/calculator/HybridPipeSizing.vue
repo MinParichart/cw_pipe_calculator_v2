@@ -34,7 +34,7 @@
         <!-- Group by Node -->
         <div class="space-y-3">
           <div
-            v-for="node in (hybridResult.fixtureNodes || fixtureNodesData)"
+            v-for="node in hybridResult.fixtureNodes || fixtureNodesData"
             :key="node.id"
             class="bg-white rounded-lg border border-purple-200 overflow-hidden"
           >
@@ -113,7 +113,7 @@
             </svg>
             <span
               ><strong>อ้างอิง:</strong> ตาราง Fixture Units (Private Use)
-              สำหรับที่พักอาศัย ≤ 2 ชั้น (MOCK DATA)</span
+              สำหรับที่พักอาศัย ≤ 2 ชั้น</span
             >
           </p>
         </div>
@@ -144,10 +144,10 @@
 const { hybridSizingApi, networksApi } = useApi();
 
 const props = defineProps<{
-  pipeId?: number;        // v1 mode
-  networkId?: number;      // v1 mode
-  networkData?: any;       // v2 mode: network data from version snapshot
-  versionId?: number;      // v2 mode
+  pipeId?: number; // v1 mode
+  networkId?: number; // v1 mode
+  networkData?: any; // v2 mode: network data from version snapshot
+  versionId?: number; // v2 mode
   systemType?: "FLUSH_TANK" | "FLUSH_VALVE";
 }>();
 
@@ -171,7 +171,7 @@ const isV2Mode = computed(() => {
   return !!(props.networkData && props.versionId);
 });
 
-console.log('[HybridPipeSizing] Component mounted/updated:', {
+console.log("[HybridPipeSizing] Component mounted/updated:", {
   networkId: props.networkId,
   versionId: props.versionId,
   hasNetworkData: !!props.networkData,
@@ -224,11 +224,11 @@ const loadNetworkNodes = async () => {
 
     if (isV2Mode.value && props.networkData) {
       // v2 mode: Load from networkData prop
-      console.log('[HybridPipeSizing V2] Loading nodes from networkData');
+      console.log("[HybridPipeSizing V2] Loading nodes from networkData");
       networkNodes.value = props.networkData.nodes || [];
     } else if (props.networkId) {
       // v1 mode: Load from API
-      console.log('[HybridPipeSizing V1] Loading nodes from API');
+      console.log("[HybridPipeSizing V1] Loading nodes from API");
       const nodes = await networksApi.getNodes(props.networkId);
       networkNodes.value = nodes;
     }
@@ -255,11 +255,11 @@ const calculateHybrid = async () => {
 
     if (isV2Mode.value && props.networkData) {
       // v2 mode: Calculate locally from networkData (no API call)
-      console.log('[HybridPipeSizing V2] Calculating from networkData');
+      console.log("[HybridPipeSizing V2] Calculating from networkData");
 
       // Get fixture nodes from networkData
-      const nodesWithFixtures = (props.networkData.nodes || []).filter((node: any) =>
-        node.fixtures && node.fixtures.length > 0
+      const nodesWithFixtures = (props.networkData.nodes || []).filter(
+        (node: any) => node.fixtures && node.fixtures.length > 0
       );
 
       if (nodesWithFixtures.length === 0) {
@@ -278,12 +278,12 @@ const calculateHybrid = async () => {
         tableSizing: {
           mm: 15,
           inches: '1/2"',
-          method: 'table26'
+          method: "table26"
         },
         formulaSizing: {
           mm: 15,
           inches: '1/2"',
-          method: 'hazenWilliams'
+          method: "hazenWilliams"
         },
         comparison: {
           agreement: true,
@@ -291,8 +291,11 @@ const calculateHybrid = async () => {
         }
       };
 
-      console.log('[HybridPipeSizing V2] Created result from networkData:', fixtureNodes.length, 'nodes with fixtures');
-
+      console.log(
+        "[HybridPipeSizing V2] Created result from networkData:",
+        fixtureNodes.length,
+        "nodes with fixtures"
+      );
     } else if (props.pipeId) {
       // v1 mode: Calculate for single pipe
       result = await hybridSizingApi.calculatePipe(props.pipeId, {
@@ -323,7 +326,9 @@ const calculateHybrid = async () => {
     emit("sizingChange");
 
     if (isV2Mode.value) {
-      toast.success(`โหลดข้อมูลสุขภัณฑ์ ${result.fixtureNodes?.length || 0} ห้องเรียบร้อย`);
+      toast.success(
+        `โหลดข้อมูลสุขภัณฑ์ ${result.fixtureNodes?.length || 0} ห้องเรียบร้อย`
+      );
     } else {
       toast.success("คำนวณเสร็จสิ้น");
     }

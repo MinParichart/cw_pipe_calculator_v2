@@ -269,19 +269,35 @@ export class VersionService {
       throw new Error('Access denied')
     }
 
+    // Determine the appropriate action based on what's being updated
+    let action = 'UPDATE'
+    if (data.snapshotFixtures) {
+      action = 'UPDATE_FIXTURES'
+    } else if (data.snapshotNetwork) {
+      action = 'UPDATE_NETWORK'
+    } else if (data.snapshotResults) {
+      action = 'CALCULATE'
+    } else if (data.referenceLayer) {
+      action = 'UPLOAD_REFERENCE'
+    } else if (data.name || data.description) {
+      action = 'UPDATE' // Generic update for name/description changes
+    }
+
     const updated = await prisma.version.update({
       where: { id: versionId },
       data,
     })
 
-    // Create audit log
+    // Create audit log with specific action
     await prisma.auditLog.create({
       data: {
         projectId: version.projectId,
+        versionId: versionId,
         userId,
-        action: 'UPDATE',
+        action,
         entity: 'version',
         entityId: versionId,
+        details: Object.keys(data).length > 0 ? JSON.stringify(data) : undefined,
       },
     })
 

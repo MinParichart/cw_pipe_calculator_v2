@@ -129,76 +129,159 @@
       </div>
     </div>
 
-    <!-- Audit Log Timeline -->
-    <div v-else class="space-y-4">
-      <div v-for="(group, date) in groupedLogs" :key="date" class="bg-white rounded-lg shadow-sm border border-slate-200">
-        <!-- Date Header -->
-        <div class="bg-slate-50 px-6 py-3 border-b border-slate-200">
-          <h3 class="font-semibold text-slate-800">{{ date }}</h3>
+    <!-- Audit Log Table -->
+    <div v-else class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3 text-left">
+                <span class="text-xs font-semibold text-slate-700 uppercase tracking-wide">วันที่/เวลา</span>
+              </th>
+              <th class="px-4 py-3 text-left">
+                <span class="text-xs font-semibold text-slate-700 uppercase tracking-wide">ผู้แก้ไข</span>
+              </th>
+              <th class="px-4 py-3 text-left">
+                <span class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Action</span>
+              </th>
+              <th class="px-4 py-3 text-left">
+                <span class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Details</span>
+              </th>
+              <th class="px-4 py-3 text-center">
+                <span class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr
+              v-for="log in paginatedLogs"
+              :key="log.id"
+              class="hover:bg-slate-50 transition-colors"
+              :class="{ 'bg-orange-50': expandedLogId === log.id }"
+            >
+              <!-- Date/Time -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                <div class="text-sm">
+                  <div class="font-medium text-slate-900">{{ formatDateShort(log.createdAt) }}</div>
+                  <div class="text-xs text-slate-500">{{ formatTime(log.createdAt) }}</div>
+                  <div class="text-xs text-blue-600">{{ formatRelativeTime(log.createdAt) }}</div>
+                </div>
+              </td>
+
+              <!-- User -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                    {{ getUserInitials(log.user) }}
+                  </div>
+                  <div class="text-sm">
+                    <div class="font-medium text-slate-900">{{ log.user?.name || 'System' }}</div>
+                    <div class="text-xs text-slate-500">{{ log.user?.email || '-' }}</div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Action -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">{{ getActionIcon(log.action) }}</span>
+                  <span
+                    class="px-2 py-1 text-xs font-medium rounded-full"
+                    :class="getActionBadgeClass(log.action)"
+                  >
+                    {{ getActionTitle(log.action) }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Details -->
+              <td class="px-4 py-3">
+                <div class="text-sm text-slate-700">
+                  {{ getChangesSummary(log) }}
+                </div>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-4 py-3 whitespace-nowrap text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <button
+                    v-if="canViewDetails(log)"
+                    @click="viewDetails(log)"
+                    class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                    title="View Details"
+                  >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
+                  <button
+                    v-if="canRevert(log)"
+                    @click="revertChange(log)"
+                    class="p-1.5 text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded transition-colors"
+                    title="Revert Change"
+                  >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="px-4 py-3 border-t border-slate-200 flex items-center justify-between">
+        <div class="text-sm text-slate-600">
+          Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredLogs.length) }} of {{ filteredLogs.length }} entries
         </div>
-
-        <!-- Log Entries -->
-        <div class="divide-y divide-slate-100">
-          <div
-            v-for="log in group"
-            :key="log.id"
-            class="p-6 hover:bg-slate-50 transition-colors"
+        <div class="flex items-center gap-2">
+          <button
+            @click="currentPage--"
+            :disabled="currentPage === 1"
+            class="px-3 py-1 text-sm border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <div class="flex items-start gap-4">
-              <!-- Icon -->
-              <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" :class="getActionColor(log.action)">
-                <span class="text-xl">{{ getActionIcon(log.action) }}</span>
-              </div>
+            Previous
+          </button>
+          <button
+            v-for="page in totalPages"
+            :key="page"
+            @click="currentPage = page"
+            class="px-3 py-1 text-sm border rounded transition-colors"
+            :class="currentPage === page
+              ? 'bg-blue-600 text-white border-blue-600'
+              : 'border-slate-300 hover:bg-slate-50'"
+          >
+            {{ page }}
+          </button>
+          <button
+            @click="currentPage++"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-1 text-sm border border-slate-300 rounded hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      </div>
 
-              <!-- Content -->
-              <div class="flex-1 min-w-0">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <p class="font-semibold text-slate-800">{{ getActionTitle(log.action) }}</p>
-                    <p class="text-sm text-slate-600 mt-1">{{ getActionDescription(log) }}</p>
-
-                    <!-- Metadata -->
-                    <div class="flex flex-wrap items-center gap-4 mt-3 text-xs text-slate-500">
-                      <span class="flex items-center gap-1">
-                        <span>👤</span>
-                        {{ log.user?.name || log.user?.email || 'System' }}
-                      </span>
-                      <span class="flex items-center gap-1">
-                        <span>⏰</span>
-                        {{ formatTime(log.createdAt) }}
-                      </span>
-                      <span v-if="log.ipAddress" class="flex items-center gap-1">
-                        <span>🌐</span>
-                        {{ log.ipAddress }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- Actions -->
-                  <div class="flex items-center gap-2 ml-4">
-                    <button
-                      v-if="canViewDetails(log)"
-                      @click="viewDetails(log)"
-                      class="px-3 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
-                    >
-                      View Details
-                    </button>
-                    <button
-                      v-if="canRevert(log)"
-                      @click="revertChange(log)"
-                      class="px-3 py-1 text-xs font-medium text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded transition-colors"
-                    >
-                      Revert
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Expandable Details -->
-                <div v-if="expandedLogId === log.id" class="mt-4 p-4 bg-slate-50 rounded-lg">
-                  <pre class="text-xs text-slate-700 whitespace-pre-wrap">{{ formatDetails(log) }}</pre>
-                </div>
-              </div>
-            </div>
+      <!-- Expandable Details Panel -->
+      <div v-if="expandedLogId !== null" class="border-t border-slate-200 bg-slate-50">
+        <div class="px-6 py-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-slate-800">Audit Log Details</h3>
+            <button
+              @click="expandedLogId = null"
+              class="text-slate-400 hover:text-slate-600"
+            >
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="bg-white rounded-lg p-4 border border-slate-200">
+            <pre class="text-xs text-slate-700 whitespace-pre-wrap font-mono">{{ formatDetails(expandedLog) }}</pre>
           </div>
         </div>
       </div>
@@ -337,6 +420,22 @@ const lastEdited = computed(() => {
   )
 
   return formatRelativeTime(latestLog.createdAt)
+})
+
+// Pagination
+const currentPage = ref(1)
+const pageSize = 10
+
+const totalPages = computed(() => Math.ceil(filteredLogs.value.length / pageSize))
+
+const paginatedLogs = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  const end = start + pageSize
+  return filteredLogs.value.slice(start, end)
+})
+
+const expandedLog = computed(() => {
+  return auditLogs.value.find(log => log.id === expandedLogId.value)
 })
 
 // Methods
@@ -495,6 +594,83 @@ const formatRelativeTime = (dateString: string): string => {
   if (diffHours < 24) return `${diffHours}h ago`
   if (diffDays < 7) return `${diffDays}d ago`
   return formatDate(dateString)
+}
+
+const formatDateShort = (dateString: string): string => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('th-TH', {
+    day: '2-digit',
+    month: 'short',
+    year: '2-digit'
+  })
+}
+
+const getUserInitials = (user: any): string => {
+  if (!user) return 'S'
+  if (user.name) {
+    return user.name
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+  if (user.email) {
+    return user.email[0].toUpperCase()
+  }
+  return 'S'
+}
+
+const getActionBadgeClass = (action: string): string => {
+  const classes: Record<string, string> = {
+    CREATE_VERSION: 'bg-green-100 text-green-800',
+    UPDATE_NETWORK: 'bg-blue-100 text-blue-800',
+    UPDATE_FIXTURES: 'bg-purple-100 text-purple-800',
+    CALCULATE: 'bg-yellow-100 text-yellow-800',
+    APPLY_PIPE_SIZE: 'bg-orange-100 text-orange-800',
+    UPLOAD_REFERENCE: 'bg-indigo-100 text-indigo-800',
+    DUPLICATE: 'bg-cyan-100 text-cyan-800',
+    RESTORE: 'bg-pink-100 text-pink-800',
+    DELETE: 'bg-red-100 text-red-800',
+    UPDATE: 'bg-slate-100 text-slate-800',
+  }
+  return classes[action] || 'bg-slate-100 text-slate-800'
+}
+
+const getChangesSummary = (log: AuditLog): string => {
+  if (log.details) {
+    try {
+      const details = JSON.parse(log.details)
+      if (typeof details === 'object') {
+        // Count fixtures if present
+        if (details.snapshotFixtures) {
+          const fixtures = JSON.parse(details.snapshotFixtures)
+          const fixtureCount = fixtures.nodes?.reduce((sum: number, node: any) =>
+            sum + (node.fixtures?.length || 0), 0) || 0
+          return `เพิ่ม/แก้ไข ${fixtureCount} สุภัณฑ์`
+        }
+        // Count pipes if present
+        if (details.snapshotNetwork) {
+          const network = JSON.parse(details.snapshotNetwork)
+          const pipeCount = network.pipes?.length || 0
+          const nodeCount = network.nodes?.length || 0
+          return `${nodeCount} จุดเชื่อมต่อ, ${pipeCount} ท่อ`
+        }
+        // Count results if present
+        if (details.snapshotResults) {
+          return 'คำนวณระบบท่อ'
+        }
+        // Generic summary
+        return Object.entries(details)
+          .map(([key]) => key)
+          .join(', ')
+      }
+      return details
+    } catch {
+      return log.details
+    }
+  }
+  return `${log.entity} ${log.action.toLowerCase()}`
 }
 
 // Lifecycle

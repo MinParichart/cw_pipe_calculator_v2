@@ -346,9 +346,33 @@ export class VersionService {
         createdBy: userId,
         snapshotCriteria: original.snapshotCriteria,
         snapshotNetwork: original.snapshotNetwork,
+        snapshotFixtures: original.snapshotFixtures,  // ✅ Copy fixtures data
         snapshotResults: original.snapshotResults,
+        referenceLayer: original.referenceLayer,        // ✅ Copy blueprint reference
       },
     })
+
+    // ✅ Copy documents (blueprint images) to new version
+    const originalDocuments = await prisma.document.findMany({
+      where: { versionId: original.id }
+    });
+
+    for (const doc of originalDocuments) {
+      await prisma.document.create({
+        data: {
+          projectId: duplicated.projectId,
+          versionId: duplicated.id,
+          fileName: doc.fileName,
+          filePath: doc.filePath,  // Share same file path
+          floor: doc.floor,
+          type: doc.type,
+          scale: doc.scale,
+          notes: doc.notes,
+        }
+      });
+    }
+
+    console.log(`✅ Copied ${originalDocuments.length} documents to version ${duplicated.id}`);
 
     // Create audit log
     await prisma.auditLog.create({

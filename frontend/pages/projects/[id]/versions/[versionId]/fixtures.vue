@@ -196,7 +196,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onBeforeUnmount, ref } from "vue";
 import VersionSteps from "~/components/workflow/VersionSteps.vue";
 import PipeFUCard from "~/components/calculator/PipeFUCard.vue";
 import NextStepButton from "~/components/navigation/NextStepButton.vue";
@@ -362,18 +362,33 @@ const pipeGPMData = computed(() => {
 });
 
 // Watch pipeGPMData and save to version.snapshotFixtures
-watch(
-  pipeGPMData,
-  (newData) => {
-    console.log(`👀 [Step 4 - V2] pipeGPMData watch triggered:`);
-    console.log(`   - newData length: ${newData?.length || 0}`);
+// ❌ REMOVE: Auto-save on every change (causes multiple audit logs)
+// watch(
+//   pipeGPMData,
+//   (newData) => {
+//     console.log(`👀 [Step 4 - V2] pipeGPMData watch triggered:`);
+//     console.log(`   - newData length: ${newData?.length || 0}`);
+//
+//     if (newData && newData.length > 0) {
+//       saveFixturesSnapshot(newData);
+//     }
+//   },
+//   { deep: true }
+// );
 
-    if (newData && newData.length > 0) {
-      saveFixturesSnapshot(newData);
+// ✅ ADD: Save only when leaving the page (onBeforeUnmount)
+onBeforeUnmount(async () => {
+  console.log('🚪 [Step 4 - V2] Leaving fixtures page, saving snapshot...');
+
+  if (pipeGPMData.value && pipeGPMData.value.length > 0) {
+    try {
+      await saveFixturesSnapshot(pipeGPMData.value);
+      console.log('✅ [Step 4 - V2] Snapshot saved on page leave');
+    } catch (error) {
+      console.error('❌ [Step 4 - V2] Failed to save snapshot on page leave:', error);
     }
-  },
-  { deep: true }
-);
+  }
+});
 
 // Sort pipes from end (fixtures) to start (source)
 const sortPipesFromEndToStart = (pipes: any[]) => {

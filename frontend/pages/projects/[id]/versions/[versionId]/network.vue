@@ -234,7 +234,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed, watch, onBeforeUnmount } from "vue";
 import VersionSteps from "~/components/workflow/VersionSteps.vue";
 import BackButton from "~/components/navigation/BackButton.vue";
 import NextStepButton from "~/components/navigation/NextStepButton.vue";
@@ -350,17 +350,26 @@ const createNetwork = async () => {
   toast.success("สร้าง Network เรียบร้อย");
 };
 
+// ❌ REMOVE: Auto-save on every network change
 const onNetworkChange = async (updatedNetwork: any) => {
   networkData.value = updatedNetwork;
-  // Save to version snapshot
-  try {
-    await saveNetworkSnapshot();
-    console.log("✅ Network snapshot saved");
-  } catch (error) {
-    console.error("❌ Failed to save network snapshot:", error);
-    toast.error("ไม่สามารถบันทึก Network ได้");
-  }
+  // Don't save immediately - will save when leaving the page
+  console.log("📝 Network changed (not saved yet)");
 };
+
+// ✅ ADD: Save only when leaving the page
+onBeforeUnmount(async () => {
+  console.log('🚪 [Network] Leaving network page, saving snapshot...');
+
+  if (networkData.value) {
+    try {
+      await saveNetworkSnapshot();
+      console.log('✅ [Network] Snapshot saved on page leave');
+    } catch (error) {
+      console.error('❌ [Network] Failed to save snapshot on page leave:', error);
+    }
+  }
+});
 
 const saveNetworkSnapshot = async () => {
   try {

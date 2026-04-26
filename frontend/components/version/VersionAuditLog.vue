@@ -650,14 +650,14 @@ const getChangesSummary = (log: AuditLog): string => {
 
       // Legacy: If it's still an object, generate summary
       if (typeof details === 'object') {
-        // Count fixtures if present
+        // 🔥 FIX: Check snapshotFixtures FIRST (before snapshotNetwork)
         if (details.snapshotFixtures) {
           const fixtures = JSON.parse(details.snapshotFixtures)
           const fixtureCount = fixtures.nodes?.reduce((sum: number, node: any) =>
             sum + (node.fixtures?.length || 0), 0) || 0
           return `แก้ไข ${fixtureCount} สุภัณฑ์`
         }
-        // Count pipes if present
+        // Count network if present
         if (details.snapshotNetwork) {
           const network = JSON.parse(details.snapshotNetwork)
           const pipeCount = network.pipes?.length || 0

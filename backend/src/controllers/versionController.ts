@@ -355,6 +355,42 @@ export class VersionController {
   }
 
   /**
+   * Get audit logs for a specific version
+   * GET /api/versions/:versionId/audit
+   */
+  async getVersionAuditLogs(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+        })
+      }
+
+      const versionId = parseInt(req.params.versionId)
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100
+
+      if (isNaN(versionId)) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid version ID' },
+        })
+      }
+
+      const logs = await versionService.getVersionAuditLogs(versionId, req.user.userId, limit)
+
+      res.json({ success: true, data: logs })
+    } catch (error: any) {
+      const statusCode = error.message === 'Version not found' ? 404 :
+                        error.message === 'Access denied' ? 403 : 500
+      res.status(statusCode).json({
+        success: false,
+        error: { code: statusCode === 404 ? 'NOT_FOUND' : 'FORBIDDEN', message: error.message },
+      })
+    }
+  }
+
+  /**
    * Upload reference layer to version
    * POST /api/versions/:versionId/reference
    */

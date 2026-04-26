@@ -333,6 +333,9 @@ export const versionsApi = {
 
   restore: (versionId: number) =>
     apiRequest<any>(`/versions/${versionId}/restore`, { method: 'POST' }),
+
+  getAuditLogs: (versionId: number, limit = 100) =>
+    apiRequest<any[]>(`/versions/${versionId}/audit?limit=${limit}`),
 }
 
 /**

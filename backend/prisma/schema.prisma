@@ -183,6 +183,7 @@ model Version {
 model AuditLog {
   id        Int      @id @default(autoincrement())
   projectId Int
+  versionId Int?
   userId    Int?
   action    String
   entity    String
@@ -195,6 +196,7 @@ model AuditLog {
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+  @@index([versionId])
   @@index([createdAt])
   @@map("audit_logs")
 }

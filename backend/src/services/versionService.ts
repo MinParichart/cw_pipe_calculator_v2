@@ -556,6 +556,45 @@ export class VersionService {
   }
 
   /**
+   * Get audit logs for a specific version
+   */
+  async getVersionAuditLogs(versionId: number, userId: number, limit = 100) {
+    // Verify version ownership
+    const version = await prisma.version.findUnique({
+      where: { id: versionId },
+      include: { project: true },
+    })
+
+    if (!version) {
+      throw new Error('Version not found')
+    }
+
+    if (version.project.ownerId !== userId) {
+      throw new Error('Access denied')
+    }
+
+    const logs = await prisma.auditLog.findMany({
+      where: {
+        projectId: version.projectId,
+        versionId: versionId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    })
+
+    return logs
+  }
+
+  /**
    * Helper: Compare two objects and return differences
    */
   private compareObjects(obj1: any, obj2: any) {

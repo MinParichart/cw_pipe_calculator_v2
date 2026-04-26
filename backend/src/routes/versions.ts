@@ -69,6 +69,13 @@ router.post('/versions/:versionId/restore', authenticate, versionController.rest
 router.get('/projects/:projectId/audit', authenticate, versionController.getAuditLogs)
 
 /**
+ * @route   GET /api/versions/:versionId/audit
+ * @desc    Get audit logs for a specific version
+ * @access  Private
+ */
+router.get('/versions/:versionId/audit', authenticate, versionController.getVersionAuditLogs)
+
+/**
  * @route   POST /api/projects/:projectId/versions/:versionId/reference
  * @desc    Upload reference layer to version
  * @access  Private

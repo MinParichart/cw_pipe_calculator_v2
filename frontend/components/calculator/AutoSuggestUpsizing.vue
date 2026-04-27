@@ -1200,10 +1200,10 @@ const { autoSuggestApi } = useApi();
 const projectStore = useProjectStore();
 
 const props = defineProps<{
-  networkId?: number;      // v1 mode: network ID from database
-  networkData?: any;       // v2 mode: network data from version snapshot
-  versionId?: number;      // v2 mode: version ID
-  versionData?: any;       // v2 mode: version object (for snapshotFixtures)
+  networkId?: number; // v1 mode: network ID from database
+  networkData?: any; // v2 mode: network data from version snapshot
+  versionId?: number; // v2 mode: version ID
+  versionData?: any; // v2 mode: version object (for snapshotFixtures)
   systemType?: "FLUSH_TANK" | "FLUSH_VALVE";
   projectId?: number; // 🔥 FIX: Add projectId for localStorage key consistency
 }>();
@@ -1233,7 +1233,7 @@ const isV2Mode = computed(() => {
   return !!(props.networkData && props.versionId);
 });
 
-console.log('[AutoSuggest] Component mounted/updated:', {
+console.log("[AutoSuggest] Component mounted/updated:", {
   networkId: props.networkId,
   versionId: props.versionId,
   hasNetworkData: !!props.networkData,
@@ -1688,11 +1688,13 @@ const selectSimulatedSize = async (pipeId: number, simSize: any) => {
       const pipe = props.networkData.pipes.find((p: any) => p.id === pipeId);
       if (pipe) {
         pipe.nominalSize = simSize.mm;
-        console.log(`[V2] Updated pipe ${pipeId} size to ${simSize.mm}mm in networkData`);
+        console.log(
+          `[V2] Updated pipe ${pipeId} size to ${simSize.mm}mm in networkData`
+        );
       }
 
       // Emit event to parent to save to version snapshot
-      emit('networkChange', props.networkData);
+      emit("networkChange", props.networkData);
     } else {
       // v1 mode: Call API to save the new size to database
       await autoSuggestApi.applySingle(props.networkId, pipeId, simSize.mm);
@@ -1948,7 +1950,10 @@ const separatePipesByPath = (pipes: any[]) => {
 // ===== ANALYSIS METHODS =====
 
 const analyzePipes = async () => {
-  console.log("[AutoSuggest] 📍 analyzePipes() called - networkId:", props.networkId);
+  console.log(
+    "[AutoSuggest] 📍 analyzePipes() called - networkId:",
+    props.networkId
+  );
 
   if (!props.networkId) {
     toast.error("ไม่พบข้อมูล Network");
@@ -2082,7 +2087,9 @@ const analyzePipes = async () => {
           currentSizeMM,
           pvcClass
         );
-        console.log(`[AutoSuggest] Pipe ${suggestion.pipeId}: DN=${currentSizeMM}mm, PVC Class=${pvcClass}, ID=${internalDiameterM}m`);
+        console.log(
+          `[AutoSuggest] Pipe ${suggestion.pipeId}: DN=${currentSizeMM}mm, PVC Class=${pvcClass}, ID=${internalDiameterM}m`
+        );
       } else {
         // Non-PVC - use PIPE_SIZES constant
         const currentSize =
@@ -2135,23 +2142,112 @@ const analyzePipes = async () => {
       }
 
       // Create segment name from node labels
-      const sourceLabel = suggestion.sourceNode?.label || "J?";
-      const targetLabel = suggestion.targetNode?.label || "ห้องน้ำ";
+      // Create segment name from node labels
+      // (รองรับตัวแปรทั้งจาก V1 และ V2)
+      const srcNode = suggestion.sourceNode || sourceNode;
+      const tgtNode = suggestion.targetNode || targetNode;
+      const sourceLabel = srcNode?.label || "J?";
+      const targetLabel = tgtNode?.label || "ห้องน้ำ";
       const segmentName = `${sourceLabel} → ${targetLabel}`;
 
-      // Calculate suggested size internal diameter (if exists)
-      let suggestedInternalDiameterM: number | undefined;
-      if (suggestion.suggestedSize && cFactor === 150) {
-        const pvcClass = projectCriteria.value?.pvcClass || 7;
-        suggestedInternalDiameterM = calculatePVCInternalDiameterWorstCase(
-          suggestion.suggestedSize.mm,
-          pvcClass
-        );
-      } else if (suggestion.suggestedSize) {
-        const suggestedSize =
-          PIPE_SIZES.find((s) => s.mm === suggestion.suggestedSize.mm) ||
-          PIPE_SIZES[0];
-        suggestedInternalDiameterM = suggestedSize.internalDiameterM;
+      // 🔥 LOGIC ใหม่สุด: ค้นหาขนาดท่อที่ดีที่สุด (พิจารณาทั้ง Velocity และ Friction Loss)
+      let optimalSizeObj = null;
+      let optimalVelocity = null;
+      let optimalFrictionLoss = null;
+
+      // 💡 เพิ่มเงื่อนไข: ถึง status จะ OK (เขียว) แต่ถ้า Friction เดิมเกิน MAX (10.0) ก็ควรหาไซส์ใหม่ด้วย!
+      if (status !== "OK" || frictionLoss > MAX_FRICTION_LOSS) {
+        let bestOK = null;
+        let bestWarning = null;
+
+        for (const testSize of PIPE_SIZES) {
+          let testID =
+            cFactor === 150
+              ? calculatePVCInternalDiameterWorstCase(
+                  testSize.mm,
+                  projectCriteria.value?.pvcClass || 7
+                )
+              : testSize.internalDiameterM;
+
+          const testVel = calculateVelocity(flowM3S, testID);
+          const testFric = calculateFrictionLoss(flowM3S, testID, cFactor); // 💡 คำนวณ Friction ของท่อที่กำลังทดสอบ
+          const testStatus = determineStatus(testVel);
+
+          if (testStatus === "OK") {
+            const isFricOK = testFric <= MAX_FRICTION_LOSS;
+
+            if (!bestOK) {
+              bestOK = {
+                size: testSize,
+                velocity: testVel,
+                id: testID,
+                frictionLoss: testFric,
+                isFricOK
+              };
+            } else {
+              // 💡 กฎการประชันท่อในโซนสีเขียว (OK)
+              if (isFricOK && !bestOK.isFricOK) {
+                // 1. ท่อนี้ Friction ผ่าน แต่ของเดิมไม่ผ่าน -> โหวตให้ท่อนี้ชนะทันที
+                bestOK = {
+                  size: testSize,
+                  velocity: testVel,
+                  id: testID,
+                  frictionLoss: testFric,
+                  isFricOK
+                };
+              } else if (isFricOK && bestOK.isFricOK) {
+                // 2. ผ่านเกณฑ์ Friction ทั้งคู่ -> เอาอันที่ "เล็กที่สุด" (เพื่อประหยัดงบก่อสร้าง)
+                if (testSize.mm < bestOK.size.mm) {
+                  bestOK = {
+                    size: testSize,
+                    velocity: testVel,
+                    id: testID,
+                    frictionLoss: testFric,
+                    isFricOK
+                  };
+                }
+              } else if (!isFricOK && !bestOK.isFricOK) {
+                // 3. ไม่ผ่านเกณฑ์ Friction ทั้งคู่ (ไหลแรงจัด) -> เอาอันที่ Friction "น้อยกว่า" (ซึ่งก็คือท่อใหญ่กว่านั่นเอง)
+                if (testFric < bestOK.frictionLoss) {
+                  bestOK = {
+                    size: testSize,
+                    velocity: testVel,
+                    id: testID,
+                    frictionLoss: testFric,
+                    isFricOK
+                  };
+                }
+              }
+            }
+          } else if (testStatus === "WARNING") {
+            const distToOK =
+              testVel < VELOCITY_MIN
+                ? VELOCITY_MIN - testVel
+                : testVel - VELOCITY_MAX;
+            if (!bestWarning || distToOK < bestWarning.dist) {
+              bestWarning = {
+                size: testSize,
+                velocity: testVel,
+                id: testID,
+                frictionLoss: testFric,
+                dist: distToOK
+              };
+            }
+          }
+        }
+
+        const bestFound = bestOK || bestWarning;
+
+        // ถ้าเจอขนาดที่ดีกว่า และไม่ใช่ขนาดเดิม ค่อยแนะนำผู้ใช้
+        if (bestFound && bestFound.size.mm !== currentSizeMM) {
+          optimalSizeObj = {
+            mm: bestFound.size.mm,
+            inches: bestFound.size.inches,
+            internalDiameter: bestFound.id
+          };
+          optimalVelocity = bestFound.velocity;
+          optimalFrictionLoss = bestFound.frictionLoss; // 💡 ดึง Friction ที่คำนวณไว้มาใช้เลย ไม่ต้องคำนวณซ้ำ
+        }
       }
 
       // Get pipe size info for inches label
@@ -2159,12 +2255,12 @@ const analyzePipes = async () => {
         PIPE_SIZES.find((s) => s.mm === currentSizeMM) || PIPE_SIZES[0];
 
       return {
-        pipeId: suggestion.pipeId,
+        pipeId: suggestion.pipeId || pipe?.id,
         segmentName: segmentName,
         fixtureUnits: fu,
-        hunterGPM: rawTotalGPM, // เก็บยอดรวมดิบไว้โชว์เผื่อจำเป็น
-        baseHunterGPM: baseHunterGPM, // 🔥 เพิ่มบรรทัดนี้: ส่ง GPM สุขภัณฑ์ไปโชว์
-        hoseBibbGPM: hoseBibbGPM, // 🔥 เพิ่มบรรทัดนี้: ส่ง GPM ก๊อกสนามไปโชว์
+        hunterGPM: rawTotalGPM,
+        baseHunterGPM: baseHunterGPM,
+        hoseBibbGPM: hoseBibbGPM,
         waterFactorPercent: waterFactorPercent,
         adjustedGPM: adjustedGPM,
         flowRate: {
@@ -2186,217 +2282,20 @@ const analyzePipes = async () => {
         staticHead: suggestion.staticHead || 0,
         totalLoss: majorLoss + majorLoss * 0.3 + (suggestion.staticHead || 0),
         status: status,
-        suggestedSize: (() => {
-          if (
-            suggestion.suggestedSize &&
-            suggestedInternalDiameterM !== undefined
-          ) {
-            return {
-              mm: suggestion.suggestedSize.mm,
-              inches:
-                PIPE_SIZES.find((s) => s.mm === suggestion.suggestedSize.mm)
-                  ?.inches || suggestion.suggestedSize.inches,
-              internalDiameter: suggestedInternalDiameterM
-            };
-          }
-
-          const currentIndex = PIPE_SIZES.findIndex(
-            (s) => s.mm === currentSizeMM
-          );
-          let bestSizeInOKRange = null;
-          let bestDistanceToMin = Infinity;
-
-          for (let i = currentIndex; i < PIPE_SIZES.length; i++) {
-            const testSize = PIPE_SIZES[i];
-            const testVelocity = calculateVelocity(
-              flowM3S,
-              testSize.internalDiameterM
-            );
-
-            if (testVelocity >= VELOCITY_MIN && testVelocity <= VELOCITY_MAX) {
-              const distanceToMin = Math.abs(testVelocity - VELOCITY_MIN);
-              if (distanceToMin < bestDistanceToMin) {
-                bestDistanceToMin = distanceToMin;
-                bestSizeInOKRange = testSize;
-              }
-            }
-          }
-
-          if (bestSizeInOKRange) {
-            return {
-              mm: bestSizeInOKRange.mm,
-              inches: bestSizeInOKRange.inches,
-              internalDiameter: bestSizeInOKRange.internalDiameterM
-            };
-          }
-
-          for (let i = currentIndex; i < PIPE_SIZES.length; i++) {
-            const testSize = PIPE_SIZES[i];
-            const testVelocity = calculateVelocity(
-              flowM3S,
-              testSize.internalDiameterM
-            );
-            if (
-              (testVelocity >= VELOCITY_CRITICAL_LOW &&
-                testVelocity < VELOCITY_MIN) ||
-              (testVelocity > VELOCITY_MAX &&
-                testVelocity <= VELOCITY_CRITICAL_HIGH)
-            ) {
-              return {
-                mm: testSize.mm,
-                inches: testSize.inches,
-                internalDiameter: testSize.internalDiameterM
-              };
-            }
-          }
-
-          const nextLargerIndex = currentIndex + 1;
-          if (nextLargerIndex < PIPE_SIZES.length) {
-            const nextSize = PIPE_SIZES[nextLargerIndex];
-            return {
-              mm: nextSize.mm,
-              inches: nextSize.inches,
-              internalDiameter: nextSize.internalDiameterM
-            };
-          }
-
-          return {
-            mm: currentSizeMM,
-            inches: currentSizeInfo.inches,
-            internalDiameter: internalDiameterM
-          };
-        })(),
-        suggestedVelocity: (() => {
-          const sizeInfo =
-            suggestion.suggestedSize && suggestedInternalDiameterM !== undefined
-              ? { internalDiameter: suggestedInternalDiameterM }
-              : (() => {
-                  const currentIndex = PIPE_SIZES.findIndex(
-                    (s) => s.mm === currentSizeMM
-                  );
-                  let bestSizeInOKRange = null;
-                  let bestDistanceToMin = Infinity;
-
-                  for (let i = currentIndex; i < PIPE_SIZES.length; i++) {
-                    const testSize = PIPE_SIZES[i];
-                    const testVelocity = calculateVelocity(
-                      flowM3S,
-                      testSize.internalDiameterM
-                    );
-
-                    if (
-                      testVelocity >= VELOCITY_MIN &&
-                      testVelocity <= VELOCITY_MAX
-                    ) {
-                      const distanceToMin = Math.abs(
-                        testVelocity - VELOCITY_MIN
-                      );
-                      if (distanceToMin < bestDistanceToMin) {
-                        bestDistanceToMin = distanceToMin;
-                        bestSizeInOKRange = testSize;
-                      }
-                    }
-                  }
-
-                  if (bestSizeInOKRange) return bestSizeInOKRange;
-
-                  for (let i = currentIndex; i < PIPE_SIZES.length; i++) {
-                    const testSize = PIPE_SIZES[i];
-                    const testVelocity = calculateVelocity(
-                      flowM3S,
-                      testSize.internalDiameterM
-                    );
-                    if (
-                      (testVelocity >= VELOCITY_CRITICAL_LOW &&
-                        testVelocity < VELOCITY_MIN) ||
-                      (testVelocity > VELOCITY_MAX &&
-                        testVelocity <= VELOCITY_CRITICAL_HIGH)
-                    ) {
-                      return testSize;
-                    }
-                  }
-
-                  const nextLargerIndex = currentIndex + 1;
-                  if (nextLargerIndex < PIPE_SIZES.length) {
-                    return PIPE_SIZES[nextLargerIndex];
-                  }
-                  return { internalDiameter: internalDiameterM };
-                })();
-
-          return calculateVelocity(flowM3S, sizeInfo.internalDiameter);
-        })(),
-        suggestedFrictionLoss: (() => {
-          const sizeInfo =
-            suggestion.suggestedSize && suggestedInternalDiameterM !== undefined
-              ? { internalDiameter: suggestedInternalDiameterM }
-              : (() => {
-                  const currentIndex = PIPE_SIZES.findIndex(
-                    (s) => s.mm === currentSizeMM
-                  );
-                  let bestSizeInOKRange = null;
-                  let bestDistanceToMin = Infinity;
-
-                  for (let i = currentIndex; i < PIPE_SIZES.length; i++) {
-                    const testSize = PIPE_SIZES[i];
-                    const testVelocity = calculateVelocity(
-                      flowM3S,
-                      testSize.internalDiameterM
-                    );
-
-                    if (
-                      testVelocity >= VELOCITY_MIN &&
-                      testVelocity <= VELOCITY_MAX
-                    ) {
-                      const distanceToMin = Math.abs(
-                        testVelocity - VELOCITY_MIN
-                      );
-                      if (distanceToMin < bestDistanceToMin) {
-                        bestDistanceToMin = distanceToMin;
-                        bestSizeInOKRange = testSize;
-                      }
-                    }
-                  }
-
-                  if (bestSizeInOKRange) return bestSizeInOKRange;
-
-                  for (let i = currentIndex; i < PIPE_SIZES.length; i++) {
-                    const testSize = PIPE_SIZES[i];
-                    const testVelocity = calculateVelocity(
-                      flowM3S,
-                      testSize.internalDiameterM
-                    );
-                    if (
-                      (testVelocity >= VELOCITY_CRITICAL_LOW &&
-                        testVelocity < VELOCITY_MIN) ||
-                      (testVelocity > VELOCITY_MAX &&
-                        testVelocity <= VELOCITY_CRITICAL_HIGH)
-                    ) {
-                      return testSize;
-                    }
-                  }
-
-                  const nextLargerIndex = currentIndex + 1;
-                  if (nextLargerIndex < PIPE_SIZES.length) {
-                    return PIPE_SIZES[nextLargerIndex];
-                  }
-                  return { internalDiameter: internalDiameterM };
-                })();
-
-          return calculateFrictionLoss(
-            flowM3S,
-            sizeInfo.internalDiameter,
-            cFactor
-          );
-        })(),
+        // นำค่าที่ผ่านการสแกนแบบใหม่มาใส่ได้เลย โค้ดสั้นลงมาก
+        suggestedSize: optimalSizeObj,
+        suggestedVelocity: optimalVelocity,
+        suggestedFrictionLoss: optimalFrictionLoss,
         reason:
           suggestion.reason ||
           (status === "OK"
             ? "Velocity อยู่ในช่วงปกติ"
             : `Velocity ${velocity.toFixed(2)} m/s (ควร 1.2-2.4)`),
         warnings: warnings.length > 0 ? warnings : suggestion.warnings || [],
-        isCriticalPath: suggestion.isCriticalPath || false,
-        sourceNode: suggestion.sourceNode || null,
-        targetNode: suggestion.targetNode || null
+        isCriticalPath:
+          suggestion.isCriticalPath || pipe?.isCriticalPath || false,
+        sourceNode: srcNode || null,
+        targetNode: tgtNode || null
       };
     });
 
@@ -2424,8 +2323,13 @@ const analyzePipes = async () => {
     nextTick(() => {
       if (suggestions.value.length > 0) {
         // Calculate stats from suggestions
-        const totalFU = suggestions.value.reduce((sum, s) => sum + (s.fixtureUnits || 0), 0);
-        const maxPipeSize = Math.max(...suggestions.value.map(s => s.currentSize?.mm || 0));
+        const totalFU = suggestions.value.reduce(
+          (sum, s) => sum + (s.fixtureUnits || 0),
+          0
+        );
+        const maxPipeSize = Math.max(
+          ...suggestions.value.map((s) => s.currentSize?.mm || 0)
+        );
         const criticalPathFlowRate = criticalPath.reduce((max, p) => {
           const flow = p.flowRate?.gpm || 0;
           return flow > max ? flow : max;
@@ -2517,17 +2421,21 @@ const applySingleSuggestion = async (suggestion: any) => {
 
     if (isV2Mode.value && props.networkData) {
       // v2 mode: Update networkData directly
-      const pipe = props.networkData.pipes.find((p: any) => p.id === suggestion.pipeId);
+      const pipe = props.networkData.pipes.find(
+        (p: any) => p.id === suggestion.pipeId
+      );
       if (pipe) {
         pipe.nominalSize = targetSize;
-        console.log(`[V2] Updated pipe ${suggestion.pipeId} size to ${targetSize}mm in networkData`);
+        console.log(
+          `[V2] Updated pipe ${suggestion.pipeId} size to ${targetSize}mm in networkData`
+        );
       }
 
       // Recalculate analysis locally
       await analyzePipesV2();
 
       // Emit event to parent to save to version snapshot
-      emit('networkChange', props.networkData);
+      emit("networkChange", props.networkData);
 
       toast.success(
         `ปรับขนาดท่อ #${suggestion.pipeId} เป็น ${targetSize}mm เรียบร้อย`
@@ -2572,25 +2480,42 @@ const applyAllSuggestions = async () => {
 
   try {
     if (isV2Mode.value && props.networkData) {
-      // v2 mode: Update all pipes in networkData
-      const pipesToUpdate = suggestions.value.filter(s => s.suggestedSize);
+      // 🔥 NEW: Optimize ALL pipes (not just those with suggestions!)
+      let updatedCount = 0;
 
-      for (const suggestion of pipesToUpdate) {
-        const pipe = props.networkData.pipes.find((p: any) => p.id === suggestion.pipeId);
-        if (pipe) {
-          pipe.nominalSize = suggestion.suggestedSize.mm;
+      for (const suggestion of suggestions.value) {
+        const pipe = props.networkData.pipes.find(
+          (p: any) => p.id === suggestion.pipeId
+        );
+        if (!pipe) continue;
+
+        // Use suggestedSize if available, otherwise keep current size
+        const optimalSizeMM = suggestion.suggestedSize?.mm || pipe.nominalSize;
+
+        // Only update if the size is different
+        if (pipe.nominalSize !== optimalSizeMM) {
+          pipe.nominalSize = optimalSizeMM;
+          updatedCount++;
         }
       }
 
-      console.log(`[V2] Updated ${pipesToUpdate.length} pipes in networkData`);
+      console.log(`[V2] Optimized ${updatedCount} pipes in networkData`);
 
       // Recalculate analysis locally
       await analyzePipesV2();
 
-      // Emit event to parent to save to version snapshot
-      emit('networkChange', props.networkData);
+      // 🔥 Clear all suggestedSize (they've been applied!)
+      suggestions.value = suggestions.value.map((s) => ({
+        ...s,
+        suggestedSize: null
+      }));
 
-      toast.success(`ปรับปรุงท่อทั้งหมด ${pipesToUpdate.length} ท่อเรียบร้อย`);
+      console.log(`[V2] Cleared all suggestedSize`);
+
+      // Emit event to parent to save to version snapshot
+      emit("networkChange", props.networkData);
+
+      toast.success(`ปรับปรุงท่อทั้งหมด ${updatedCount} ท่อเรียบร้อย`);
     } else {
       // v1 mode: Call API
       const updatedPipes = await autoSuggestApi.applyAll(props.networkId);
@@ -2701,9 +2626,16 @@ const getFrictionLossColor = (frictionLoss: number) => {
 
 // ===== V2 MODE: Local Analysis from networkData =====
 const analyzePipesV2 = async () => {
-  console.log("[AutoSuggest V2] 📍 analyzePipesV2() called - versionId:", props.versionId);
+  console.log(
+    "[AutoSuggest V2] 📍 analyzePipesV2() called - versionId:",
+    props.versionId
+  );
 
-  if (!props.networkData || !props.networkData.pipes || props.networkData.pipes.length === 0) {
+  if (
+    !props.networkData ||
+    !props.networkData.pipes ||
+    props.networkData.pipes.length === 0
+  ) {
     console.warn("[AutoSuggest V2] ⚠️ No pipes in networkData");
     toast.error("ไม่พบข้อมูล Network");
     return;
@@ -2732,9 +2664,13 @@ const analyzePipesV2 = async () => {
             hoseBibbGPM: pipe.hoseBibbGPM || 0,
             fixtureGroups: pipe.fixtureGroups || []
           }));
-          console.log(`✅ [V2] Loaded fixtures data from version.snapshotFixtures (${fixturesData.length} ท่อ)`);
+          console.log(
+            `✅ [V2] Loaded fixtures data from version.snapshotFixtures (${fixturesData.length} ท่อ)`
+          );
         } else {
-          console.warn("⚠️ [V2] snapshotFixtures.pipes not found or not an array");
+          console.warn(
+            "⚠️ [V2] snapshotFixtures.pipes not found or not an array"
+          );
         }
       } catch (e) {
         console.error("❌ [V2] Failed to parse version.snapshotFixtures:", e);
@@ -2742,13 +2678,19 @@ const analyzePipesV2 = async () => {
     }
 
     // Fallback: Try localStorage (for backward compatibility)
-    if (fixturesData.length === 0 && typeof window !== "undefined" && props.projectId) {
+    if (
+      fixturesData.length === 0 &&
+      typeof window !== "undefined" &&
+      props.projectId
+    ) {
       const storageKey = `pipeGPMData_${props.projectId}`;
       const savedData = localStorage.getItem(storageKey);
       if (savedData) {
         try {
           fixturesData = JSON.parse(savedData);
-          console.log(`✅ [V2] Loaded fixtures data from localStorage fallback (${fixturesData.length} ท่อ)`);
+          console.log(
+            `✅ [V2] Loaded fixtures data from localStorage fallback (${fixturesData.length} ท่อ)`
+          );
         } catch (e) {
           console.error("❌ [V2] ไม่สามารถอ่านข้อมูลจาก Step 4 ได้:", e);
         }
@@ -2756,7 +2698,9 @@ const analyzePipesV2 = async () => {
     }
 
     if (fixturesData.length === 0) {
-      console.warn("⚠️ [V2] No fixtures data found - analysis will have zero FU/GPM values");
+      console.warn(
+        "⚠️ [V2] No fixtures data found - analysis will have zero FU/GPM values"
+      );
     }
 
     // Process pipes from networkData
@@ -2769,7 +2713,9 @@ const analyzePipesV2 = async () => {
       const hoseBibbGPM = fixturesPipe?.hoseBibbGPM || 0;
       const rawTotalGPM = baseHunterGPM + hoseBibbGPM;
 
-      console.log(`[AutoSuggest V2] Pipe ${pipe.id}: FU=${fu}, HunterGPM=${baseHunterGPM.toFixed(2)}, HB=${hoseBibbGPM.toFixed(2)}`);
+      console.log(
+        `[AutoSuggest V2] Pipe ${pipe.id}: FU=${fu}, HunterGPM=${baseHunterGPM.toFixed(2)}, HB=${hoseBibbGPM.toFixed(2)}`
+      );
 
       // Apply Water Factor
       const waterFactorPercent = getWaterFactorPercent(fu);
@@ -2781,7 +2727,8 @@ const analyzePipesV2 = async () => {
 
       // Get pipe size
       const currentSizeMM = pipe.nominalSize || 15;
-      const sizeInfo = PIPE_SIZES.find((s) => s.mm === currentSizeMM) || PIPE_SIZES[0];
+      const sizeInfo =
+        PIPE_SIZES.find((s) => s.mm === currentSizeMM) || PIPE_SIZES[0];
 
       // Calculate internal diameter
       let internalDiameterM: number;
@@ -2789,15 +2736,24 @@ const analyzePipesV2 = async () => {
 
       if (cFactor === 150) {
         const pvcClass = projectCriteria.value?.pvcClass || 7;
-        internalDiameterM = calculatePVCInternalDiameterWorstCase(currentSizeMM, pvcClass);
-        console.log(`[AutoSuggest V2] Pipe ${pipe.id}: DN=${currentSizeMM}mm, PVC Class=${pvcClass}, ID=${internalDiameterM}m`);
+        internalDiameterM = calculatePVCInternalDiameterWorstCase(
+          currentSizeMM,
+          pvcClass
+        );
+        console.log(
+          `[AutoSuggest V2] Pipe ${pipe.id}: DN=${currentSizeMM}mm, PVC Class=${pvcClass}, ID=${internalDiameterM}m`
+        );
       } else {
         internalDiameterM = sizeInfo.internalDiameterM;
       }
 
       // Calculate velocity and friction loss
       const velocity = calculateVelocity(flowM3S, internalDiameterM);
-      const frictionLoss = calculateFrictionLoss(flowM3S, internalDiameterM, cFactor);
+      const frictionLoss = calculateFrictionLoss(
+        flowM3S,
+        internalDiameterM,
+        cFactor
+      );
       const pipeLength = pipe.length || 1;
       const majorLoss = calculateMajorLoss(pipeLength, frictionLoss);
 
@@ -2807,11 +2763,17 @@ const analyzePipesV2 = async () => {
       // Generate warnings
       const warnings: string[] = [];
       if (velocity < VELOCITY_CRITICAL_LOW) {
-        warnings.push("CRITICAL: Velocity extremely low - risk of sedimentation");
+        warnings.push(
+          "CRITICAL: Velocity extremely low - risk of sedimentation"
+        );
       } else if (velocity < VELOCITY_MIN) {
-        warnings.push("WARNING: Velocity below minimum - may cause sedimentation");
+        warnings.push(
+          "WARNING: Velocity below minimum - may cause sedimentation"
+        );
       } else if (velocity > VELOCITY_CRITICAL_HIGH) {
-        warnings.push("CRITICAL: Velocity extremely high - risk of water hammer");
+        warnings.push(
+          "CRITICAL: Velocity extremely high - risk of water hammer"
+        );
       } else if (velocity > VELOCITY_MAX) {
         warnings.push("WARNING: Velocity above maximum - may cause noise");
       }
@@ -2823,12 +2785,115 @@ const analyzePipesV2 = async () => {
       }
 
       // Get node labels
-      const sourceNode = props.networkData.nodes?.find((n: any) => n.id === pipe.sourceNodeId);
-      const targetNode = props.networkData.nodes?.find((n: any) => n.id === pipe.targetNodeId);
+      const sourceNode = props.networkData.nodes?.find(
+        (n: any) => n.id === pipe.sourceNodeId
+      );
+      const targetNode = props.networkData.nodes?.find(
+        (n: any) => n.id === pipe.targetNodeId
+      );
       const sourceLabel = sourceNode?.label || `J${pipe.sourceNodeId}`;
       const targetLabel = targetNode?.label || `J${pipe.targetNodeId}`;
       const segmentName = `${sourceLabel} → ${targetLabel}`;
 
+      // 🔥 LOGIC ใหม่สุด: ค้นหาขนาดท่อที่ดีที่สุด (พิจารณาทั้ง Velocity และ Friction Loss)
+      let optimalSizeObj = null;
+      let optimalVelocity = null;
+      let optimalFrictionLoss = null;
+
+      // 💡 เพิ่มเงื่อนไข: ถึง status จะ OK (เขียว) แต่ถ้า Friction เดิมเกิน MAX (10.0) ก็ควรหาไซส์ใหม่ด้วย!
+      if (status !== "OK" || frictionLoss > MAX_FRICTION_LOSS) {
+        let bestOK = null;
+        let bestWarning = null;
+
+        for (const testSize of PIPE_SIZES) {
+          let testID =
+            cFactor === 150
+              ? calculatePVCInternalDiameterWorstCase(
+                  testSize.mm,
+                  projectCriteria.value?.pvcClass || 7
+                )
+              : testSize.internalDiameterM;
+
+          const testVel = calculateVelocity(flowM3S, testID);
+          const testFric = calculateFrictionLoss(flowM3S, testID, cFactor); // 💡 คำนวณ Friction ของท่อที่กำลังทดสอบ
+          const testStatus = determineStatus(testVel);
+
+          if (testStatus === "OK") {
+            const isFricOK = testFric <= MAX_FRICTION_LOSS;
+
+            if (!bestOK) {
+              bestOK = {
+                size: testSize,
+                velocity: testVel,
+                id: testID,
+                frictionLoss: testFric,
+                isFricOK
+              };
+            } else {
+              // 💡 กฎการประชันท่อในโซนสีเขียว (OK)
+              if (isFricOK && !bestOK.isFricOK) {
+                // 1. ท่อนี้ Friction ผ่าน แต่ของเดิมไม่ผ่าน -> โหวตให้ท่อนี้ชนะทันที
+                bestOK = {
+                  size: testSize,
+                  velocity: testVel,
+                  id: testID,
+                  frictionLoss: testFric,
+                  isFricOK
+                };
+              } else if (isFricOK && bestOK.isFricOK) {
+                // 2. ผ่านเกณฑ์ Friction ทั้งคู่ -> เอาอันที่ "เล็กที่สุด" (เพื่อประหยัดงบก่อสร้าง)
+                if (testSize.mm < bestOK.size.mm) {
+                  bestOK = {
+                    size: testSize,
+                    velocity: testVel,
+                    id: testID,
+                    frictionLoss: testFric,
+                    isFricOK
+                  };
+                }
+              } else if (!isFricOK && !bestOK.isFricOK) {
+                // 3. ไม่ผ่านเกณฑ์ Friction ทั้งคู่ (ไหลแรงจัด) -> เอาอันที่ Friction "น้อยกว่า" (ซึ่งก็คือท่อใหญ่กว่านั่นเอง)
+                if (testFric < bestOK.frictionLoss) {
+                  bestOK = {
+                    size: testSize,
+                    velocity: testVel,
+                    id: testID,
+                    frictionLoss: testFric,
+                    isFricOK
+                  };
+                }
+              }
+            }
+          } else if (testStatus === "WARNING") {
+            const distToOK =
+              testVel < VELOCITY_MIN
+                ? VELOCITY_MIN - testVel
+                : testVel - VELOCITY_MAX;
+            if (!bestWarning || distToOK < bestWarning.dist) {
+              bestWarning = {
+                size: testSize,
+                velocity: testVel,
+                id: testID,
+                frictionLoss: testFric,
+                dist: distToOK
+              };
+            }
+          }
+        }
+
+        const bestFound = bestOK || bestWarning;
+
+        // ถ้าเจอขนาดที่ดีกว่า และไม่ใช่ขนาดเดิม ค่อยแนะนำผู้ใช้
+        if (bestFound && bestFound.size.mm !== currentSizeMM) {
+          optimalSizeObj = {
+            mm: bestFound.size.mm,
+            inches: bestFound.size.inches,
+            internalDiameter: bestFound.id
+          };
+          optimalVelocity = bestFound.velocity;
+          optimalFrictionLoss = bestFound.frictionLoss; // 💡 ดึง Friction ที่คำนวณไว้มาใช้เลย ไม่ต้องคำนวณซ้ำ
+        }
+      }
       return {
         pipeId: pipe.id,
         segmentName: segmentName,
@@ -2857,10 +2922,14 @@ const analyzePipesV2 = async () => {
         staticHead: 0,
         totalLoss: majorLoss + majorLoss * 0.3,
         status: status,
-        suggestedSize: null, // TODO: implement suggestion logic
-        suggestedVelocity: null,
-        suggestedFrictionLoss: null,
-        reason: status === "OK" ? "Velocity อยู่ในช่วงปกติ" : `Velocity ${velocity.toFixed(2)} m/s (ควร 1.2-2.4)`,
+        // ✅ นำค่าที่คำนวณมาใส่ตรงๆ เลย ไม่ต้องทำ IIFE ซับซ้อนแล้ว
+        suggestedSize: optimalSizeObj,
+        suggestedVelocity: optimalVelocity,
+        suggestedFrictionLoss: optimalFrictionLoss,
+        reason:
+          status === "OK"
+            ? "Velocity อยู่ในช่วงปกติ"
+            : `Velocity ${velocity.toFixed(2)} m/s (ควร 1.2-2.4)`,
         warnings: warnings,
         isCriticalPath: pipe.isCriticalPath || false,
         sourceNode: sourceNode || null,
@@ -2884,8 +2953,12 @@ const analyzePipesV2 = async () => {
     const sortedCriticalPath = sortPipesFromEndToStart(criticalPath);
     const sortedBranchPipes = sortPipesFromEndToStart(branchPipesData);
 
-    console.log(`✅ [V2] Sorted ${sortedCriticalPath.length} critical pipes (farthest → nearest)`);
-    console.log(`✅ [V2] Sorted ${sortedBranchPipes.length} branch pipes (farthest → nearest)`);
+    console.log(
+      `✅ [V2] Sorted ${sortedCriticalPath.length} critical pipes (farthest → nearest)`
+    );
+    console.log(
+      `✅ [V2] Sorted ${sortedBranchPipes.length} branch pipes (farthest → nearest)`
+    );
 
     suggestions.value = [
       ...sortedCriticalPath.map((p) => ({ ...p, pathType: "CRITICAL" })),
@@ -2901,8 +2974,13 @@ const analyzePipesV2 = async () => {
     // Emit summary
     nextTick(() => {
       if (suggestions.value.length > 0) {
-        const totalFU = suggestions.value.reduce((sum, s) => sum + (s.fixtureUnits || 0), 0);
-        const maxPipeSize = Math.max(...suggestions.value.map(s => s.currentSize?.mm || 0));
+        const totalFU = suggestions.value.reduce(
+          (sum, s) => sum + (s.fixtureUnits || 0),
+          0
+        );
+        const maxPipeSize = Math.max(
+          ...suggestions.value.map((s) => s.currentSize?.mm || 0)
+        );
         const criticalPathFlowRate = criticalPath.reduce((max, p) => {
           const flow = p.flowRate?.gpm || 0;
           return flow > max ? flow : max;
@@ -2941,10 +3019,10 @@ const analyzePipesV2 = async () => {
 
     summary.value = {
       total: validPipes.length,
-      ok: validPipes.filter(p => p.status === "OK").length,
-      warning: validPipes.filter(p => p.status === "WARNING").length,
-      critical: validPipes.filter(p => p.status === "CRITICAL").length,
-      needsUpsizing: validPipes.filter(p => p.status !== "OK").length
+      ok: validPipes.filter((p) => p.status === "OK").length,
+      warning: validPipes.filter((p) => p.status === "WARNING").length,
+      critical: validPipes.filter((p) => p.status === "CRITICAL").length,
+      needsUpsizing: validPipes.filter((p) => p.status !== "OK").length
     };
 
     toast.success(
@@ -2960,19 +3038,30 @@ const analyzePipesV2 = async () => {
 
 // Auto-analyze on mount
 onMounted(() => {
-  console.log("[AutoSuggest] 🚀 Component mounted - networkId:", props.networkId, "versionId:", props.versionId, "projectId:", props.projectId, "isV2Mode:", isV2Mode.value);
+  console.log(
+    "[AutoSuggest] 🚀 Component mounted - networkId:",
+    props.networkId,
+    "versionId:",
+    props.versionId,
+    "projectId:",
+    props.projectId,
+    "isV2Mode:",
+    isV2Mode.value
+  );
 
   // Clear criteria cache to ensure we get the latest PVC Class
   if (props.projectId) {
     projectStore.clearProject(props.projectId);
-    console.log(`[AutoSuggest] 🗑️ Cleared criteria cache for project ${props.projectId}`);
+    console.log(
+      `[AutoSuggest] 🗑️ Cleared criteria cache for project ${props.projectId}`
+    );
   }
 
   // 🛡️ Load staticHead from localStorage FIRST (browser-only, prevents hydration mismatch)
   if (typeof window !== "undefined") {
     const cacheKey = isV2Mode.value
-      ? `staticHead_ver_${props.versionId}`  // v2: use versionId
-      : `staticHead_net_${props.networkId}`;  // v1: use networkId
+      ? `staticHead_ver_${props.versionId}` // v2: use versionId
+      : `staticHead_net_${props.networkId}`; // v1: use networkId
 
     const cachedHead = localStorage.getItem(cacheKey);
     if (cachedHead !== null) {
@@ -2985,13 +3074,17 @@ onMounted(() => {
 
   // Start analyzing based on mode
   if (isV2Mode.value) {
-    console.log("[AutoSuggest] ✅ V2 mode detected, starting local analysis from networkData...");
+    console.log(
+      "[AutoSuggest] ✅ V2 mode detected, starting local analysis from networkData..."
+    );
     analyzePipesV2();
   } else if (props.networkId) {
     console.log("[AutoSuggest] ✅ V1 mode detected, starting API analysis...");
     analyzePipes();
   } else {
-    console.log("[AutoSuggest] ❌ No networkId or networkData provided, skipping analysis");
+    console.log(
+      "[AutoSuggest] ❌ No networkId or networkData provided, skipping analysis"
+    );
   }
 });
 

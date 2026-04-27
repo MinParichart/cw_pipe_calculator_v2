@@ -190,7 +190,7 @@
       </div>
     </div> -->
 
-    Debug Info
+    <!-- Debug Info
     <div v-if="true" class="mb-4 p-4 bg-gray-100 rounded text-xs">
       <div><strong>Debug Info:</strong></div>
       <div>Suggestions length: {{ suggestions?.length || 0 }}</div>
@@ -198,7 +198,7 @@
       <div>Branch Pipes: {{ branchPipes.length }}</div>
       <div>Analyzing: {{ analyzing }}</div>
       <div>Network ID: {{ networkId }}</div>
-    </div>
+    </div> -->
 
     <!-- Pipe Cards Grouped -->
     <div v-if="suggestions && suggestions.length > 0" class="space-y-6">

@@ -410,7 +410,7 @@ const saveCalculation = () => {
 };
 
 const goToNextStep = () => {
-  router.push(`/projects/${route.params.id}/versions`);
+  router.push(`/projects/${route.params.id}/versions/${route.params.versionId}/audit`);
 };
 
 const goToPrevStep = () => {

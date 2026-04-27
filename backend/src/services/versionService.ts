@@ -290,32 +290,12 @@ export class VersionService {
     const oldPipeCount = oldNetwork.pipes?.length || 0
 
     // Determine the appropriate action based on what's being updated
-    // Priority: UPDATE_FIXTURES > CALCULATE > UPDATE_NETWORK > UPLOAD_BLUEPRINT > UPDATE
-    // ⚠️ FIX: fixtures เมื่อเพิ่มสุภัณฑ์ต้องมาก่อน calculate
+    // 🔥 NEW: Use diff-based detection instead of simple priority
     let action = 'UPDATE'
     let detailsContent: string | undefined
 
-    // 🔥 CHECK FIXTURES FIRST
-    if (data.snapshotFixtures) {
-      action = 'UPDATE_FIXTURES'
-      // 🔥 Calculate fixtures diff (BEFORE vs AFTER)
-      try {
-        const fixtures = JSON.parse(data.snapshotFixtures)
-        const newFixturesCount = fixtures.nodes?.reduce((sum: number, node: any) =>
-          sum + (node.fixtures?.length || 0), 0) || 0
-
-        const diff = newFixturesCount - oldFixturesCount
-        if (diff > 0) {
-          detailsContent = `เพิ่ม ${diff} สุภัณฑ์ (${oldFixturesCount} → ${newFixturesCount})`
-        } else if (diff < 0) {
-          detailsContent = `ลบ ${Math.abs(diff)} สุภัณฑ์ (${oldFixturesCount} → ${newFixturesCount})`
-        } else {
-          detailsContent = `แก้ไข ${newFixturesCount} สุภัณฑ์`
-        }
-      } catch {
-        detailsContent = 'แก้ไขสุภัณฑ์'
-      }
-    } else if (data.snapshotResults) {
+    // 🔥 CHECK CALCULATION FIRST (always has highest priority)
+    if (data.snapshotResults) {
       action = 'CALCULATE'
       // Generate calculation summary
       try {
@@ -326,16 +306,23 @@ export class VersionService {
       } catch {
         detailsContent = 'คำนวณระบบท่อ'
       }
-    } else if (data.snapshotNetwork) {
-      action = 'UPDATE_NETWORK'
-      // 🔥 Calculate network diff (BEFORE vs AFTER)
-      try {
-        const network = JSON.parse(data.snapshotNetwork)
-        const newNodeCount = network.nodes?.length || 0
-        const newPipeCount = network.pipes?.length || 0
+    }
+// 🔥 NEW LOGIC: Check for topology changes vs fixture-only changes
+    else if (data.snapshotNetwork) {
+      // Use ONLY snapshotNetwork for topology detection (not snapshotFixtures!)
+      const newNetwork = JSON.parse(data.snapshotNetwork)
 
-        const nodeDiff = newNodeCount - oldNodeCount
-        const pipeDiff = newPipeCount - oldPipeCount
+      // Calculate topology diff from network data only
+      const newNodeCount = newNetwork?.nodes?.length || 0
+      const newPipeCount = newNetwork?.pipes?.length || 0
+
+      const nodeDiff = newNodeCount - oldNodeCount
+      const pipeDiff = newPipeCount - oldPipeCount
+
+      // 🔥 KEY LOGIC: Check if topology changed
+      if (nodeDiff !== 0 || pipeDiff !== 0) {
+        // Topology changed (nodes/pipes added/removed) → UPDATE_NETWORK
+        action = 'UPDATE_NETWORK'
 
         let changes: string[] = []
         if (nodeDiff > 0) changes.push(`เพิ่ม ${nodeDiff} จุดเชื่อมต่อ`)
@@ -349,8 +336,58 @@ export class VersionService {
         } else {
           detailsContent = `${newNodeCount} จุดเชื่อมต่อ, ${newPipeCount} ท่อ`
         }
+      } else {
+        // 🔥 FIX: Check if fixtures inside the network nodes changed!
+        const getFixturesString = (network: any) => {
+          return JSON.stringify(network.nodes?.flatMap((n: any) => n.fixtures || []) || [])
+        }
+
+        const oldFixturesStr = getFixturesString(oldNetwork)
+        const newFixturesStr = getFixturesString(newNetwork)
+
+        if (oldFixturesStr !== newFixturesStr) {
+          // หากไม่มีการเพิ่ม/ลด Node หรือท่อ แต่ข้อมูล Fixtures ข้างในเปลี่ยนไป ให้เป็น UPDATE_FIXTURES
+          action = 'UPDATE_FIXTURES'
+          
+          const oldFixCount = oldNetwork.nodes?.reduce((sum: number, n: any) => sum + (n.fixtures?.length || 0), 0) || 0
+          const newFixCount = newNetwork.nodes?.reduce((sum: number, n: any) => sum + (n.fixtures?.length || 0), 0) || 0
+          const diff = newFixCount - oldFixCount
+          
+          if (diff > 0) {
+            detailsContent = `เพิ่ม ${diff} สุขภัณฑ์ (${oldFixCount} → ${newFixCount})`
+          } else if (diff < 0) {
+            detailsContent = `ลบ ${Math.abs(diff)} สุขภัณฑ์ (${oldFixCount} → ${newFixCount})`
+          } else {
+            detailsContent = `แก้ไข ${newFixCount} สุขภัณฑ์ (ในแผนภาพท่อ)`
+          }
+        } else {
+          // No topology changes and no fixture changes
+          // → Could be position changes (x, y) or other network updates
+          action = 'UPDATE_NETWORK'
+          detailsContent = `แก้ไขตำแหน่งหรือรายละเอียดท่อ (${newNodeCount} จุดเชื่อมต่อ, ${newPipeCount} ท่อ)`
+        }
+      }
+    } else if (data.snapshotFixtures) {
+      // No network data, only fixtures data → UPDATE_FIXTURES
+      // This means user is editing fixtures in existing nodes only
+      action = 'UPDATE_FIXTURES'
+
+      // Calculate fixtures diff
+      try {
+        const newFixtures = JSON.parse(data.snapshotFixtures)
+        const newFixturesCount = newFixtures.nodes?.reduce((sum: number, node: any) =>
+          sum + (node.fixtures?.length || 0), 0) || 0
+
+        const diff = newFixturesCount - oldFixturesCount
+        if (diff > 0) {
+          detailsContent = `เพิ่ม ${diff} สุภัณฑ์ (${oldFixturesCount} → ${newFixturesCount})`
+        } else if (diff < 0) {
+          detailsContent = `ลบ ${Math.abs(diff)} สุภัณฑ์ (${oldFixturesCount} → ${newFixturesCount})`
+        } else {
+          detailsContent = `แก้ไข ${newFixturesCount} สุภัณฑ์`
+        }
       } catch {
-        detailsContent = 'แก้ไขแผนภาพท่อ'
+        detailsContent = 'แก้ไขสุภัณฑ์'
       }
     } else if (data.referenceLayer) {
       action = 'UPLOAD_BLUEPRINT'

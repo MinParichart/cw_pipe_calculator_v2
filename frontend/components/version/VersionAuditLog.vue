@@ -148,9 +148,6 @@
               <th class="px-4 py-3 text-left">
                 <span class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Details</span>
               </th>
-              <th class="px-4 py-3 text-center">
-                <span class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Actions</span>
-              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -202,32 +199,7 @@
                 </div>
               </td>
 
-              <!-- Actions -->
-              <td class="px-4 py-3 whitespace-nowrap text-center">
-                <div class="flex items-center justify-center gap-2">
-                  <button
-                    v-if="canViewDetails(log)"
-                    @click="viewDetails(log)"
-                    class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
-                    title="View Details"
-                  >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </button>
-                  <button
-                    v-if="canRevert(log)"
-                    @click="revertChange(log)"
-                    class="p-1.5 text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded transition-colors"
-                    title="Revert Change"
-                  >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
+              <!-- Actions - REMOVED -->
             </tr>
           </tbody>
         </table>
@@ -287,27 +259,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Details Modal -->
-    <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="showModal = false">
-      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden" @click.stop>
-        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-slate-800">Audit Log Details</h3>
-          <button @click="showModal = false" class="text-slate-400 hover:text-slate-600">✕</button>
-        </div>
-        <div class="p-6 overflow-y-auto max-h-[60vh]">
-          <pre class="text-sm text-slate-700 whitespace-pre-wrap">{{ selectedLogDetails }}</pre>
-        </div>
-        <div class="px-6 py-4 border-t border-slate-200 flex justify-end">
-          <button
-            @click="showModal = false"
-            class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -346,8 +297,6 @@ const error = ref<string | null>(null)
 const selectedFilter = ref('all')
 const searchQuery = ref('')
 const expandedLogId = ref<number | null>(null)
-const showModal = ref(false)
-const selectedLogDetails = ref('')
 
 // Computed
 const filteredLogs = computed(() => {
@@ -521,26 +470,128 @@ const getActionDescription = (log: AuditLog): string => {
   return `${log.entity} ${log.action.toLowerCase()}`
 }
 
-const canViewDetails = (log: AuditLog): boolean => {
-  return !!log.details
 }
 
-const canRevert = (log: AuditLog): boolean => {
-  return ['UPDATE_NETWORK', 'UPDATE_FIXTURES', 'APPLY_PIPE_SIZE'].includes(log.action)
-}
+// Format Details Functions
+const formatNetworkDetails = (details: any): string => {
+  const lines: string[] = []
 
-const viewDetails = (log: AuditLog) => {
-  if (expandedLogId.value === log.id) {
-    expandedLogId.value = null
-  } else {
-    expandedLogId.value = log.id
+  if (details.nodes || details.pipes) {
+    if (details.nodes) {
+      const nodeDiff = details.nodes?.added || details.nodes?.deleted || 0
+      if (nodeDiff > 0) lines.push(`  • เพิ่ม ${nodeDiff} จุดเชื่อมต่อ`)
+      else if (nodeDiff < 0) lines.push(`  • ลบ ${Math.abs(nodeDiff)} จุดเชื่อมต่อ`)
+    }
+
+    if (details.pipes) {
+      const pipeDiff = details.pipes?.added || details.pipes?.deleted || 0
+      if (pipeDiff > 0) lines.push(`  • เพิ่ม ${pipeDiff} ท่อ`)
+      else if (pipeDiff < 0) lines.push(`  • ลบ ${Math.abs(pipeDiff)} ท่อ`)
+    }
+
+    // แสดงรายละเอียดท่อที่เปลี่ยนแปลง
+    if (details.changedPipes && Array.isArray(details.changedPipes)) {
+      lines.push('\n  ท่อที่เปลี่ยนแปลง:')
+      details.changedPipes.forEach((pipe: any) => {
+        const change = pipe.changes || []
+        const changesStr = change.map((c: string) => `      • ${c}`).join('\n')
+        lines.push(`  • ${pipe.segment || pipe.id}:\n${changesStr}`)
+      })
+    }
   }
+
+  return lines.length > 0 ? lines.join('\n') : 'แก้ไขแผนภาพท่อ'
 }
 
-const revertChange = async (log: AuditLog) => {
-  // TODO: Implement revert functionality
-  console.log('Revert change:', log)
-  alert(`Revert functionality for ${log.action} will be implemented soon`)
+const formatFixtureDetails = (details: any): string => {
+  const lines: string[] = []
+
+  if (details.nodes) {
+    const nodesWithFixtures = details.nodes.filter((n: any) => n.fixtures && n.fixtures.length > 0)
+
+    if (nodesWithFixtures.length > 0) {
+      lines.push('  Node ที่เปลี่ยนแปลง:')
+
+      nodesWithFixtures.forEach((node: any) => {
+        const label = node.label || node.id || 'Unknown'
+        const fixtures = node.fixtures || []
+        const changes: string[] = []
+
+        fixtures.forEach((f: any) => {
+          if (f.added) changes.push(`      • เพิ่ม ${f.type}`)
+          else if (f.deleted) changes.push(`      • ลบ ${f.type}`)
+          else if (f.modified) changes.push(`      • แก้ไข ${f.type}`)
+        })
+
+        if (changes.length > 0) {
+          lines.push(`  • ${label} (${node.type || 'Node'}):\n${changes.join('\n')}`)
+        }
+      })
+    }
+  }
+
+  return lines.length > 0 ? lines.join('\n') : 'แก้ไขสุภัณฑ์'
+}
+
+const formatCalculateDetails = (details: any): string => {
+  const lines: string[] = []
+
+  if (details.pipeCount !== undefined) {
+    lines.push(`  จำนวนท่อ: ${details.pipeCount}`)
+  }
+
+  if (details.avgVelocity !== undefined) {
+    lines.push(`  เฉลี่ย velocity: ${details.avgVelocity.toFixed(2)} m/s`)
+  }
+
+  if (details.majorLoss !== undefined) {
+    lines.push(`  Major loss: ${details.majorLoss.toFixed(2)} m`)
+  }
+
+  if (details.failCount !== undefined) {
+    if (details.failCount > 0) {
+      lines.push(`  ⚠️ ท่อที่เร็วเกินไป: ${details.failCount} ท่อ`)
+    } else {
+      lines.push(`  ✓ ผ่านเกณฑ์ทั้งหมด`)
+    }
+  }
+
+  if (details.totalLoss !== undefined) {
+    lines.push(`  Total loss: ${details.totalLoss.toFixed(2)} m`)
+  }
+
+  return lines.length > 0 ? lines.join('\n') : 'คำนวณระบบท่อ'
+}
+
+const formatBlueprintDetails = (details: any): string => {
+  const lines: string[] = []
+
+  if (details.fileName) {
+    lines.push(`  ไฟล์: ${details.fileName}`)
+  }
+
+  if (details.fileSize) {
+    const sizeMB = (details.fileSize / (1024 * 1024)).toFixed(2)
+    lines.push(`  ขนาด: ${sizeMB} MB`)
+  }
+
+  if (details.floor) {
+    lines.push(`  ชั้น: ${details.floor}`)
+  }
+
+  if (details.scale) {
+    lines.push(` สเกล: ${details.scale}`)
+  }
+
+  if (details.nodeCount) {
+    lines.push(`  Node ที่อ้างอิง: ${details.nodeCount} จุด`)
+  }
+
+  if (details.wallCount) {
+    lines.push(`  Wall ที่อ้างอิง: ${details.wallCount} อัน`)
+  }
+
+  return lines.length > 0 ? lines.join('\n') : 'อัปโหลด blueprint'
 }
 
 const formatDetails = (log: AuditLog): string => {
@@ -548,7 +599,21 @@ const formatDetails = (log: AuditLog): string => {
 
   try {
     const details = JSON.parse(log.details)
-    return JSON.stringify(details, null, 2)
+
+    // Format ตาม action type
+    switch (log.action) {
+      case 'UPDATE_NETWORK':
+        return formatNetworkDetails(details)
+      case 'UPDATE_FIXTURES':
+        return formatFixtureDetails(details)
+      case 'CALCULATE':
+        return formatCalculateDetails(details)
+      case 'UPLOAD_BLUEPRINT':
+        return formatBlueprintDetails(details)
+      default:
+        // Fallback: แสดง JSON เดิมถ้าไม่รู้จัก action type
+        return JSON.stringify(details, null, 2)
+    }
   } catch {
     return log.details
   }

@@ -470,8 +470,6 @@ const getActionDescription = (log: AuditLog): string => {
   return `${log.entity} ${log.action.toLowerCase()}`
 }
 
-}
-
 // Format Details Functions
 const formatNetworkDetails = (details: any): string => {
   const lines: string[] = []

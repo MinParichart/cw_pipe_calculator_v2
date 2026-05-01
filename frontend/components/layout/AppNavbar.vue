@@ -97,7 +97,7 @@
             </NuxtLink>
 
             <button
-              @click="handleLogout"
+              @click="showLogoutConfirm = true"
               class="nav-link text-red-600 hover:text-red-700"
             >
               <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -186,7 +186,7 @@
           โปรไฟล์
         </NuxtLink>
         <button
-          @click="handleLogout"
+          @click="showLogoutConfirm = true"
           class="nav-link-mobile w-full text-left text-red-600 hover:bg-red-50"
         >
           ออกจากระบบ
@@ -194,6 +194,39 @@
       </div>
     </div>
   </nav>
+
+  <!-- Logout Confirmation Dialog -->
+  <div
+    v-if="showLogoutConfirm"
+    class="fixed inset-0 z-50 flex items-center justify-center"
+    style="background-color: rgba(0, 0, 0, 0.5);"
+  >
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">
+        ออกจากระบบ
+      </h3>
+      <p class="text-sm text-gray-600 mb-6">
+        ต้องการออกจากระบบใช่หรือไม่?
+      </p>
+
+      <div class="flex justify-end space-x-3">
+        <button
+          @click="showLogoutConfirm = false"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        >
+          ยกเลิก
+        </button>
+        <button
+          @click="confirmLogout"
+          :disabled="isLoggingOut"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span v-if="isLoggingOut">กำลังออกจากระบบ...</span>
+          <span v-else>ตกลง</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -202,14 +235,30 @@ const router = useRouter()
 const route = useRoute()
 
 const mobileMenuOpen = ref(false)
+const showLogoutConfirm = ref(false)
+const isLoggingOut = ref(false)
 
 const isActive = (path: string) => {
   return route.path.startsWith(path)
 }
 
-const handleLogout = async () => {
-  await logout()
-  await router.push('/')
+// Show logout confirmation dialog
+const handleLogout = () => {
+  showLogoutConfirm.value = true
+}
+
+// Confirm logout
+const confirmLogout = async () => {
+  isLoggingOut.value = true
+  try {
+    await logout()
+    showLogoutConfirm.value = false
+    await router.push('/')
+  } catch (error) {
+    console.error('Logout error:', error)
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 </script>
 

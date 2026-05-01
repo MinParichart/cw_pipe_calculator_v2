@@ -7,7 +7,7 @@
       <p class="mt-2 text-center text-sm text-gray-600">
         หรือ
         <NuxtLink to="/register" class="font-medium text-primary-600 hover:text-primary-500">
-          สมัครสมาชิกใหม่
+          ลงทะเบียน
         </NuxtLink>
       </p>
     </div>

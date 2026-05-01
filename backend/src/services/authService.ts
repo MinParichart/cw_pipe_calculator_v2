@@ -50,7 +50,7 @@ export class AuthService {
     })
 
     if (existingUser) {
-      throw new Error('Email already registered')
+      throw new Error('อีเมลนี้ถูกใช้งานแล้ว')
     }
 
     // Hash password

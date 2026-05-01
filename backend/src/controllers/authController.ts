@@ -17,17 +17,17 @@ export class AuthController {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Email and password are required',
+            message: 'กรุณากรอก Email และ Password',
           },
         })
       }
 
-      if (password.length < 6) {
+      if (password.length < 8) {
         return res.status(400).json({
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Password must be at least 6 characters',
+            message: 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
           },
         })
       }
@@ -38,14 +38,14 @@ export class AuthController {
       res.status(201).json({
         success: true,
         data: result,
-        message: 'User registered successfully',
+        message: 'ลงทะเบียนสำเร็จ',
       })
     } catch (error: any) {
       res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: error.message || 'Registration failed',
+          message: error.message || 'ไม่สามารถสร้างบัญชีได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง',
         },
       })
     }

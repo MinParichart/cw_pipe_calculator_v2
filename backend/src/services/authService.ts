@@ -93,14 +93,14 @@ export class AuthService {
     })
 
     if (!user) {
-      throw new Error('Invalid email or password')
+      throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
     }
 
     // Verify password
     const isValid = await this.comparePassword(password, user.password)
 
     if (!isValid) {
-      throw new Error('Invalid email or password')
+      throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
     }
 
     // Generate token

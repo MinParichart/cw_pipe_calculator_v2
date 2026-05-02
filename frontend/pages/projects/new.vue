@@ -19,7 +19,7 @@
 
         <!-- Form -->
         <div class="bg-white shadow rounded-lg p-6">
-          <form @submit.prevent="handleCreate" class="space-y-6">
+          <form @submit.prevent="handleCreate" novalidate class="space-y-6">
             <!-- Project Name -->
             <div>
               <label for="name" class="label">
@@ -29,10 +29,13 @@
                 id="name"
                 v-model="form.name"
                 type="text"
-                required
                 class="input"
+                :class="{ 'border-danger-500': errors.name }"
                 placeholder="เช่น บ้านพักอาศัย 2 ชั้น"
               />
+              <p v-if="errors.name" class="mt-1 text-sm text-danger-600">
+                {{ errors.name }}
+              </p>
             </div>
 
             <!-- Description -->
@@ -61,7 +64,8 @@
                   class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
                   :class="{
                     'border-primary-500 bg-primary-50': form.buildingType === type.value,
-                    'border-gray-300': form.buildingType !== type.value
+                    'border-danger-500': errors.buildingType && form.buildingType !== type.value,
+                    'border-gray-300': !errors.buildingType && form.buildingType !== type.value
                   }"
                 >
                   <input
@@ -80,6 +84,9 @@
                   </div>
                 </label>
               </div>
+              <p v-if="errors.buildingType" class="mt-1 text-sm text-danger-600">
+                {{ errors.buildingType }}
+              </p>
             </div>
 
             <!-- Number of Floors -->
@@ -89,14 +96,15 @@
               </label>
               <input
                 id="floors"
-                v-model.number="form.floors"
-                type="number"
-                min="1"
-                max="2"
-                required
+                v-model="form.floors"
+                type="text"
                 class="input"
+                :class="{ 'border-danger-500': errors.floors }"
                 placeholder="1"
               />
+              <p v-if="errors.floors" class="mt-1 text-sm text-danger-600">
+                {{ errors.floors }}
+              </p>
               <p class="mt-1 text-sm text-gray-500">
                 ระบบรองรับสูงสุด 2 ชั้น
               </p>
@@ -136,10 +144,15 @@ const form = ref({
   name: '',
   description: '',
   buildingType: 'APARTMENT' as 'APARTMENT' | 'OFFICE' | 'HOSPITAL' | 'SCHOOL' | 'HOTEL',
-  floors: 1,
+  floors: '1',
 })
 
 const loading = ref(false)
+const errors = ref<{
+  name?: string
+  buildingType?: string
+  floors?: string
+}>({})
 
 const buildingTypes = [
   { value: 'APARTMENT', label: 'ที่พักอาศัย' },
@@ -149,10 +162,35 @@ const buildingTypes = [
   { value: 'HOTEL', label: 'โรงแรม' },
 ]
 
-const handleCreate = async () => {
-  // Validate
+const validateForm = (): boolean => {
+  let isValid = true
+  errors.value = {}
+
+  // A1: Project Name ว่าง
   if (!form.value.name || form.value.name.trim() === '') {
-    toast.error('กรุณากรอกชื่อโปรเจกต์')
+    errors.value.name = 'กรุณากรอกชื่อโปรเจกต์'
+    isValid = false
+  }
+
+  // Validate Building Type
+  if (!form.value.buildingType) {
+    errors.value.buildingType = 'กรุณาเลือกประเภทอาคาร'
+    isValid = false
+  }
+
+  // Validate Floors (ต้องอยู่ในช่วง 1-2)
+  const floorsNum = parseInt(form.value.floors)
+  if (!form.value.floors || isNaN(floorsNum) || floorsNum < 1 || floorsNum > 2) {
+    errors.value.floors = 'กรุณาระบุจำนวนชั้น (1-2)'
+    isValid = false
+  }
+
+  return isValid
+}
+
+const handleCreate = async () => {
+  // Validate form
+  if (!validateForm()) {
     return
   }
 
@@ -167,6 +205,7 @@ const handleCreate = async () => {
       criteria: {
         buildingType: form.value.buildingType,
       },
+      floors: parseInt(form.value.floors),
     })
 
     console.log('Project created successfully:', newProject)

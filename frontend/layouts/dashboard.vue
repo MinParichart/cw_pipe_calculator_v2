@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Toast Notification -->
+    <ToastNotification />
+
     <!-- Top Navigation Bar -->
     <nav class="bg-white shadow fixed top-0 left-0 right-0 z-50 h-16 relative transition-all duration-300 ease-in-out"
       :class="{ 'ml-64': sidebarOpen }"
@@ -128,6 +131,7 @@
 
 <script setup lang="ts">
 import ProjectSteps from '~/components/workflow/ProjectSteps.vue'
+import ToastNotification from '~/components/ToastNotification.vue'
 
 const { user, logout } = useAuth()
 const router = useRouter()

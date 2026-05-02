@@ -410,6 +410,34 @@ export const calculationsApi = {
 }
 
 /**
+ * Auth API
+ */
+export const authApi = {
+  login: (email: string, password: string) =>
+    apiRequest<any>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+
+  register: (email: string, password: string, name?: string) =>
+    apiRequest<any>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name }),
+    }),
+
+  logout: () =>
+    apiRequest<any>('/auth/logout', { method: 'POST' }),
+
+  getMe: () => apiRequest<any>('/auth/me'),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiRequest<any>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+}
+
+/**
  * useApi composable - exports all APIs
  */
 export const useApi = () => {
@@ -424,5 +452,6 @@ export const useApi = () => {
     autoSuggestApi,
     calculationsApi,
     documentsApi,
+    authApi,
   }
 }

@@ -33,4 +33,11 @@ router.post('/logout', authenticate, authController.logout)
  */
 router.get('/me', authenticate, authController.me)
 
+/**
+ * @route   POST /api/auth/change-password
+ * @desc    Change password
+ * @access  Private
+ */
+router.post('/change-password', authenticate, authController.changePassword)
+
 export default router

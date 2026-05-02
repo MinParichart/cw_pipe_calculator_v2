@@ -143,6 +143,43 @@ export class AuthService {
 
     return user
   }
+
+  /**
+   * Change password
+   */
+  async changePassword(userId: number, currentPassword: string, newPassword: string) {
+    // Find user with password
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      throw new Error('ไม่พบผู้ใช้')
+    }
+
+    // Verify current password
+    const isValid = await this.comparePassword(currentPassword, user.password)
+
+    if (!isValid) {
+      throw new Error('รหัสผ่านปัจจุบันไม่ถูกต้อง')
+    }
+
+    // Hash new password
+    const hashedPassword = await this.hashPassword(newPassword)
+
+    // Update password
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+      },
+    })
+
+    return {
+      success: true,
+      message: 'เปลี่ยนรหัสผ่านสำเร็จ',
+    }
+  }
 }
 
 export default new AuthService()

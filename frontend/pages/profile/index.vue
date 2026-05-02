@@ -26,9 +26,6 @@
                   {{ user.name || 'ผู้ใช้' }}
                 </h2>
                 <p class="text-sm text-gray-600">{{ user.email }}</p>
-                <p class="text-xs text-gray-500 mt-1">
-                  สมาชิกตั้งแต่ {{ formatDate(user.createdAt) }}
-                </p>
               </div>
               <button
                 @click="editing = !editing"
@@ -59,30 +56,6 @@
           <div v-if="editing" class="card">
             <h3 class="text-lg font-medium text-gray-900 mb-4">แก้ไขข้อมูลส่วนตัว</h3>
             <form @submit.prevent="updateProfile" class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  ชื่อ
-                </label>
-                <input
-                  v-model="form.name"
-                  type="text"
-                  required
-                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50"
-                  placeholder="ชื่อของคุณ"
-                >
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                  อีเมล
-                </label>
-                <input
-                  v-model="form.email"
-                  type="email"
-                  required
-                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50"
-                  placeholder="your@email.com"
-                >
-              </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                   เบอร์โทรศัพท์
@@ -208,89 +181,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Account Settings -->
-          <div class="card">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">ตั้งค่าบัญชี</h3>
-            <div class="space-y-4">
-              <div class="flex items-center justify-between py-3 border-b">
-                <div>
-                  <p class="text-sm font-medium text-gray-900">การแจ้งเตือนทางอีเมล</p>
-                  <p class="text-xs text-gray-500">รับข่าวสารและอัปเดตเกี่ยวกับระบบ</p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    v-model="accountSettings.emailNotifications"
-                    type="checkbox"
-                    class="sr-only peer"
-                  >
-                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary peer-focus:ring-opacity-25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              <div class="flex items-center justify-between py-3 border-b">
-                <div>
-                  <p class="text-sm font-medium text-gray-900">โหมดเซสชันคงอยู่</p>
-                  <p class="text-xs text-gray-500">ไม่ต้องล็อกอินใหม่ทุกครั้ง</p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    v-model="accountSettings.rememberSession"
-                    type="checkbox"
-                    class="sr-only peer"
-                  >
-                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary peer-focus:ring-opacity-25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              <div class="flex items-center justify-between py-3">
-                <div>
-                  <p class="text-sm font-medium text-gray-900">การยืนยัน 2 ขั้นตอน</p>
-                  <p class="text-xs text-gray-500">เพิ่มความปลอดภัยให้บัญชีของคุณ</p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    v-model="accountSettings.twoFactorAuth"
-                    type="checkbox"
-                    class="sr-only peer"
-                  >
-                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary peer-focus:ring-opacity-25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Danger Zone -->
-          <div class="card border-red-200">
-            <h3 class="text-lg font-medium text-red-900 mb-4">โซนอันตราย</h3>
-            <div class="space-y-4">
-              <div class="flex items-center justify-between py-3 border-b border-red-200">
-                <div>
-                  <p class="text-sm font-medium text-red-900">ลบข้อมูลทั้งหมด</p>
-                  <p class="text-xs text-red-600">ลบโปรเจกต์ การคำนวณ และข้อมูลทั้งหมด</p>
-                </div>
-                <button
-                  @click="confirmDeleteAllData"
-                  class="px-4 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50"
-                >
-                  ลบข้อมูล
-                </button>
-              </div>
-
-              <div class="flex items-center justify-between py-3">
-                <div>
-                  <p class="text-sm font-medium text-red-900">ลบบัญชี</p>
-                  <p class="text-xs text-red-600">ลบบัญชีและข้อมูลทั้งหมดถาวร</p>
-                </div>
-                <button
-                  @click="confirmDeleteAccount"
-                  class="px-4 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50"
-                >
-                  ลบบัญชี
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -298,8 +188,12 @@
 </template>
 
 <script setup lang="ts">
+import { useAuth } from '~/composables/useAuth'
+import { projectsApi, versionsApi, authApi } from '~/composables/useApi'
+
 const toast = useToast()
 const router = useRouter()
+const { user: authUser } = useAuth()
 
 // State
 const editing = ref(false)
@@ -308,12 +202,25 @@ const saving = ref(false)
 const savingPassword = ref(false)
 const passwordError = ref('')
 
-const user = ref({
-  name: 'ผู้ใช้ทดสอบ',
-  email: 'test@example.com',
-  phone: '',
-  organization: '',
-  createdAt: '2024-01-01T00:00:00Z',
+// User data from useAuth with fallback
+const user = computed(() => {
+  if (!authUser.value) {
+    return {
+      name: 'ผู้ใช้ทดสอบ',
+      email: 'test@example.com',
+      phone: '',
+      organization: '',
+      createdAt: '2024-01-01T00:00:00Z',
+    }
+  }
+
+  return {
+    name: authUser.value.name || authUser.value.email || 'ผู้ใช้',
+    email: authUser.value.email || 'test@example.com',
+    phone: authUser.value.phone || '',
+    organization: authUser.value.organization || '',
+    createdAt: authUser.value.createdAt || '2024-01-01T00:00:00Z',
+  }
 })
 
 const form = ref({
@@ -333,12 +240,6 @@ const stats = ref({
   projects: 0,
   calculations: 0,
   versions: 0,
-})
-
-const accountSettings = ref({
-  emailNotifications: true,
-  rememberSession: true,
-  twoFactorAuth: false,
 })
 
 // Computed
@@ -364,8 +265,7 @@ const formatDate = (dateString: string) => {
 
 const loadProfile = async () => {
   try {
-    // TODO: Load from API
-    // user.value = await authApi.getProfile()
+    // Initialize form with current user data
     form.value = {
       name: user.value.name,
       email: user.value.email,
@@ -373,15 +273,34 @@ const loadProfile = async () => {
       organization: user.value.organization,
     }
 
-    // Load stats
-    // stats.value = await usersApi.getStats()
+    // Load actual stats from API
+    const projects = await projectsApi.list()
+
+    // Count versions and calculations across all projects
+    let totalVersions = 0
+    let totalCalculations = 0
+
+    for (const project of projects) {
+      const versions = await versionsApi.list(project.id)
+      totalVersions += versions.length
+
+      // Count versions that have calculation results
+      totalCalculations += versions.filter(v => v.snapshotResults).length
+    }
+
     stats.value = {
-      projects: 5,
-      calculations: 23,
-      versions: 12,
+      projects: projects.length,
+      calculations: totalCalculations,
+      versions: totalVersions,
     }
   } catch (error: any) {
     console.error('Failed to load profile:', error)
+    // Set default values on error
+    stats.value = {
+      projects: 0,
+      calculations: 0,
+      versions: 0,
+    }
   }
 }
 
@@ -389,13 +308,18 @@ const updateProfile = async () => {
   saving.value = true
 
   try {
-    // TODO: Update via API
-    // await authApi.updateProfile(form.value)
+    // TODO: Update via API (ไม่ส่ง email และ name ไป update)
+    // await authApi.updateProfile({
+    //   phone: form.value.phone,
+    //   organization: form.value.organization
+    // })
     await new Promise(resolve => setTimeout(resolve, 500))
 
     user.value = {
       ...user.value,
-      ...form.value,
+      phone: form.value.phone,
+      organization: form.value.organization,
+      // email, name: เก็บค่าเดิม ไม่อัปเดต
     }
 
     editing.value = false
@@ -423,9 +347,11 @@ const changePassword = async () => {
   savingPassword.value = true
 
   try {
-    // TODO: Change password via API
-    // await authApi.changePassword(passwordForm.value)
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // เรียก API จริงเปลี่ยนรหัสผ่าน
+    await authApi.changePassword(
+      passwordForm.value.currentPassword,
+      passwordForm.value.newPassword
+    )
 
     passwordForm.value = {
       currentPassword: '',
@@ -435,7 +361,7 @@ const changePassword = async () => {
     changingPassword.value = false
     toast.success('เปลี่ยนรหัสผ่านเรียบร้อย')
   } catch (error: any) {
-    toast.error(error.message || 'Failed to change password')
+    toast.error(error.message || 'ไม่สามารถเปลี่ยนรหัสผ่านได้')
   } finally {
     savingPassword.value = false
   }
@@ -449,49 +375,6 @@ const cancelChangePassword = () => {
     confirmPassword: '',
   }
   passwordError.value = ''
-}
-
-const confirmDeleteAllData = () => {
-  if (confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
-    deleteAllData()
-  }
-}
-
-const deleteAllData = async () => {
-  try {
-    // TODO: Delete all data via API
-    // await usersApi.deleteAllData()
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    stats.value = {
-      projects: 0,
-      calculations: 0,
-      versions: 0,
-    }
-
-    toast.success('ลบข้อมูลทั้งหมดเรียบร้อย')
-  } catch (error: any) {
-    toast.error(error.message || 'Failed to delete data')
-  }
-}
-
-const confirmDeleteAccount = () => {
-  if (confirm('คุณแน่ใจหรือไม่ที่จะลบบัญชี? การกระทำนี้ไม่สามารถย้อนกลับได้และข้อมูลทั้งหมดจะหายไป')) {
-    deleteAccount()
-  }
-}
-
-const deleteAccount = async () => {
-  try {
-    // TODO: Delete account via API
-    // await authApi.deleteAccount()
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    toast.success('ลบบัญชีเรียบร้อย')
-    router.push('/login')
-  } catch (error: any) {
-    toast.error(error.message || 'Failed to delete account')
-  }
 }
 
 // Load profile on mount

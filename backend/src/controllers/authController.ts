@@ -132,6 +132,63 @@ export class AuthController {
       message: 'Logout successful',
     })
   }
+
+  /**
+   * Change password
+   * POST /auth/change-password
+   */
+  async changePassword(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        })
+      }
+
+      const { currentPassword, newPassword } = req.body
+
+      // Validation
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'กรุณากรอกรหัสผ่านปัจจุบันและรหัสผ่านใหม่',
+          },
+        })
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
+          },
+        })
+      }
+
+      // Change password
+      await authService.changePassword(req.user.userId, currentPassword, newPassword)
+
+      res.json({
+        success: true,
+        message: 'เปลี่ยนรหัสผ่านสำเร็จ',
+      })
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: error.message || 'ไม่สามารถเปลี่ยนรหัสผ่านได้',
+        },
+      })
+    }
+  }
 }
 
 export default new AuthController()

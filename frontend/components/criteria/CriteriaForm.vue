@@ -28,19 +28,7 @@ const cFactorOptions = [
     value: 150,
     label: "PVC (150)",
     desc: "ท่อ PVC ทั่วไป - มาตรฐานสำหรับท่อน้ำดี"
-  },
-  {
-    value: 130,
-    label: "Copper (130)",
-    desc: "ท่อทองแดง - ทนทานต่อน้ำร้อน/เย็น"
-  },
-  {
-    value: 100,
-    label: "Steel (Galvanized) (100)",
-    desc: "ท่อเหล็กชุบสังกะสี - แข็งแรง"
-  },
-  { value: 150, label: "CPVC (150)", desc: "ท่อ CPVC - สำหรับน้ำร้อน" },
-  { value: 150, label: "PEX (150)", desc: "ท่อ PEX - ยืดหยุ่นสูง" }
+  }
 ];
 
 const demandModeOptions = [
@@ -263,19 +251,14 @@ const handleSubmit = () => {
       <label class="block text-sm font-medium text-gray-700 mb-1">
         ชนิดท่อ (C-Factor)
       </label>
-      <select
-        v-model.number="form.cFactor"
-        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-        required
-      >
-        <option
-          v-for="option in cFactorOptions"
-          :key="option.value"
-          :value="option.value"
-        >
-          {{ option.label }}
-        </option>
-      </select>
+      <div class="relative">
+        <input
+          value="PVC (150)"
+          disabled
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed text-sm"
+        />
+        <span class="absolute right-3 top-2 text-xs text-gray-400">🔒 ล็อค</span>
+      </div>
       <p class="text-xs text-gray-500 mt-1">
         ค่า C-Factor สำหรับคำนวณความสูญเสียดัน (Hazen-Williams)
       </p>

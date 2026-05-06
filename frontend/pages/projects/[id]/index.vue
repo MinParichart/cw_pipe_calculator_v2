@@ -148,13 +148,13 @@
                 <div class="flex justify-between">
                   <dt class="text-gray-600">วันที่สร้าง:</dt>
                   <dd class="font-medium text-gray-900">
-                    {{ formatDate(project.createdAt) }}
+                    {{ formatDate(latestVersion?.createdAt) }}
                   </dd>
                 </div>
                 <div class="flex justify-between">
                   <dt class="text-gray-600">อัปเดตล่าสุด:</dt>
                   <dd class="font-medium text-gray-900">
-                    {{ formatDate(project.updatedAt) }}
+                    {{ formatDate(latestVersion?.updatedAt) }}
                   </dd>
                 </div>
               </dl>
@@ -385,6 +385,20 @@ const versions = ref<any[]>([]);
 const editingCriteria = ref(false);
 const editingProjectDetails = ref(false);
 const showCreateModal = ref(false);
+
+// Computed - Latest version (sorted by updatedAt)
+const latestVersion = computed(() => {
+  if (versions.value.length === 0) return null;
+
+  // Sort by updatedAt descending (most recent first)
+  const sorted = [...versions.value].sort((a, b) => {
+    const dateA = new Date(a.updatedAt).getTime();
+    const dateB = new Date(b.updatedAt).getTime();
+    return dateB - dateA;
+  });
+
+  return sorted[0];
+});
 
 // Helper functions
 const formatDate = (dateString: string) => {

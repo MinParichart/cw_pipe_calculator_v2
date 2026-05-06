@@ -264,6 +264,7 @@ const versionId = computed(() => {
 // State
 const version = ref<any>(null);
 const networkData = ref<any>(null);
+const originalNetworkData = ref<any>(null); // 🔥 OPTION 2: Store original data for change detection
 const fixtures = ref<any[]>([]);
 const criticalEndpointId = ref("");
 const findingPath = ref(false);
@@ -311,9 +312,14 @@ const loadNetworkFromVersion = () => {
       console.log("ℹ️ No snapshotNetwork found, networkData is null");
       networkData.value = null;
     }
+
+    // 🔥 OPTION 2: Store original data for change detection
+    originalNetworkData.value = JSON.parse(JSON.stringify(networkData.value));
+    console.log("ℹ️ [Network] Original data stored for comparison");
   } catch (error) {
     console.error("Failed to parse network snapshot:", error);
     networkData.value = null;
+    originalNetworkData.value = null;
   } finally {
     loadingNetwork.value = false;
   }
@@ -372,12 +378,45 @@ onBeforeUnmount(async () => {
   }
 });
 
+// 🔥 OPTION 2: Check if network data actually changed
+const hasNetworkChanges = (): boolean => {
+  if (!networkData.value && !originalNetworkData.value) {
+    return false; // Both null, no changes
+  }
+
+  if (!networkData.value || !originalNetworkData.value) {
+    return true; // One is null, one has data → changed
+  }
+
+  // Deep comparison
+  const currentStr = JSON.stringify(networkData.value);
+  const originalStr = JSON.stringify(originalNetworkData.value);
+
+  if (currentStr !== originalStr) {
+    console.log('✅ [Network] Changes detected, will save');
+    return true;
+  }
+
+  console.log('ℹ️ [Network] No changes detected, skipping save');
+  return false;
+};
+
 const saveNetworkSnapshot = async () => {
+  // 🔥 OPTION 2: Check for changes before calling API
+  if (!hasNetworkChanges()) {
+    console.log('ℹ️ [Network] Skipping save - no changes');
+    return;
+  }
+
   try {
     const versionId = parseInt(route.params.versionId as string);
     await versionStore.updateVersion(versionId, {
       snapshotNetwork: JSON.stringify(networkData.value)
     });
+
+    // Update original data after successful save
+    originalNetworkData.value = JSON.parse(JSON.stringify(networkData.value));
+    console.log('✅ [Network] Snapshot saved and original data updated');
   } catch (error) {
     console.error("Failed to save network snapshot:", error);
   }

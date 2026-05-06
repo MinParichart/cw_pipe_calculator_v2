@@ -71,7 +71,7 @@
 
       <div class="bg-gray-50 rounded-lg p-4">
         <label class="block text-sm font-medium text-gray-700 mb-2">
-          สุขภัณฑ์ปลายทางที่ใกล้ที่สุด
+          สุขภัณฑ์ปลายทางที่ไกลที่สุด
         </label>
         <select
           v-model="selectedFixtureKey"
@@ -243,9 +243,9 @@ import { useProjectStore } from "~/stores/projectStore";
 import { fixtureFlowRates } from "~/utils/fixtureData";
 
 const props = defineProps<{
-  networkId?: number;      // v1 mode
-  networkData?: any;       // v2 mode
-  versionId?: number;      // v2 mode
+  networkId?: number; // v1 mode
+  networkData?: any; // v2 mode
+  versionId?: number; // v2 mode
   projectId?: number;
 }>();
 
@@ -259,11 +259,11 @@ const isV2Mode = computed(() => {
 // Get storage key based on mode
 const getStorageKey = () => {
   return isV2Mode.value
-    ? `requiredInletPressure_ver_${props.versionId}`   // v2: use versionId
-    : `requiredInletPressure_net_${props.networkId}`;  // v1: use networkId
+    ? `requiredInletPressure_ver_${props.versionId}` // v2: use versionId
+    : `requiredInletPressure_net_${props.networkId}`; // v1: use networkId
 };
 
-console.log('[RequiredInletPressure] Component mounted/updated:', {
+console.log("[RequiredInletPressure] Component mounted/updated:", {
   networkId: props.networkId,
   versionId: props.versionId,
   hasNetworkData: !!props.networkData,

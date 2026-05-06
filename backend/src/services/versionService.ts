@@ -289,6 +289,19 @@ export class VersionService {
     const oldNodeCount = oldNetwork.nodes?.length || 0
     const oldPipeCount = oldNetwork.pipes?.length || 0
 
+    // 🔥 OPTION 3: Check if there are actual changes before creating audit log
+    const hasChanges = this.checkForChanges(version, data)
+
+    if (!hasChanges) {
+      console.log('📝 [VersionService] No actual changes detected, skipping audit log creation')
+      // Still update the record (in case updatedAt needs to change), but don't create audit log
+      const updated = await prisma.version.update({
+        where: { id: versionId },
+        data,
+      })
+      return updated
+    }
+
     // Determine the appropriate action based on what's being updated
     // 🔥 NEW: Use diff-based detection instead of simple priority
     let action = 'UPDATE'
@@ -838,6 +851,142 @@ export class VersionService {
     }
 
     return project
+  }
+
+  /**
+   * Helper: Check if there are actual changes in update data
+   * Returns true if any field has changed, false otherwise
+   */
+  private checkForChanges(version: any, data: {
+    name?: string
+    description?: string
+    snapshotNetwork?: string
+    snapshotFixtures?: string
+    snapshotResults?: string
+    referenceLayer?: string
+  }): boolean {
+    // Check name change
+    if (data.name !== undefined && data.name !== version.name) {
+      console.log('📝 [VersionService] Name changed')
+      return true
+    }
+
+    // Check description change
+    if (data.description !== undefined && data.description !== version.description) {
+      console.log('📝 [VersionService] Description changed')
+      return true
+    }
+
+    // Check snapshotNetwork change
+    if (data.snapshotNetwork !== undefined) {
+      // If both are null/undefined, no change
+      const oldHasNetwork = !!version.snapshotNetwork
+      const newHasNetwork = !!data.snapshotNetwork && data.snapshotNetwork !== 'null' && data.snapshotNetwork !== ''
+
+      if (oldHasNetwork !== newHasNetwork) {
+        console.log('📝 [VersionService] Network presence changed')
+        return true
+      }
+
+      // If both have network data, compare the content
+      if (oldHasNetwork && newHasNetwork) {
+        try {
+          const oldNetwork = JSON.parse(version.snapshotNetwork)
+          const newNetwork = JSON.parse(data.snapshotNetwork)
+
+          // Compare JSON strings for deep comparison
+          if (JSON.stringify(oldNetwork) !== JSON.stringify(newNetwork)) {
+            console.log('📝 [VersionService] Network content changed')
+            return true
+          }
+        } catch (e) {
+          // If parsing fails, assume there's a change
+          console.log('📝 [VersionService] Network JSON parse failed, assuming change')
+          return true
+        }
+      }
+    }
+
+    // Check snapshotFixtures change
+    if (data.snapshotFixtures !== undefined) {
+      const oldHasFixtures = !!version.snapshotFixtures
+      const newHasFixtures = !!data.snapshotFixtures && data.snapshotFixtures !== 'null' && data.snapshotFixtures !== ''
+
+      if (oldHasFixtures !== newHasFixtures) {
+        console.log('📝 [VersionService] Fixtures presence changed')
+        return true
+      }
+
+      if (oldHasFixtures && newHasFixtures) {
+        try {
+          const oldFixtures = JSON.parse(version.snapshotFixtures)
+          const newFixtures = JSON.parse(data.snapshotFixtures)
+
+          if (JSON.stringify(oldFixtures) !== JSON.stringify(newFixtures)) {
+            console.log('📝 [VersionService] Fixtures content changed')
+            return true
+          }
+        } catch (e) {
+          console.log('📝 [VersionService] Fixtures JSON parse failed, assuming change')
+          return true
+        }
+      }
+    }
+
+    // Check snapshotResults change
+    if (data.snapshotResults !== undefined) {
+      const oldHasResults = !!version.snapshotResults
+      const newHasResults = !!data.snapshotResults && data.snapshotResults !== 'null' && data.snapshotResults !== ''
+
+      if (oldHasResults !== newHasResults) {
+        console.log('📝 [VersionService] Results presence changed')
+        return true
+      }
+
+      if (oldHasResults && newHasResults) {
+        try {
+          const oldResults = JSON.parse(version.snapshotResults)
+          const newResults = JSON.parse(data.snapshotResults)
+
+          if (JSON.stringify(oldResults) !== JSON.stringify(newResults)) {
+            console.log('📝 [VersionService] Results content changed')
+            return true
+          }
+        } catch (e) {
+          console.log('📝 [VersionService] Results JSON parse failed, assuming change')
+          return true
+        }
+      }
+    }
+
+    // Check referenceLayer change
+    if (data.referenceLayer !== undefined) {
+      const oldHasReference = !!version.referenceLayer
+      const newHasReference = !!data.referenceLayer && data.referenceLayer !== 'null' && data.referenceLayer !== ''
+
+      if (oldHasReference !== newHasReference) {
+        console.log('📝 [VersionService] Reference layer presence changed')
+        return true
+      }
+
+      if (oldHasReference && newHasReference) {
+        try {
+          const oldReference = JSON.parse(version.referenceLayer)
+          const newReference = JSON.parse(data.referenceLayer)
+
+          if (JSON.stringify(oldReference) !== JSON.stringify(newReference)) {
+            console.log('📝 [VersionService] Reference layer content changed')
+            return true
+          }
+        } catch (e) {
+          console.log('📝 [VersionService] Reference layer JSON parse failed, assuming change')
+          return true
+        }
+      }
+    }
+
+    console.log('📝 [VersionService] No changes detected')
+    return false
   }
 }
 

@@ -62,9 +62,9 @@
           </div>
 
           <!-- Project Info Section -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <!-- Project Details Card -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="lg:col-span-2 bg-white rounded-lg shadow-md border border-gray-200 p-6">
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900">
                   รายละเอียดโปรเจกต์
@@ -121,7 +121,7 @@
             </div>
 
             <!-- Versions Card -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6">
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900">Versions</h3>
                 <svg
@@ -162,7 +162,7 @@
           </div>
 
           <!-- Design Criteria Section - Separate Card -->
-          <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium text-gray-900">เกณฑ์การออกแบบ</h3>
               <button
@@ -180,8 +180,11 @@
               class="grid grid-cols-1 md:grid-cols-2 gap-6"
             >
               <!-- Velocity Card -->
-              <div class="border rounded-lg p-4">
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">
+              <div class="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                <h4 class="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
                   ความเร็วน้ำในท่อ
                 </h4>
                 <dl class="space-y-2 text-sm">
@@ -207,8 +210,11 @@
               </div>
 
               <!-- Calculation Mode Card -->
-              <div class="border rounded-lg p-4">
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">
+              <div class="border border-green-200 bg-green-50 rounded-lg p-4">
+                <h4 class="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
+                  <svg class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
                   โหมดการคำนวณ
                 </h4>
                 <dl class="space-y-2 text-sm">
@@ -269,7 +275,7 @@
           </div>
 
           <!-- Versions List Section -->
-          <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
             <VersionList
               :versions="versions"
               :loading="loading"
@@ -289,7 +295,7 @@
           </div>
 
           <!-- Actions Card -->
-          <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium text-gray-900">การจัดการ</h3>
               <svg
@@ -310,7 +316,7 @@
               <BackButton @click="$router.back()" />
               <button
                 @click="goToCompare"
-                class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center gap-2"
+                class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="versions.length < 2"
               >
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -344,7 +350,7 @@
             </p>
             <button
               @click="$router.push('/projects')"
-              class="mt-4 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+              class="mt-4 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
             >
               กลับไปหน้าโปรเจกต์
             </button>

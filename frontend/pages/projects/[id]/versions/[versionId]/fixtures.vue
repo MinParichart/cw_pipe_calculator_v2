@@ -20,14 +20,14 @@
 
             <!-- Version Badge -->
             <div class="flex items-center gap-3">
-              <div class="bg-orange-100 border border-orange-200 rounded-lg px-4 py-2">
+              <div class="bg-blue-100 border border-blue-200 rounded-lg px-4 py-2">
                 <div class="flex items-center gap-2">
-                  <svg class="h-5 w-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                   </svg>
                   <div>
-                    <p class="text-xs text-orange-600 font-medium">Version</p>
-                    <p class="text-lg font-bold text-orange-900">{{ version?.name || `Version ${version?.versionNumber || '-'}` }}</p>
+                    <p class="text-xs text-blue-600 font-medium">Version</p>
+                    <p class="text-lg font-bold text-blue-900">{{ version?.name || `Version ${version?.versionNumber || '-'}` }}</p>
                   </div>
                 </div>
               </div>
@@ -41,7 +41,7 @@
           class="bg-white rounded-lg shadow-sm p-8 text-center"
         >
           <div
-            class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"
           ></div>
           <p class="text-gray-600">กำลังโหลดข้อมูล...</p>
         </div>
@@ -86,9 +86,9 @@
               </h3>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div class="bg-orange-50 rounded-lg p-4">
-                <p class="text-xs text-orange-700 mb-1">ท่อทั้งหมด</p>
-                <p class="text-2xl font-bold text-orange-900">
+              <div class="bg-blue-50 rounded-lg p-4">
+                <p class="text-xs text-blue-700 mb-1">ท่อทั้งหมด</p>
+                <p class="text-2xl font-bold text-blue-900">
                   {{ criticalPathPipeLoads.length + branchPipeLoads.length }}
                 </p>
               </div>
@@ -120,7 +120,7 @@
           >
             <div class="flex items-center gap-2 mb-4">
               <svg
-                class="h-5 w-5 text-orange-500"
+                class="h-5 w-5 text-blue-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -140,7 +140,7 @@
               <div
                 v-for="pipeLoad in criticalPathPipeLoads"
                 :key="pipeLoad.pipe.id"
-                class="border border-orange-200 rounded-lg p-4 bg-orange-50"
+                class="border border-blue-200 rounded-lg p-4 bg-blue-50"
               >
                 <PipeFUCard :pipe-load="pipeLoad" />
               </div>

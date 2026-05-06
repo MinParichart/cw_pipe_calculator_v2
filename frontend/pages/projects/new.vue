@@ -22,40 +22,40 @@
           <form @submit.prevent="handleCreate" novalidate class="space-y-6">
             <!-- Project Name -->
             <div>
-              <label for="name" class="label">
-                ชื่อโปรเจกต์ <span class="text-danger-500">*</span>
+              <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                ชื่อโปรเจกต์ <span class="text-red-500">*</span>
               </label>
               <input
                 id="name"
                 v-model="form.name"
                 type="text"
-                class="input"
-                :class="{ 'border-danger-500': errors.name }"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                :class="{ 'border-red-500': errors.name }"
                 placeholder="เช่น บ้านพักอาศัย 2 ชั้น"
               />
-              <p v-if="errors.name" class="mt-1 text-sm text-danger-600">
+              <p v-if="errors.name" class="mt-1 text-sm text-red-600">
                 {{ errors.name }}
               </p>
             </div>
 
             <!-- Description -->
             <div>
-              <label for="description" class="label">
+              <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
                 รายละเอียด (ไม่บังคับ)
               </label>
               <textarea
                 id="description"
                 v-model="form.description"
                 rows="3"
-                class="input"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="ระบุรายละเอียดเพิ่มเติมเกี่ยวกับโปรเจกต์..."
               />
             </div>
 
             <!-- Building Type -->
             <div>
-              <label class="label">
-                ประเภทอาคาร <span class="text-danger-500">*</span>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                ประเภทอาคาร <span class="text-red-500">*</span>
               </label>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <label
@@ -63,8 +63,8 @@
                   :key="type.value"
                   class="relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
                   :class="{
-                    'border-primary-500 bg-primary-50': form.buildingType === type.value,
-                    'border-danger-500': errors.buildingType && form.buildingType !== type.value,
+                    'border-blue-500 bg-blue-50': form.buildingType === type.value,
+                    'border-red-500': errors.buildingType && form.buildingType !== type.value,
                     'border-gray-300': !errors.buildingType && form.buildingType !== type.value
                   }"
                 >
@@ -75,7 +75,7 @@
                     class="sr-only"
                   />
                   <div class="flex items-center">
-                    <svg class="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                     <span class="ml-2 text-sm font-medium text-gray-900">
@@ -84,25 +84,25 @@
                   </div>
                 </label>
               </div>
-              <p v-if="errors.buildingType" class="mt-1 text-sm text-danger-600">
+              <p v-if="errors.buildingType" class="mt-1 text-sm text-red-600">
                 {{ errors.buildingType }}
               </p>
             </div>
 
             <!-- Number of Floors -->
             <div>
-              <label for="floors" class="label">
-                จำนวนชั้น <span class="text-danger-500">*</span>
+              <label for="floors" class="block text-sm font-medium text-gray-700 mb-2">
+                จำนวนชั้น <span class="text-red-500">*</span>
               </label>
               <input
                 id="floors"
                 v-model="form.floors"
                 type="text"
-                class="input"
-                :class="{ 'border-danger-500': errors.floors }"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                :class="{ 'border-red-500': errors.floors }"
                 placeholder="1"
               />
-              <p v-if="errors.floors" class="mt-1 text-sm text-danger-600">
+              <p v-if="errors.floors" class="mt-1 text-sm text-red-600">
                 {{ errors.floors }}
               </p>
               <p class="mt-1 text-sm text-gray-500">
@@ -115,14 +115,14 @@
               <button
                 type="button"
                 @click="$router.back()"
-                class="btn btn-secondary"
+                class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 ยกเลิก
               </button>
               <button
                 type="submit"
                 :disabled="loading"
-                class="btn btn-primary"
+                class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span v-if="loading">กำลังสร้าง...</span>
                 <span v-else>สร้างโปรเจกต์</span>

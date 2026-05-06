@@ -13,7 +13,7 @@
         </div>
         <button
           @click="createNewProject"
-          class="btn btn-primary flex items-center gap-2"
+          class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2"
         >
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -45,7 +45,7 @@
           เริ่มต้นสร้างโปรเจกต์ใหม่เพื่อคำนวณขนาดท่อน้ำดี
         </p>
         <div class="mt-6">
-          <button @click="createNewProject" class="btn btn-primary">
+          <button @click="createNewProject" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors">
             สร้างโปรเจกต์แรกของคุณ
           </button>
         </div>
@@ -63,10 +63,10 @@
         การดำเนินการนี้ไม่สามารถย้อนกลับได้ คุณต้องการลบโปรเจกต์นี้หรือไม่?
       </p>
       <div class="mt-6 flex justify-end gap-3">
-        <button @click="showDeleteModal = false" class="btn btn-secondary">
+        <button @click="showDeleteModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
           ยกเลิก
         </button>
-        <button @click="confirmDelete" class="btn btn-danger">
+        <button @click="confirmDelete" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
           ลบโปรเจกต์
         </button>
       </div>

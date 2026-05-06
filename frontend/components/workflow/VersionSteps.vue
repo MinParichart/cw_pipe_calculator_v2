@@ -1,11 +1,23 @@
 <template>
   <div class="bg-white border-b border-slate-200 px-6 py-3">
     <div class="max-w-[1400px] mx-auto">
-      <div class="flex items-center justify-between gap-1">
+      <div class="relative flex items-center justify-between gap-1">
+        <!-- Progress Line Background -->
+        <div class="absolute top-[18px] left-9 right-9 h-0.5 bg-slate-200" style="z-index: 0;"></div>
+
+        <!-- Progress Line Fill -->
+        <div
+          class="absolute top-[18px] left-9 h-0.5 bg-green-500 transition-all duration-500"
+          style="z-index: 0;"
+          :style="{ width: getProgressWidth() }"
+        ></div>
+
+        <!-- Steps -->
         <div
           v-for="(step, index) in VERSION_STEPS"
           :key="step.id"
-          class="flex items-center flex-shrink-0"
+          class="flex items-center justify-center flex-1 relative"
+          style="z-index: 10;"
         >
           <!-- Step Circle -->
           <div class="flex flex-col items-center">
@@ -19,7 +31,7 @@
               "
               :class="{
                 'bg-green-500 text-white shadow-md hover:shadow-lg': isCompleted(step.id),
-                'bg-orange-600 text-white shadow-md ring-3 ring-orange-100 hover:shadow-lg': isCurrent(step.id),
+                'bg-blue-600 text-white shadow-md ring-3 ring-blue-100 hover:shadow-lg': isCurrent(step.id),
                 'bg-slate-200 text-slate-500 hover:bg-slate-300': !isCompleted(step.id) && !isCurrent(step.id)
               }"
               :title="`คลิกเพื่อไปยัง ${step.label}`"
@@ -34,7 +46,7 @@
                 class="text-[10px] font-medium whitespace-nowrap"
                 :class="{
                   'text-green-600': isCompleted(step.id),
-                  'text-orange-600': isCurrent(step.id),
+                  'text-blue-600': isCurrent(step.id),
                   'text-slate-500': !isCompleted(step.id) && !isCurrent(step.id)
                 }"
               >
@@ -42,16 +54,6 @@
               </p>
             </div>
           </div>
-
-          <!-- Connector Line -->
-          <div
-            v-if="index < VERSION_STEPS.length - 1"
-            class="w-8 h-0.5 mx-1 mb-6 transition-all"
-            :class="{
-              'bg-green-500': isCompleted(VERSION_STEPS[index + 1].id) || isCompleted(step.id),
-              'bg-slate-200': !isCompleted(VERSION_STEPS[index + 1].id) && !isCompleted(step.id)
-            }"
-          />
         </div>
       </div>
     </div>
@@ -92,6 +94,15 @@ const isCompleted = (stepId: VersionStep) => {
 
 const isCurrent = (stepId: VersionStep) => {
   return workflowStore.isCurrentStep(stepId)
+}
+
+// Get progress width
+const getProgressWidth = () => {
+  const totalSteps = VERSION_STEPS.length
+  const completedSteps = VERSION_STEPS.filter(step => isCompleted(step.id)).length
+
+  if (totalSteps <= 1) return '0%'
+  return `${(completedSteps / (totalSteps - 1)) * 100}%`
 }
 
 // Methods

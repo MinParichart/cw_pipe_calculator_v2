@@ -22,11 +22,11 @@
             <!-- Version Badge -->
             <div class="flex items-center gap-3">
               <div
-                class="bg-orange-100 border border-orange-200 rounded-lg px-4 py-2"
+                class="bg-blue-100 border border-blue-200 rounded-lg px-4 py-2"
               >
                 <div class="flex items-center gap-2">
                   <svg
-                    class="h-5 w-5 text-orange-600"
+                    class="h-5 w-5 text-blue-600"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -39,8 +39,8 @@
                     />
                   </svg>
                   <div>
-                    <p class="text-xs text-orange-600 font-medium">Version</p>
-                    <p class="text-lg font-bold text-orange-900">
+                    <p class="text-xs text-blue-600 font-medium">Version</p>
+                    <p class="text-lg font-bold text-blue-900">
                       {{
                         version?.name ||
                         `Version ${version?.versionNumber || "-"}`
@@ -96,7 +96,7 @@
                   class="border-2 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg"
                   :class="
                     isBlueprintSelected(bp)
-                      ? 'border-orange-500 bg-orange-50 shadow-md'
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
                       : 'border-gray-300 hover:border-blue-400'
                   "
                 >
@@ -108,7 +108,7 @@
                     />
                     <div
                       v-if="isBlueprintSelected(bp)"
-                      class="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold"
+                      class="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-bold"
                     >
                       {{ getBlueprintLayerNumber(bp) }}
                     </div>
@@ -197,7 +197,7 @@
           class="mb-6 bg-white rounded-lg shadow-sm p-8 text-center"
         >
           <div
-            class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"
           ></div>
           <p class="text-gray-600">กำลังโหลด Network...</p>
         </div>
@@ -242,6 +242,7 @@ import NetworkBuilder from "~/components/network/NetworkBuilder.vue";
 import { documentsApi, versionsApi } from "~/composables/useApi";
 import { useVersionStore } from "~/stores/versionStore";
 import { useWorkflowStore } from "~/stores/workflowStore";
+import { useToast } from "~/composables/useToast";
 
 const route = useRoute();
 const router = useRouter();

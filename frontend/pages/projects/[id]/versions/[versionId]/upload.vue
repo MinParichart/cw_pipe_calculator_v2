@@ -22,11 +22,11 @@
             <!-- Version Badge -->
             <div class="flex items-center gap-3">
               <div
-                class="bg-orange-100 border border-orange-200 rounded-lg px-4 py-2"
+                class="bg-blue-100 border border-blue-200 rounded-lg px-4 py-2"
               >
                 <div class="flex items-center gap-2">
                   <svg
-                    class="h-5 w-5 text-orange-600"
+                    class="h-5 w-5 text-blue-600"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -39,8 +39,8 @@
                     />
                   </svg>
                   <div>
-                    <p class="text-xs text-orange-600 font-medium">Version</p>
-                    <p class="text-lg font-bold text-orange-900">
+                    <p class="text-xs text-blue-600 font-medium">Version</p>
+                    <p class="text-lg font-bold text-blue-900">
                       {{
                         version?.name ||
                         `Version ${version?.versionNumber || "-"}`
@@ -96,7 +96,7 @@
                       </label>
                       <select
                         v-model="blueprintFloor"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         required
                       >
                         <option value="">เลือกชั้น...</option>
@@ -123,7 +123,7 @@
                       </label>
                       <select
                         v-model="blueprintType"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       >
                         <option value="floor_plan">
                           Floor Plan (แปลนชั้น)
@@ -206,8 +206,8 @@
                     class="border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer"
                     :class="
                       isDragging
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-300 hover:border-orange-500'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-300 hover:border-blue-500'
                     "
                     @click="$refs.fileInput?.click()"
                     @dragover.prevent="isDragging = true"
@@ -228,12 +228,12 @@
                       />
                     </svg>
                     <p class="mt-2 text-sm text-gray-600">
-                      <span class="font-medium text-orange-600"
+                      <span class="font-medium text-blue-600"
                         >คลิกเพื่ออัปโหลด</span
                       >
                       หรือลากไฟล์มาวาง
                     </p>
-                    <p class="mt-1 text-xs text-orange-600 font-medium">
+                    <p class="mt-1 text-xs text-blue-600 font-medium">
                       รองรับไฟล์รูปภาพเท่านั้น (PNG, JPG) สูงสุด 10MB
                     </p>
                     <input
@@ -317,7 +317,7 @@
                       v-model="manualNotes"
                       rows="3"
                       placeholder="ระบุรายละเอียดเพิ่มเติม เช่น ทิศทาย, จุดสำคัญ..."
-                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -326,7 +326,7 @@
                     type="button"
                     @click.prevent="saveBlueprint"
                     :disabled="!blueprintFile || !blueprintFloor || saving"
-                    class="w-full px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span v-if="saving">กำลังบันทึก...</span>
                     <span v-else>บันทึก Blueprint</span>
@@ -370,7 +370,7 @@
                   class="border rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
                   :class="
                     currentBlueprintId === bp.id
-                      ? 'border-orange-500 bg-orange-50'
+                      ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200'
                   "
                   @click="previewBlueprint(bp)"
@@ -506,7 +506,7 @@
                 </label>
                 <select
                   v-model="editingBlueprint.editFloor"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   required
                 >
                   <option value="roof">ดาดฟ้า (Roof)</option>
@@ -527,7 +527,7 @@
                 </label>
                 <select
                   v-model="editingBlueprint.editType"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 >
                   <option value="floor_plan">Floor Plan (แปลนชั้น)</option>
                   <option value="elevation">Elevation (ด้านข้าง)</option>
@@ -548,7 +548,7 @@
                   v-model="editingBlueprint.editNotes"
                   rows="3"
                   placeholder="ระบุรายละเอียดเพิ่มเติม..."
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
 
@@ -562,7 +562,7 @@
                 </button>
                 <button
                   @click="saveBlueprintEdit"
-                  class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   บันทึกการแก้ไข
                 </button>

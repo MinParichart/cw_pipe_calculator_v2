@@ -260,6 +260,17 @@
             v-if="blueprints.length > 0"
             class="flex items-center gap-1 border-l border-gray-300 pl-2 flex-shrink-0"
           >
+            <!-- Toggle Labels Button -->
+            <button
+              @click="showLabels = !showLabels"
+              class="text-xs px-2 py-1 rounded transition-colors flex items-center gap-1"
+              :class="showLabels ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'text-gray-600 hover:text-gray-700 hover:bg-gray-100'"
+              :title="showLabels ? 'ซ่อน Labels' : 'แสดง Labels'"
+            >
+              <span v-if="showLabels">🏷️ ซ่อน</span>
+              <span v-else>🏷️ แสดง</span>
+            </button>
+
             <button
               @click="clearAllNodes"
               class="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors"
@@ -641,25 +652,28 @@
                     />
                   </g>
 
-                  <text
-                    :x="getOrthogonalMidpoint(pipe).x"
-                    :y="getOrthogonalMidpoint(pipe).y - 12"
-                    class="text-[10px] fill-gray-600 font-medium"
-                    text-anchor="middle"
-                  >
-                    {{ pipe.length.toFixed(1) }}m
-                  </text>
+                  <!-- Pipe Labels (hidden by default, shown when toggle is on) -->
+                  <g v-if="showLabels">
+                    <text
+                      :x="getOrthogonalMidpoint(pipe).x"
+                      :y="getOrthogonalMidpoint(pipe).y - 12"
+                      class="text-[10px] fill-gray-600 font-medium"
+                      text-anchor="middle"
+                    >
+                      {{ pipe.length.toFixed(1) }}m
+                    </text>
 
-                  <!-- Pipe Size Label (แสดงขนาดท่อจริง) -->
-                  <text
-                    :x="getOrthogonalMidpoint(pipe).x"
-                    :y="getOrthogonalMidpoint(pipe).y + 20"
-                    class="text-[10px] fill-blue-600 font-bold"
-                    text-anchor="middle"
-                    style="text-shadow: 1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white;"
-                  >
-                    {{ formatPipeSize(pipe.nominalSize) }}
-                  </text>
+                    <!-- Pipe Size Label (แสดงขนาดท่อจริง) -->
+                    <text
+                      :x="getOrthogonalMidpoint(pipe).x"
+                      :y="getOrthogonalMidpoint(pipe).y + 20"
+                      class="text-[10px] fill-blue-600 font-bold"
+                      text-anchor="middle"
+                      style="text-shadow: 1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white;"
+                    >
+                      {{ formatPipeSize(pipe.nominalSize) }}
+                    </text>
+                  </g>
                   <!-- End Pipe Size Label -->
                 </g>
               </svg>
@@ -2111,6 +2125,7 @@ const nodes = ref<any[]>([]);
 const pipes = ref<any[]>([]);
 const selectedNodeId = ref<number | null>(null);
 const addingNodeType = useState<string | null>("addingNodeType", () => null);
+const showLabels = ref(false); // Toggle labels visibility (default: hidden)
 const selectedFloorForNewNode = useState<number>(
   "selectedFloorForNewNode",
   () => 0

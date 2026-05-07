@@ -613,8 +613,8 @@
                     "
                     :stroke-width="
                       pipe.isCriticalPath || selectedPipe?.id === pipe.id
-                        ? 3
-                        : 2
+                        ? 1.5
+                        : 1
                     "
                     stroke-dasharray="5,5"
                   />
@@ -623,7 +623,7 @@
                     :transform="`translate(${getOrthogonalMidpoint(pipe).x}, ${getOrthogonalMidpoint(pipe).y}) rotate(${getPipeAngle(pipe)})`"
                   >
                     <polygon
-                      points="-6,-5 8,0 -6,5"
+                      points="-3,-2.5 4,0 -3,2.5"
                       :fill="
                         pipe.isCriticalPath
                           ? '#F59E0B'
@@ -637,7 +637,7 @@
                   <text
                     :x="getOrthogonalMidpoint(pipe).x"
                     :y="getOrthogonalMidpoint(pipe).y - 12"
-                    class="text-xs fill-gray-600 font-medium"
+                    class="text-[10px] fill-gray-600 font-medium"
                     text-anchor="middle"
                   >
                     {{ pipe.length.toFixed(1) }}m
@@ -647,7 +647,7 @@
                   <text
                     :x="getOrthogonalMidpoint(pipe).x"
                     :y="getOrthogonalMidpoint(pipe).y + 20"
-                    class="text-xs fill-blue-600 font-bold"
+                    class="text-[10px] fill-blue-600 font-bold"
                     text-anchor="middle"
                     style="text-shadow: 1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white;"
                   >
@@ -729,12 +729,12 @@
                 :data-node-type="node.type"
               >
                 <div
-                  class="flex items-center justify-center w-4 h-4 rounded-full border-2 shadow-sm"
+                  class="flex items-center justify-center w-3 h-3 rounded-full border-2 shadow-sm"
                   :class="getNodeClass(node)"
                 >
                   <span
                     v-html="getNodeIcon(node.type)"
-                    class="text-white text-sm"
+                    class="text-white text-[10px]"
                   ></span>
                 </div>
                 <div
@@ -3158,9 +3158,9 @@ const handleCanvasClick = async (event: MouseEvent, floorIndex: number = 0) => {
   if (!canvasEl) return;
 
   const rect = canvasEl.getBoundingClientRect();
-  // Store actual screen coordinates (Zoom Wrapper handles scaling)
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
+  // Convert screen coordinates to canvas coordinates (account for zoom)
+  const x = (event.clientX - rect.left) / zoom.value;
+  const y = (event.clientY - rect.top) / zoom.value;
 
   if (addingNodeType.value) {
     // Add new node with floor property
@@ -3192,10 +3192,10 @@ const handleCanvasMouseMove = (event: MouseEvent, floorIndex: number = 0) => {
   if (!canvasEl) return;
 
   const rect = canvasEl.getBoundingClientRect();
-  // Store actual screen coordinates (Zoom Wrapper handles scaling)
+  // Convert screen coordinates to canvas coordinates (account for zoom)
   mousePosition.value = {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top
+    x: (event.clientX - rect.left) / zoom.value,
+    y: (event.clientY - rect.top) / zoom.value
   };
 
   // NOTE: Node dragging is now handled by window-level events in startDragNode

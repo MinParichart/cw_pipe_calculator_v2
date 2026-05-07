@@ -58,7 +58,7 @@
     <div class="flex-1 min-w-0 flex flex-col">
       <!-- Toolbar -->
       <div
-        class="bg-gray-50 border-b px-4 py-2 flex items-center gap-4 flex-wrap flex-shrink-0"
+        class="bg-gray-50 border-b px-4 py-2 flex items-center gap-2 flex-shrink-0 overflow-x-auto"
       >
         <div class="text-sm font-medium text-gray-700">เพิ่ม:</div>
         <button
@@ -76,21 +76,6 @@
           <span v-html="nodeType.icon"></span>
           <span>{{ nodeType.label }}</span>
         </button>
-
-        <!-- Floor Selector (only show in 2-floor mode and when adding node) -->
-        <div
-          v-if="blueprints.length === 2 && addingNodeType"
-          class="flex items-center gap-2 border-l border-gray-300 pl-4"
-        >
-          <span class="text-sm text-gray-600">ชั้น:</span>
-          <select
-            v-model="selectedFloorForNewNode"
-            class="px-2 py-1 text-sm border border-gray-300 rounded-md bg-white"
-          >
-            <option :value="0">{{ blueprints[0].floorText }}</option>
-            <option :value="1">{{ blueprints[1].floorText }}</option>
-          </select>
-        </div>
 
         <div class="border-l border-gray-300 h-6 mx-2"></div>
 
@@ -169,15 +154,8 @@
                 <span>สลับ</span>
               </button>
 
-              <select
-                v-model="selectedCalibrationFloor"
-                class="px-2 py-1.5 text-sm border border-gray-300 rounded-md bg-white"
-              >
-                <option :value="0">{{ blueprints[0].floorText }}</option>
-                <option :value="1">{{ blueprints[1].floorText }}</option>
-              </select>
               <button
-                @click="startCalibration(selectedCalibrationFloor)"
+                @click="startCalibration(0)"
                 class="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors"
               >
                 <svg
@@ -276,6 +254,31 @@
               รีเซ็ต
             </button>
           </div>
+
+          <!-- Clear All Buttons (separate div to prevent layout shift) -->
+          <div
+            v-if="blueprints.length > 0"
+            class="flex items-center gap-1 border-l border-gray-300 pl-2 flex-shrink-0"
+          >
+            <button
+              @click="clearAllNodes"
+              class="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+              :disabled="nodes.length === 0"
+              :class="{ 'opacity-30 cursor-not-allowed': nodes.length === 0 }"
+              title="ลบ Node ทั้งหมด"
+            >
+              🗑️ Nodes
+            </button>
+            <button
+              @click="clearAllPipes"
+              class="text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50 px-2 py-1 rounded transition-colors"
+              :disabled="pipes.length === 0"
+              :class="{ 'opacity-30 cursor-not-allowed': pipes.length === 0 }"
+              title="ลบท่อทั้งหมด"
+            >
+              🔧 Pipes
+            </button>
+          </div>
         </div>
 
         <button
@@ -302,9 +305,6 @@
         <div
           ref="canvasContainerRef"
           class="flex-1 bg-gray-100 relative h-full w-full"
-          :class="{
-            flex: blueprints.length === 2
-          }"
         >
           <!-- Zoom Wrapper - หุ้ม Blueprint, Pipes, Nodes ทั้งหมด -->
           <div
@@ -3996,6 +3996,70 @@ const clearBlueprints = () => {
   toast.success("ลบแบบทั้งหมดเรียบร้อย");
 };
 
+// Clear all nodes
+const clearAllNodes = () => {
+  if (nodes.value.length === 0) {
+    toast.info("ไม่มี Node ให้ลบ");
+    return;
+  }
+
+  const nodeCount = nodes.value.length;
+  const pipeCount = pipes.value.length;
+
+  if (!confirm(`ลบ Node ทั้งหมด (${nodeCount} nodes)?\nเส้นท่อที่เชื่อมต่อจะหายไปด้วย`)) {
+    return;
+  }
+
+  try {
+    nodes.value = [];
+    pipes.value = [];
+    selectedNode.value = null;
+    selectedPipe.value = null;
+    selectedNodeId.value = null;
+    drawingPipeFrom.value = null;
+
+    emit('networkChange', {
+      ...currentNetwork.value,
+      nodes: [],
+      pipes: []
+    });
+
+    toast.success(`ลบ ${nodeCount} Nodes, ${pipeCount} Pipes`);
+  } catch (error: any) {
+    toast.error("ไม่สามารถลบได้");
+  }
+};
+
+// Clear all pipes
+const clearAllPipes = () => {
+  if (pipes.value.length === 0) {
+    toast.info("ไม่มีเส้นท่อให้ลบ");
+    return;
+  }
+
+  const pipeCount = pipes.value.length;
+
+  if (!confirm(`ลบเส้นท่อทั้งหมด (${pipeCount} เส้น)?`)) {
+    return;
+  }
+
+  try {
+    pipes.value = [];
+    selectedPipe.value = null;
+    drawingPipeFrom.value = null;
+
+    emit('networkChange', {
+      ...currentNetwork.value,
+      nodes: [...nodes.value],
+      pipes: []
+    });
+
+    toast.success(`ลบ ${pipeCount} เส้นท่อ`);
+  } catch (error: any) {
+    toast.error("ไม่สามารถลบได้");
+  }
+};
+
 // Swap floor positions
 const swapFloors = () => {
   if (blueprints.value.length !== 2) return;
@@ -4055,7 +4119,7 @@ const handleCanvasClickForCalibration = (
   event: MouseEvent,
   floorIndex: number = 0
 ) => {
-  if (!calibrating.value || calibratingFloor.value !== floorIndex) return;
+  if (!calibrating.value) return;
 
   const canvasEl = canvasRef.value;
   if (!canvasEl) return;

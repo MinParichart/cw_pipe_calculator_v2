@@ -143,3 +143,117 @@ Error: listen EADDRINUSE: address already in use :::3004
   port: 3004
 }
 [31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\41.IS-Thesis\cw_pipe_calculator_v2\backend\node_modules\express\lib\application.js:635:24)
+    at Object.<anonymous> (D:\41.IS-Thesis\cw_pipe_calculator_v2\backend\src\server.ts:63:5)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Module.m._compile (D:\41.IS-Thesis\cw_pipe_calculator_v2\backend\node_modules\ts-node\src\index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1839:10
+    at Object.require.extensions.<computed> [as .ts] (D:\41.IS-Thesis\cw_pipe_calculator_v2\backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1441:32) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3004
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/server.ts`[39m
+🚀 Server running on http://localhost:3004
+📚 API Documentation: http://localhost:3004/api
+🔧 Environment: development
+prisma:query SELECT `main`.`projects`.`id`, `main`.`projects`.`name`, `main`.`projects`.`description`, `main`.`projects`.`type`, `main`.`projects`.`status`, `main`.`projects`.`ownerId`, `main`.`projects`.`createdAt`, `main`.`projects`.`updatedAt` FROM `main`.`projects` WHERE (`main`.`projects`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`design_criteria`.`id`, `main`.`design_criteria`.`projectId`, `main`.`design_criteria`.`velocityMin`, `main`.`design_criteria`.`velocityRecommended`, `main`.`design_criteria`.`velocityMax`, `main`.`design_criteria`.`velocityWarning`, `main`.`design_criteria`.`pressureMin`, `main`.`design_criteria`.`pressureWarning`, `main`.`design_criteria`.`cFactor`, `main`.`design_criteria`.`pvcClass`, `main`.`design_criteria`.`systemType`, `main`.`design_criteria`.`demandMode`, `main`.`design_criteria`.`buildingType`, `main`.`design_criteria`.`floors`, `main`.`design_criteria`.`minorLossFactor`, `main`.`design_criteria`.`blueprintUrl`, `main`.`design_criteria`.`blueprintScale`, `main`.`design_criteria`.`staticHead`, `main`.`design_criteria`.`residualPressure`, `main`.`design_criteria`.`createdAt`, `main`.`design_criteria`.`updatedAt` FROM `main`.`design_criteria` WHERE `main`.`design_criteria`.`projectId` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`networks`.`id`, `main`.`networks`.`projectId`, `main`.`networks`.`name`, `main`.`networks`.`versionId`, `main`.`networks`.`isCurrent`, `main`.`networks`.`createdAt`, `main`.`networks`.`updatedAt` FROM `main`.`networks` WHERE (`main`.`networks`.`isCurrent` = ? AND `main`.`networks`.`projectId` IN (?)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`versions`.`id`, `main`.`versions`.`projectId`, `main`.`versions`.`name`, `main`.`versions`.`description`, `main`.`versions`.`versionNumber`, `main`.`versions`.`isCurrent`, `main`.`versions`.`createdAt`, `main`.`versions`.`updatedAt`, `main`.`versions`.`createdBy`, `main`.`versions`.`snapshotCriteria`, `main`.`versions`.`snapshotNetwork`, `main`.`versions`.`snapshotFixtures`, `main`.`versions`.`snapshotResults`, `main`.`versions`.`referenceLayer` FROM `main`.`versions` WHERE `main`.`versions`.`projectId` IN (?) ORDER BY `main`.`versions`.`versionNumber` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`versions`.`id`, `main`.`versions`.`projectId`, `main`.`versions`.`name`, `main`.`versions`.`description`, `main`.`versions`.`versionNumber`, `main`.`versions`.`isCurrent`, `main`.`versions`.`createdAt`, `main`.`versions`.`updatedAt`, `main`.`versions`.`createdBy`, `main`.`versions`.`snapshotCriteria`, `main`.`versions`.`snapshotNetwork`, `main`.`versions`.`snapshotFixtures`, `main`.`versions`.`snapshotResults`, `main`.`versions`.`referenceLayer` FROM `main`.`versions` WHERE (`main`.`versions`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`projects`.`id`, `main`.`projects`.`name`, `main`.`projects`.`description`, `main`.`projects`.`type`, `main`.`projects`.`status`, `main`.`projects`.`ownerId`, `main`.`projects`.`createdAt`, `main`.`projects`.`updatedAt` FROM `main`.`projects` WHERE `main`.`projects`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`projects`.`id`, `main`.`projects`.`name`, `main`.`projects`.`description`, `main`.`projects`.`type`, `main`.`projects`.`status`, `main`.`projects`.`ownerId`, `main`.`projects`.`createdAt`, `main`.`projects`.`updatedAt` FROM `main`.`projects` WHERE (`main`.`projects`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`design_criteria`.`id`, `main`.`design_criteria`.`projectId`, `main`.`design_criteria`.`velocityMin`, `main`.`design_criteria`.`velocityRecommended`, `main`.`design_criteria`.`velocityMax`, `main`.`design_criteria`.`velocityWarning`, `main`.`design_criteria`.`pressureMin`, `main`.`design_criteria`.`pressureWarning`, `main`.`design_criteria`.`cFactor`, `main`.`design_criteria`.`pvcClass`, `main`.`design_criteria`.`systemType`, `main`.`design_criteria`.`demandMode`, `main`.`design_criteria`.`buildingType`, `main`.`design_criteria`.`floors`, `main`.`design_criteria`.`minorLossFactor`, `main`.`design_criteria`.`blueprintUrl`, `main`.`design_criteria`.`blueprintScale`, `main`.`design_criteria`.`staticHead`, `main`.`design_criteria`.`residualPressure`, `main`.`design_criteria`.`createdAt`, `main`.`design_criteria`.`updatedAt` FROM `main`.`design_criteria` WHERE `main`.`design_criteria`.`projectId` IN (?) LIMIT ? OFFSET ?
+📝 [VersionService] updateVersion called
+📝 [VersionService] versionId: 10
+📝 [VersionService] data keys: [
+  'name',
+  'description',
+  'snapshotNetwork',
+  'snapshotFixtures',
+  'snapshotResults',
+  'referenceLayer'
+]
+📝 [VersionService] has snapshotFixtures: false
+📝 [VersionService] has snapshotNetwork: false
+📝 [VersionService] has snapshotResults: true
+prisma:query SELECT `main`.`versions`.`id`, `main`.`versions`.`projectId`, `main`.`versions`.`name`, `main`.`versions`.`description`, `main`.`versions`.`versionNumber`, `main`.`versions`.`isCurrent`, `main`.`versions`.`createdAt`, `main`.`versions`.`updatedAt`, `main`.`versions`.`createdBy`, `main`.`versions`.`snapshotCriteria`, `main`.`versions`.`snapshotNetwork`, `main`.`versions`.`snapshotFixtures`, `main`.`versions`.`snapshotResults`, `main`.`versions`.`referenceLayer` FROM `main`.`versions` WHERE (`main`.`versions`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`projects`.`id`, `main`.`projects`.`name`, `main`.`projects`.`description`, `main`.`projects`.`type`, `main`.`projects`.`status`, `main`.`projects`.`ownerId`, `main`.`projects`.`createdAt`, `main`.`projects`.`updatedAt` FROM `main`.`projects` WHERE `main`.`projects`.`id` IN (?) LIMIT ? OFFSET ?
+📝 [VersionService] checkForChanges called with: {
+  dataKeys: [
+    'name',
+    'description',
+    'snapshotNetwork',
+    'snapshotFixtures',
+    'snapshotResults',
+    'referenceLayer'
+  ],
+  hasName: false,
+  hasDesc: false,
+  hasNetwork: false,
+  hasFixtures: false,
+  hasResults: true,
+  hasRef: false
+}
+📝 [VersionService] Results content changed
+prisma:query UPDATE `main`.`versions` SET `snapshotResults` = ?, `updatedAt` = ? WHERE (`main`.`versions`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `projectId` AS `projectId`, `name` AS `name`, `description` AS `description`, `versionNumber` AS `versionNumber`, `isCurrent` AS `isCurrent`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`, `createdBy` AS `createdBy`, `snapshotCriteria` AS `snapshotCriteria`, `snapshotNetwork` AS `snapshotNetwork`, `snapshotFixtures` AS `snapshotFixtures`, `snapshotResults` AS `snapshotResults`, `referenceLayer` AS `referenceLayer`
+prisma:query INSERT INTO `main`.`audit_logs` (`projectId`, `versionId`, `userId`, `action`, `entity`, `entityId`, `details`, `createdAt`) VALUES (?,?,?,?,?,?,?,?) RETURNING `id` AS `id`, `projectId` AS `projectId`, `versionId` AS `versionId`, `userId` AS `userId`, `action` AS `action`, `entity` AS `entity`, `entityId` AS `entityId`, `details` AS `details`, `ipAddress` AS `ipAddress`, `userAgent` AS `userAgent`, `createdAt` AS `createdAt`
+📝 [VersionService] updateVersion called
+📝 [VersionService] versionId: 10
+📝 [VersionService] data keys: [
+  'name',
+  'description',
+  'snapshotNetwork',
+  'snapshotFixtures',
+  'snapshotResults',
+  'referenceLayer'
+]
+📝 [VersionService] has snapshotFixtures: false
+📝 [VersionService] has snapshotNetwork: false
+📝 [VersionService] has snapshotResults: true
+prisma:query SELECT `main`.`versions`.`id`, `main`.`versions`.`projectId`, `main`.`versions`.`name`, `main`.`versions`.`description`, `main`.`versions`.`versionNumber`, `main`.`versions`.`isCurrent`, `main`.`versions`.`createdAt`, `main`.`versions`.`updatedAt`, `main`.`versions`.`createdBy`, `main`.`versions`.`snapshotCriteria`, `main`.`versions`.`snapshotNetwork`, `main`.`versions`.`snapshotFixtures`, `main`.`versions`.`snapshotResults`, `main`.`versions`.`referenceLayer` FROM `main`.`versions` WHERE (`main`.`versions`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`projects`.`id`, `main`.`projects`.`name`, `main`.`projects`.`description`, `main`.`projects`.`type`, `main`.`projects`.`status`, `main`.`projects`.`ownerId`, `main`.`projects`.`createdAt`, `main`.`projects`.`updatedAt` FROM `main`.`projects` WHERE `main`.`projects`.`id` IN (?) LIMIT ? OFFSET ?
+📝 [VersionService] checkForChanges called with: {
+  dataKeys: [
+    'name',
+    'description',
+    'snapshotNetwork',
+    'snapshotFixtures',
+    'snapshotResults',
+    'referenceLayer'
+  ],
+  hasName: false,
+  hasDesc: false,
+  hasNetwork: false,
+  hasFixtures: false,
+  hasResults: true,
+  hasRef: false
+}
+📝 [VersionService] Results content changed
+prisma:query UPDATE `main`.`versions` SET `snapshotResults` = ?, `updatedAt` = ? WHERE (`main`.`versions`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `projectId` AS `projectId`, `name` AS `name`, `description` AS `description`, `versionNumber` AS `versionNumber`, `isCurrent` AS `isCurrent`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`, `createdBy` AS `createdBy`, `snapshotCriteria` AS `snapshotCriteria`, `snapshotNetwork` AS `snapshotNetwork`, `snapshotFixtures` AS `snapshotFixtures`, `snapshotResults` AS `snapshotResults`, `referenceLayer` AS `referenceLayer`
+prisma:query INSERT INTO `main`.`audit_logs` (`projectId`, `versionId`, `userId`, `action`, `entity`, `entityId`, `details`, `createdAt`) VALUES (?,?,?,?,?,?,?,?) RETURNING `id` AS `id`, `projectId` AS `projectId`, `versionId` AS `versionId`, `userId` AS `userId`, `action` AS `action`, `entity` AS `entity`, `entityId` AS `entityId`, `details` AS `details`, `ipAddress` AS `ipAddress`, `userAgent` AS `userAgent`, `createdAt` AS `createdAt`
+prisma:query SELECT `main`.`projects`.`id`, `main`.`projects`.`name`, `main`.`projects`.`description`, `main`.`projects`.`type`, `main`.`projects`.`status`, `main`.`projects`.`ownerId`, `main`.`projects`.`createdAt`, `main`.`projects`.`updatedAt` FROM `main`.`projects` WHERE (`main`.`projects`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`design_criteria`.`id`, `main`.`design_criteria`.`projectId`, `main`.`design_criteria`.`velocityMin`, `main`.`design_criteria`.`velocityRecommended`, `main`.`design_criteria`.`velocityMax`, `main`.`design_criteria`.`velocityWarning`, `main`.`design_criteria`.`pressureMin`, `main`.`design_criteria`.`pressureWarning`, `main`.`design_criteria`.`cFactor`, `main`.`design_criteria`.`pvcClass`, `main`.`design_criteria`.`systemType`, `main`.`design_criteria`.`demandMode`, `main`.`design_criteria`.`buildingType`, `main`.`design_criteria`.`floors`, `main`.`design_criteria`.`minorLossFactor`, `main`.`design_criteria`.`blueprintUrl`, `main`.`design_criteria`.`blueprintScale`, `main`.`design_criteria`.`staticHead`, `main`.`design_criteria`.`residualPressure`, `main`.`design_criteria`.`createdAt`, `main`.`design_criteria`.`updatedAt` FROM `main`.`design_criteria` WHERE `main`.`design_criteria`.`projectId` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`networks`.`id`, `main`.`networks`.`projectId`, `main`.`networks`.`name`, `main`.`networks`.`versionId`, `main`.`networks`.`isCurrent`, `main`.`networks`.`createdAt`, `main`.`networks`.`updatedAt` FROM `main`.`networks` WHERE (`main`.`networks`.`isCurrent` = ? AND `main`.`networks`.`projectId` IN (?)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`versions`.`id`, `main`.`versions`.`projectId`, `main`.`versions`.`name`, `main`.`versions`.`description`, `main`.`versions`.`versionNumber`, `main`.`versions`.`isCurrent`, `main`.`versions`.`createdAt`, `main`.`versions`.`updatedAt`, `main`.`versions`.`createdBy`, `main`.`versions`.`snapshotCriteria`, `main`.`versions`.`snapshotNetwork`, `main`.`versions`.`snapshotFixtures`, `main`.`versions`.`snapshotResults`, `main`.`versions`.`referenceLayer` FROM `main`.`versions` WHERE `main`.`versions`.`projectId` IN (?) ORDER BY `main`.`versions`.`versionNumber` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`versions`.`id`, `main`.`versions`.`projectId`, `main`.`versions`.`name`, `main`.`versions`.`description`, `main`.`versions`.`versionNumber`, `main`.`versions`.`isCurrent`, `main`.`versions`.`createdAt`, `main`.`versions`.`updatedAt`, `main`.`versions`.`createdBy`, `main`.`versions`.`snapshotCriteria`, `main`.`versions`.`snapshotNetwork`, `main`.`versions`.`snapshotFixtures`, `main`.`versions`.`snapshotResults`, `main`.`versions`.`referenceLayer` FROM `main`.`versions` WHERE (`main`.`versions`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`projects`.`id`, `main`.`projects`.`name`, `main`.`projects`.`description`, `main`.`projects`.`type`, `main`.`projects`.`status`, `main`.`projects`.`ownerId`, `main`.`projects`.`createdAt`, `main`.`projects`.`updatedAt` FROM `main`.`projects` WHERE `main`.`projects`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`versions`.`id`, `main`.`versions`.`projectId`, `main`.`versions`.`name`, `main`.`versions`.`description`, `main`.`versions`.`versionNumber`, `main`.`versions`.`isCurrent`, `main`.`versions`.`createdAt`, `main`.`versions`.`updatedAt`, `main`.`versions`.`createdBy`, `main`.`versions`.`snapshotCriteria`, `main`.`versions`.`snapshotNetwork`, `main`.`versions`.`snapshotFixtures`, `main`.`versions`.`snapshotResults`, `main`.`versions`.`referenceLayer` FROM `main`.`versions` WHERE (`main`.`versions`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`projects`.`id`, `main`.`projects`.`name`, `main`.`projects`.`description`, `main`.`projects`.`type`, `main`.`projects`.`status`, `main`.`projects`.`ownerId`, `main`.`projects`.`createdAt`, `main`.`projects`.`updatedAt` FROM `main`.`projects` WHERE `main`.`projects`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`audit_logs`.`id`, `main`.`audit_logs`.`projectId`, `main`.`audit_logs`.`versionId`, `main`.`audit_logs`.`userId`, `main`.`audit_logs`.`action`, `main`.`audit_logs`.`entity`, `main`.`audit_logs`.`entityId`, `main`.`audit_logs`.`details`, `main`.`audit_logs`.`ipAddress`, `main`.`audit_logs`.`userAgent`, `main`.`audit_logs`.`createdAt` FROM `main`.`audit_logs` WHERE (`main`.`audit_logs`.`projectId` = ? AND `main`.`audit_logs`.`versionId` = ?) ORDER BY `main`.`audit_logs`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`users`.`id`, `main`.`users`.`email`, `main`.`users`.`name` FROM `main`.`users` WHERE `main`.`users`.`id` IN (?) LIMIT ? OFFSET ?
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m

@@ -239,6 +239,15 @@ import NextStepButton from "~/components/navigation/NextStepButton.vue";
 import { versionsApi } from "~/composables/useApi";
 import { useWorkflowStore } from "~/stores/workflowStore";
 
+// Debounce utility function
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  return ((...args: any[]) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  }) as T;
+}
+
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
@@ -345,8 +354,8 @@ const onSummaryChange = (summary: any) => {
 
   console.log("[Calculation] Pipe sizes summary received:", summary);
 
-  // Save to version.snapshotResults
-  saveCalculationSnapshot(summary);
+  // Save to version.snapshotResults (debounced - รอ 1 วินาที)
+  debouncedSaveCalculationSnapshot(summary);
 };
 
 const saveCalculationSnapshot = async (results: any) => {
@@ -366,6 +375,9 @@ const saveCalculationSnapshot = async (results: any) => {
     console.error('Failed to save calculation snapshot:', error);
   }
 };
+
+// Debounced version - รอ 1000ms ก่อน save เพื่อป้องกันการ save ซ้ำ
+const debouncedSaveCalculationSnapshot = debounce(saveCalculationSnapshot, 1000);
 
 const onSizingChange = () => {
   workflowStore.markStepComplete("calculation");

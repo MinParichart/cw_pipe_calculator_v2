@@ -140,7 +140,7 @@
                 calibrating && calibratingFloor === 0
                   ? "กำลังสอบเทียบ..."
                   : scale && scale !== 50
-                    ? `${scale} px/m`
+                    ? `${scale.toFixed(2)} px/m`
                     : "สอบเทียบสเกล"
               }}</span>
             </button>
@@ -197,7 +197,7 @@
                   calibrating
                     ? "กำลังสอบเทียบ..."
                     : scale
-                      ? `${scale} px/m`
+                      ? `${scale.toFixed(2)} px/m`
                       : "สอบเทียบสเกล"
                 }}</span>
               </button>
@@ -308,7 +308,8 @@
         >
           <!-- Zoom Wrapper - หุ้ม Blueprint, Pipes, Nodes ทั้งหมด -->
           <div
-            class="absolute inset-0 origin-top-left"
+            class="absolute origin-top-left"
+            style="width: 100%; height: 100%;"
             :style="{
               transform: `scale(${zoom})`,
               transformOrigin: 'top left'
@@ -776,8 +777,22 @@
                 class="absolute bottom-2 left-2 text-xs text-gray-500 bg-white px-2 py-1 rounded"
                 style="pointer-events: none"
               >
-                Scale: {{ scale }} pixels/m
+                Scale: {{ scale.toFixed(2) }} pixels/m
               </div>
+
+              <!-- Invisible placeholder to prevent canvas shift on first node placement -->
+              <div
+                v-if="nodes.length === 0"
+                style="
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  width: 1px;
+                  height: 1px;
+                  opacity: 0;
+                  pointer-events: none;
+                "
+              ></div>
             </div>
           </div>
           <!-- End Zoom Wrapper -->
@@ -1246,10 +1261,7 @@
           <!-- Network Diagram Tab -->
           <div v-show="activeTab === 'network'" class="space-y-4">
             <!-- Network info -->
-            <div
-              v-if="nodes.length > 0 || pipes.length > 0"
-              class="grid grid-cols-2 md:grid-cols-4 gap-3"
-            >
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <div class="text-2xl font-bold text-gray-900">
                   {{ nodes.length }}
@@ -4083,7 +4095,7 @@ const applyCalibration = () => {
   calibratingFloor.value = 0;
   calibrationStep.value = 0;
   calibrationPoints.value = [];
-  toast.success(`สอบเทียบสเกลเรียบร้อย: ${Math.round(scale.value)} px/m`);
+  toast.success(`สอบเทียบสเกลเรียบร้อย: ${scale.value.toFixed(2)} px/m`);
 };
 
 // Fixture modal methods
@@ -5061,21 +5073,15 @@ watch(
   { immediate: false } // Don't trigger on mount, we handle it in onMounted
 );
 
-// Watch for networkData changes (v2 snapshot mode)
-watch(
-  () => props.networkData,
-  (newNetworkData) => {
-    if (newNetworkData && props.versionId) {
-      console.log("NetworkBuilder: networkData changed (v2 mode)", {
-        nodes: newNetworkData.nodes?.length || 0,
-        pipes: newNetworkData.pipes?.length || 0
-      });
-      nodes.value = newNetworkData.nodes || [];
-      pipes.value = newNetworkData.pipes || [];
-    }
-  },
-  { deep: true, immediate: false } // Don't trigger on mount, we handle it in onMounted
-);
+// ❌ DISABLE: Watch for networkData changes (causes re-render loop)
+// NetworkBuilder now uses local state only - parent props are just for initialization
+// watch(
+//   () => props.networkData,
+//   (newNetworkData, oldNetworkData) => {
+//     // Disabled to prevent canvas shift on first node placement
+//   },
+//   { deep: false, immediate: false }
+// );
 
 // Watch nodes for debugging
 watch(

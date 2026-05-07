@@ -303,7 +303,19 @@ const loadNetworkFromVersion = () => {
   loadingNetwork.value = true;
   try {
     if (version.value?.snapshotNetwork) {
-      networkData.value = JSON.parse(version.value.snapshotNetwork);
+      const parsed = JSON.parse(version.value.snapshotNetwork);
+
+      // ✅ FIX: ถ้าไม่มี nodes หรือ nodes เป็น null/undefined ให้เซ็ตเป็น empty array
+      if (!parsed.nodes || parsed.nodes.length === 0) {
+        parsed.nodes = [];
+        console.log("✅ Fixed empty nodes array");
+      }
+      if (!parsed.pipes || parsed.pipes.length === 0) {
+        parsed.pipes = [];
+        console.log("✅ Fixed empty pipes array");
+      }
+
+      networkData.value = parsed;
       console.log("✅ Network loaded from snapshot:", {
         nodes: networkData.value?.nodes?.length || 0,
         pipes: networkData.value?.pipes?.length || 0

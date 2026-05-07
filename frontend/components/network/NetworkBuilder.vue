@@ -278,6 +278,13 @@
             >
               🔧 Pipes
             </button>
+            <button
+              @click="resetNetwork"
+              class="text-xs text-gray-600 hover:text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
+              title="รีเซ็ต Network (ลบทั้งหมด)"
+            >
+              🔄 Reset
+            </button>
           </div>
         </div>
 
@@ -2076,8 +2083,10 @@ import {
   networksApi,
   nodesApi,
   pipesApi,
-  projectsApi
+  projectsApi,
+  versionsApi
 } from "~/composables/useApi";
+import { useVersionStore } from "~/stores/versionStore";
 
 const props = defineProps<{
   projectId: number;
@@ -3997,7 +4006,7 @@ const clearBlueprints = () => {
 };
 
 // Clear all nodes
-const clearAllNodes = () => {
+const clearAllNodes = async () => {
   if (nodes.value.length === 0) {
     toast.info("ไม่มี Node ให้ลบ");
     return;
@@ -4018,20 +4027,30 @@ const clearAllNodes = () => {
     selectedNodeId.value = null;
     drawingPipeFrom.value = null;
 
+    // ✅ Save to database IMMEDIATELY (not just emit)
+    if (props.versionId) {
+      const versionStore = useVersionStore();
+      await versionStore.updateVersion(props.versionId, {
+        snapshotNetwork: JSON.stringify({ nodes: [], pipes: [] })
+      });
+      console.log("✅ Saved empty network to database");
+    }
+
     emit('networkChange', {
       ...currentNetwork.value,
       nodes: [],
       pipes: []
     });
 
-    toast.success(`ลบ ${nodeCount} Nodes, ${pipeCount} Pipes`);
+    toast.success(`ลบ ${nodeCount} Nodes, ${pipeCount} Pipes (บันทึกลง database แล้ว)`);
   } catch (error: any) {
+    console.error("Failed to clear nodes:", error);
     toast.error("ไม่สามารถลบได้");
   }
 };
 
 // Clear all pipes
-const clearAllPipes = () => {
+const clearAllPipes = async () => {
   if (pipes.value.length === 0) {
     toast.info("ไม่มีเส้นท่อให้ลบ");
     return;
@@ -4048,15 +4067,71 @@ const clearAllPipes = () => {
     selectedPipe.value = null;
     drawingPipeFrom.value = null;
 
+    // ✅ Save to database IMMEDIATELY
+    if (props.versionId) {
+      const versionStore = useVersionStore();
+      await versionStore.updateVersion(props.versionId, {
+        snapshotNetwork: JSON.stringify({ nodes: [...nodes.value], pipes: [] })
+      });
+      console.log("✅ Saved network (no pipes) to database");
+    }
+
     emit('networkChange', {
       ...currentNetwork.value,
       nodes: [...nodes.value],
       pipes: []
     });
 
-    toast.success(`ลบ ${pipeCount} เส้นท่อ`);
+    toast.success(`ลบ ${pipeCount} เส้นท่อ (บันทึกลง database แล้ว)`);
   } catch (error: any) {
+    console.error("Failed to clear pipes:", error);
     toast.error("ไม่สามารถลบได้");
+  }
+};
+
+// Reset network (clear everything and save to database)
+const resetNetwork = async () => {
+  const nodeCount = nodes.value.length;
+  const pipeCount = pipes.value.length;
+
+  if (nodeCount === 0 && pipeCount === 0) {
+    toast.info("Network ว่างเปล่าอยู่แล้ว");
+    return;
+  }
+
+  if (!confirm(`รีเซ็ต Network?\n\nจะลบ Node ทั้งหมด ${nodeCount} nodes และท่อทั้งหมด ${pipeCount} pipes\n\nข้อมูลจะถูกบันทึกลง database ทันที`)) {
+    return;
+  }
+
+  try {
+    // Clear all data
+    nodes.value = [];
+    pipes.value = [];
+    selectedNode.value = null;
+    selectedPipe.value = null;
+    selectedNodeId.value = null;
+    drawingPipeFrom.value = null;
+
+    // ✅ Save to database IMMEDIATELY via API
+    if (props.versionId) {
+      const versionStore = useVersionStore();
+      await versionStore.updateVersion(props.versionId, {
+        snapshotNetwork: JSON.stringify({ nodes: [], pipes: [] })
+      });
+      console.log("✅ Saved empty network to database");
+    }
+
+    // Also emit event for parent
+    emit('networkChange', {
+      nodes: [],
+      pipes: []
+    });
+
+    toast.success("รีเซ็ต Network เรียบร้อย (บันทึกลง database แล้ว)");
+    console.log("✅ Network reset and saved to database");
+  } catch (error: any) {
+    console.error("Failed to reset network:", error);
+    toast.error("ไม่สามารถรีเซ็ต Network ได้");
   }
 };
 

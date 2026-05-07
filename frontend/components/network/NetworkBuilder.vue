@@ -327,8 +327,9 @@
           <!-- Zoom Wrapper - หุ้ม Blueprint, Pipes, Nodes ทั้งหมด -->
           <div
             class="absolute origin-top-left"
-            style="width: 100%; height: 100%;"
             :style="{
+              width: zoomWrapperWidth,
+              height: zoomWrapperHeight,
               transform: `scale(${zoom})`,
               transformOrigin: 'top left'
             }"
@@ -2140,6 +2141,9 @@ const blueprintInputRef = ref<HTMLInputElement>();
 const showBlueprintUpload = ref(false);
 const blueprints = ref<any[]>(props.blueprints || []);
 const zoom = ref(1);
+// Freeze dimensions state - ล็อกขนาด Canvas เพื่อป้องกัน Scrollbar บีบ Canvas
+const zoomWrapperWidth = ref('100%');
+const zoomWrapperHeight = ref('100%');
 const scale = ref(props.scale || 50); // pixels per meter
 
 // Watch for blueprints prop changes
@@ -2150,6 +2154,21 @@ watch(
   },
   { deep: true }
 );
+
+// ล็อกขนาดหน้าจอเมื่อมีการซูม เพื่อป้องกัน Scrollbar บีบ Canvas
+watch(zoom, (newZoom, oldZoom) => {
+  if (newZoom !== 1 && oldZoom === 1 && canvasContainerRef.value) {
+    const rect = canvasContainerRef.value.getBoundingClientRect();
+    zoomWrapperWidth.value = `${rect.width}px`;
+    zoomWrapperHeight.value = `${rect.height}px`;
+    console.log('🔒 Canvas dimensions frozen at:', { width: zoomWrapperWidth.value, height: zoomWrapperHeight.value });
+  } else if (newZoom === 1) {
+    // ปลดล็อกกลับเป็น Responsive เมื่อรีเซ็ตซูม
+    zoomWrapperWidth.value = '100%';
+    zoomWrapperHeight.value = '100%';
+    console.log('🔓 Canvas dimensions reset to responsive (100%)');
+  }
+});
 
 // Watch for scale prop changes
 watch(
@@ -5292,6 +5311,26 @@ onMounted(() => {
 
   loadProjectParameters(); // Load project parameters from Step 1
   document.addEventListener("keydown", handleKeyDown);
+
+  // ✅ FIX: Load zoom from localStorage on mount
+  if (props.versionId) {
+    const savedZoom = localStorage.getItem(`network_zoom_${props.versionId}`);
+    if (savedZoom) {
+      const zoomValue = parseFloat(savedZoom);
+      if (!isNaN(zoomValue) && zoomValue !== 1) {
+        // หน่วงเวลาให้เบราว์เซอร์จัด 100% ให้เสร็จ แล้วค่อยล็อกขนาดและซูม
+        setTimeout(() => {
+          if (canvasContainerRef.value) {
+            const rect = canvasContainerRef.value.getBoundingClientRect();
+            zoomWrapperWidth.value = `${rect.width}px`;
+            zoomWrapperHeight.value = `${rect.height}px`;
+            zoom.value = zoomValue;
+            console.log(`✅ Loaded zoom from localStorage: ${zoomValue}`);
+          }
+        }, 150);
+      }
+    }
+  }
 });
 
 onUnmounted(() => {

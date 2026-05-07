@@ -115,7 +115,9 @@
       "Bash(cmd //c taskkill //F //IM node.exe)",
       "Bash(timeout 5 bash -c \"while ! curl -s http://localhost:3004/api > /dev/null; do sleep 1; done && echo ''Backend is ready!''\")",
       "Bash(cmd /c \"if exist .nuxt rd /s /q .nuxt\")",
-      "Bash(del /F /Q \"components\\\\ui\\\\StepIndicator.vue\" \"pages\\\\preview.vue\")"
+      "Bash(del /F /Q \"components\\\\ui\\\\StepIndicator.vue\" \"pages\\\\preview.vue\")",
+      "Bash(find . -name *.ts -path */stores/*)",
+      "Bash(timeout 5 bash -c 'while ! nc -z localhost 3003 2>/dev/null; do sleep 0.5; done; echo \"\"Backend ready\"\"')"
     ]
   }
 }

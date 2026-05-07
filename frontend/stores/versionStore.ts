@@ -109,7 +109,10 @@ export const useVersionStore = defineStore('version', {
 
         const index = this.versions.findIndex(v => v.id === versionId)
         if (index !== -1) {
-          this.versions[index] = data
+          // Create new array to trigger Vue reactivity
+          const newVersions = [...this.versions]
+          newVersions[index] = data
+          this.versions = newVersions
         }
         if (this.currentVersion?.id === versionId) {
           this.currentVersion = data

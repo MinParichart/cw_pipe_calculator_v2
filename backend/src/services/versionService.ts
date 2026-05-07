@@ -307,8 +307,31 @@ export class VersionService {
     let action = 'UPDATE'
     let detailsContent: string | undefined
 
-    // 🔥 CHECK CALCULATION FIRST (always has highest priority)
-    if (data.snapshotResults) {
+    // 🔥 CHECK NAME/DESCRIPTION CHANGES FIRST (before heavy JSON parsing)
+    if (data.name || data.description) {
+      // Name or description change → UPDATE
+      if (data.name && data.name !== version.name) {
+        action = 'UPDATE'
+        if (data.description) {
+          // ทั้งชื่อและรายละเอียดเปลี่ยน
+          detailsContent = `แก้ไขรายละเอียด version เป็น "${data.name}"`
+        } else {
+          // เฉพาะชื่อเปลี่ยน
+          detailsContent = `แก้ไขรายละเอียด version เป็น "${data.name}"`
+        }
+        console.log('📝 [VersionService] Name change detected, creating audit log:', detailsContent)
+      } else if (data.description !== undefined && data.description !== version.description) {
+        action = 'UPDATE'
+        // เฉพาะรายละเอียดเปลี่ยน
+        const descPreview = data.description.length > 50
+          ? data.description.substring(0, 50) + '...'
+          : data.description
+        detailsContent = `แก้ไขรายละเอียด version เป็น "${descPreview}"`
+        console.log('📝 [VersionService] Description change detected, creating audit log:', detailsContent)
+      }
+    }
+    // 🔥 CHECK CALCULATION (has highest priority after name/desc)
+    else if (data.snapshotResults) {
       action = 'CALCULATE'
       // Generate calculation summary
       try {
@@ -415,9 +438,11 @@ export class VersionService {
       } else {
         detailsContent = 'อัปโหลด blueprint'
       }
-    } else if (data.name || data.description) {
-      action = 'UPDATE'
-      detailsContent = data.name ? `เปลี่ยนชื่อเป็น "${data.name}"` : 'แก้ไขรายละเอียด'
+    }
+
+    // Only create audit log if we have something to log
+    if (!detailsContent && !Object.keys(data).some(key => key !== 'updatedAt')) {
+      console.log('📝 [VersionService] No meaningful changes to log')
     }
 
     const updated = await prisma.version.update({
@@ -865,15 +890,25 @@ export class VersionService {
     snapshotResults?: string
     referenceLayer?: string
   }): boolean {
+    console.log('📝 [VersionService] checkForChanges called with:', {
+      dataKeys: Object.keys(data),
+      hasName: !!data.name,
+      hasDesc: !!data.description,
+      hasNetwork: !!data.snapshotNetwork,
+      hasFixtures: !!data.snapshotFixtures,
+      hasResults: !!data.snapshotResults,
+      hasRef: !!data.referenceLayer
+    })
+
     // Check name change
     if (data.name !== undefined && data.name !== version.name) {
-      console.log('📝 [VersionService] Name changed')
+      console.log('📝 [VersionService] ✓ Name changed from', version.name, 'to', data.name)
       return true
     }
 
     // Check description change
     if (data.description !== undefined && data.description !== version.description) {
-      console.log('📝 [VersionService] Description changed')
+      console.log('📝 [VersionService] ✓ Description changed')
       return true
     }
 

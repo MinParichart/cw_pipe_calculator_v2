@@ -5,7 +5,7 @@
       <div>
         <h2 class="text-2xl font-bold text-gray-900">Versions</h2>
         <p class="text-sm text-gray-600 mt-1">
-          {{ totalVersions }} version{{ totalVersions !== 1 ? 's' : '' }}
+          {{ totalVersions }} version{{ totalVersions !== 1 ? "s" : "" }}
         </p>
       </div>
 
@@ -19,12 +19,17 @@
 
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-8">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div
+        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+      ></div>
       <p class="mt-2 text-sm text-gray-600">Loading versions...</p>
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="versions.length === 0" class="text-center py-12 bg-white rounded-lg shadow-sm">
+    <div
+      v-else-if="versions.length === 0"
+      class="text-center py-12 bg-white rounded-lg shadow-sm"
+    >
       <div class="text-gray-400 text-6xl mb-4">📦</div>
       <h3 class="text-lg font-medium text-gray-900 mb-2">No versions yet</h3>
       <p class="text-sm text-gray-600 mb-4">
@@ -44,9 +49,10 @@
         v-for="version in sortedVersions"
         :key="version.id"
         :version="version"
-        @continue="$emit('continue', $event)"
-        @duplicate="$emit('duplicate', $event)"
-        @delete="$emit('delete', $event)"
+        @continue="(version) => $emit('continue', version)"
+        @duplicate="(version) => $emit('duplicate', version)"
+        @delete="(version) => $emit('delete', version)"
+        @update="(id, data) => $emit('update', id, data)"
       />
     </div>
 
@@ -58,50 +64,51 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import VersionCard from './VersionCard.vue'
+import { computed } from "vue";
+import VersionCard from "./VersionCard.vue";
 
 interface Version {
-  id: number
-  name: string
-  description?: string
-  versionNumber: number
-  isCurrent: boolean
-  createdAt: string
-  snapshotNetwork?: string
-  snapshotFixtures?: string
-  snapshotResults?: string
-  referenceLayer?: string
+  id: number;
+  name: string;
+  description?: string;
+  versionNumber: number;
+  isCurrent: boolean;
+  createdAt: string;
+  snapshotNetwork?: string;
+  snapshotFixtures?: string;
+  snapshotResults?: string;
+  referenceLayer?: string;
 }
 
 interface Props {
-  versions: Version[]
-  loading?: boolean
-  error?: string | null
+  versions: Version[];
+  loading?: boolean;
+  error?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   error: null
-})
+});
 
 defineEmits<{
-  create: []
-  continue: [version: Version]
-  duplicate: [version: Version]
-  delete: [version: Version]
-}>()
+  create: [];
+  continue: [version: Version];
+  duplicate: [version: Version];
+  delete: [version: Version];
+  update: [versionId: number, data: { name?: string; description?: string }];
+}>();
 
-const totalVersions = computed(() => props.versions.length)
+const totalVersions = computed(() => props.versions.length);
 
 const sortedVersions = computed(() => {
   return [...props.versions].sort((a, b) => {
     // Sort by version number descending
     if (b.versionNumber !== a.versionNumber) {
-      return b.versionNumber - a.versionNumber
+      return b.versionNumber - a.versionNumber;
     }
     // Then by date descending
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  })
-})
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+});
 </script>

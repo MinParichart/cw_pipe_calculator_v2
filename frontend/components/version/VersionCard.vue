@@ -14,10 +14,20 @@
         </div>
       </div>
 
-      <!-- Current Badge -->
-      <span v-if="version.isCurrent" class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-        Current
-      </span>
+      <div class="flex items-center gap-2">
+        <!-- Current Badge -->
+        <span v-if="version.isCurrent" class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+          Current
+        </span>
+
+        <!-- Edit Button -->
+        <button
+          @click="openEditModal"
+          class="px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
+        >
+          แก้ไข
+        </button>
+      </div>
     </div>
 
     <!-- Version Info -->
@@ -68,10 +78,76 @@
         🗑️
       </button>
     </div>
+
+    <!-- Edit Modal -->
+    <div
+      v-if="showEditModal"
+      class="fixed inset-0 z-50 flex items-center justify-center"
+      style="background-color: rgba(0, 0, 0, 0.5);"
+      @keydown.escape="closeEditModal"
+    >
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          แก้ไข Version
+        </h3>
+
+        <form @submit.prevent="saveEdit">
+          <!-- Name Field -->
+          <div class="mb-4">
+            <label for="edit-name" class="block text-sm font-medium text-gray-700 mb-2">
+              ชื่อ Version <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="edit-name"
+              ref="nameInput"
+              v-model="editForm.name"
+              type="text"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="เช่น Version 1 - แบบร่างแรก"
+            />
+          </div>
+
+          <!-- Description Field -->
+          <div class="mb-6">
+            <label for="edit-description" class="block text-sm font-medium text-gray-700 mb-2">
+              รายละเอียด
+            </label>
+            <textarea
+              id="edit-description"
+              v-model="editForm.description"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับ Version นี้"
+            ></textarea>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex justify-end gap-3">
+            <button
+              type="button"
+              @click="closeEditModal"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="submit"
+              :disabled="!editForm.name.trim()"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              บันทึก
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useVersionStore } from '~/stores/versionStore'
+
 interface Version {
   id: number
   name: string
@@ -91,11 +167,23 @@ interface Props {
 
 const props = defineProps<Props>()
 
-defineEmits<{
+const emit = defineEmits<{
   continue: [version: Version]
   duplicate: [version: Version]
   delete: [version: Version]
+  update: [versionId: number, data: { name?: string; description?: string }]
 }>()
+
+// Store
+const versionStore = useVersionStore()
+
+// State for edit modal
+const showEditModal = ref(false)
+const editForm = ref({
+  name: '',
+  description: ''
+})
+const nameInput = ref<HTMLInputElement | null>(null)
 
 const hasSnapshot = (type: 'network' | 'fixtures' | 'results') => {
   const snapshotMap = {
@@ -135,5 +223,70 @@ const getNextStepText = (version: Version) => {
   if (!version.snapshotFixtures) return 'Step 4: Fixtures →'
   if (!version.snapshotResults) return 'Step 5: Calculate →'
   return 'View Results →'
+}
+
+// Modal functions
+const openEditModal = () => {
+  console.log('🔧 [VersionCard] openEditModal called')
+  console.log('🔧 [VersionCard] Current version:', props.version)
+
+  editForm.value = {
+    name: props.version.name,
+    description: props.version.description || ''
+  }
+
+  console.log('🔧 [VersionCard] editForm initialized:', editForm.value)
+
+  showEditModal.value = true
+
+  nextTick(() => {
+    nameInput.value?.focus()
+    console.log('🔧 [VersionCard] Modal opened, input focused')
+  })
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+  editForm.value = {
+    name: '',
+    description: ''
+  }
+}
+
+const saveEdit = async () => {
+  console.log('🔧 [VersionCard] saveEdit called')
+  console.log('🔧 [VersionCard] editForm:', editForm.value)
+  console.log('🔧 [VersionCard] props.version.id:', props.version.id)
+
+  if (!editForm.value.name.trim()) {
+    console.log('❌ [VersionCard] Name is empty, returning')
+    return
+  }
+
+  const updateData = {
+    name: editForm.value.name.trim(),
+    description: editForm.value.description.trim() || undefined
+  }
+
+  console.log('🔧 [VersionCard] Calling store.updateVersion with:', props.version.id, updateData)
+
+  try {
+    // Call store action directly
+    const result = await versionStore.updateVersion(props.version.id, updateData)
+
+    console.log('🔧 [VersionCard] Store result:', result)
+
+    if (result.success) {
+      console.log('✅ [VersionCard] Update successful, closing modal')
+      // Only close modal after successful update
+      closeEditModal()
+    } else {
+      console.error('❌ [VersionCard] Update failed:', result.error)
+      alert('ไม่สามารถบันทึกชื่อ Version ได้: ' + (result.error?.message || 'Unknown error'))
+    }
+  } catch (error: any) {
+    console.error('❌ [VersionCard] Update error:', error)
+    alert('เกิดข้อผิดพลาดในการบันทึก: ' + (error.message || 'Unknown error'))
+  }
 }
 </script>

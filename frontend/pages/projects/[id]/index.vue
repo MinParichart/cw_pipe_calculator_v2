@@ -283,6 +283,7 @@
               @continue="handleContinueVersion"
               @duplicate="handleDuplicateVersion"
               @delete="handleDeleteVersion"
+              @update="handleUpdateVersion"
             />
 
             <!-- Create Version Modal -->
@@ -381,7 +382,8 @@ const versionStore = useVersionStore();
 const loading = ref(true);
 const project = ref<any>(null);
 const criteria = ref<any>(null);
-const versions = ref<any[]>([]);
+// Use computed to react to store changes
+const versions = computed(() => versionStore.versions);
 const editingCriteria = ref(false);
 const editingProjectDetails = ref(false);
 const showCreateModal = ref(false);
@@ -472,10 +474,8 @@ const loadProject = async () => {
 const loadVersions = async () => {
   try {
     const projectId = parseInt(route.params.id as string);
-    const result = await versionStore.loadVersions(projectId);
-    if (result.success) {
-      versions.value = versionStore.versions;
-    }
+    await versionStore.loadVersions(projectId);
+    // versions is now computed, so it will automatically update from the store
   } catch (error: any) {
     console.error("Failed to load versions:", error);
   }
@@ -537,6 +537,27 @@ const handleDeleteVersion = async (version: any) => {
       toast.error(result.error?.message || 'ล้มเหลือ');
     }
   } catch (error: any) {
+    toast.error(error.message || 'ล้มเหลือ');
+  }
+};
+
+const handleUpdateVersion = async (versionId: number, data: { name?: string; description?: string }) => {
+  console.log('🔧 handleUpdateVersion called:', { versionId, data });
+
+  try {
+    const result = await versionStore.updateVersion(versionId, data);
+
+    console.log('🔧 versionStore.updateVersion result:', result);
+
+    if (result.success) {
+      toast.success('บันทึกการเปลี่ยนแปลงสำเร็จ');
+      await loadVersions();
+    } else {
+      console.error('❌ Update failed:', result.error);
+      toast.error(result.error?.message || 'ล้มเหลือ');
+    }
+  } catch (error: any) {
+    console.error('❌ Update error:', error);
     toast.error(error.message || 'ล้มเหลือ');
   }
 };

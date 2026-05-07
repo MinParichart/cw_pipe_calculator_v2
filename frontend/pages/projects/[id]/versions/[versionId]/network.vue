@@ -369,12 +369,13 @@ const createNetwork = async () => {
   toast.success("สร้าง Network เรียบร้อย");
 };
 
-// ✅ Network change: Keep local state, don't update props (prevents re-render loop)
+// ✅ FIX: Auto-save immediately when network changes
 const onNetworkChange = async (updatedNetwork: any) => {
-  // Don't update networkData.value to avoid triggering watch in NetworkBuilder
-  // Just keep it in memory, will save when leaving the page
-  networkData.value = updatedNetwork; // Still update for save on unmount
-  console.log("📝 Network changed (kept in memory, will save on page leave)");
+  networkData.value = updatedNetwork;
+  console.log("📝 Network changed, auto-saving...");
+
+  // Save immediately to database (real-time auto-save)
+  await saveNetworkSnapshot();
 };
 
 // ✅ ADD: Save only when leaving the page

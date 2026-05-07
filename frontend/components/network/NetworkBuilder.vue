@@ -3953,8 +3953,14 @@ const saveNetwork = async () => {
   saving.value = true;
 
   try {
-    // Network is auto-saved on each action
-    toast.success("Network saved successfully");
+    // Force emit current network state to parent (network.vue) for database save
+    emit('networkChange', {
+      ...currentNetwork.value,
+      nodes: [...nodes.value],
+      pipes: [...pipes.value]
+    });
+
+    toast.success("บันทึก Network เรียบร้อยแล้ว");
   } catch (error: any) {
     toast.error(error.message || "Failed to save network");
   } finally {

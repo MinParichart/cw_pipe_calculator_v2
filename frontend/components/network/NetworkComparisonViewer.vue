@@ -171,7 +171,7 @@
           </g>
         </svg>
 
-        <!-- Nodes Layer (z-index: 10) -->
+        <!-- Nodes Layer (z-index: 10) — ขนาดและสีตรงกับ NetworkBuilder -->
         <div
           v-if="networkData?.nodes"
           class="absolute inset-0"
@@ -180,7 +180,7 @@
           <div
             v-for="node in networkData.nodes"
             :key="node.id"
-            class="absolute transform -translate-x-1/2 -translate-y-1/2 transition-shadow"
+            class="absolute transform -translate-x-1/2 -translate-y-1/2"
             :style="{
               left: `${node.x}px`,
               top: `${node.y}px`,
@@ -188,14 +188,14 @@
               pointerEvents: 'auto'
             }"
           >
-            <!-- Node circle -->
+            <!-- Node circle: w-3 h-3 ตรงกับ NetworkBuilder -->
             <div
-              class="flex items-center justify-center w-6 h-6 rounded-full border-2 shadow-sm"
+              class="flex items-center justify-center w-3 h-3 rounded-full border-2 shadow-sm"
               :class="getNodeClass(node)"
             >
               <span
                 v-html="getNodeIcon(node.type)"
-                class="text-white text-xs"
+                class="text-white text-[10px]"
               ></span>
             </div>
 
@@ -203,15 +203,16 @@
             <div
               v-if="node.label"
               class="absolute top-full mt-1 text-xs font-medium text-gray-700 whitespace-nowrap bg-white px-1 rounded"
+              style="font-size: 10px"
             >
               {{ node.label }}
             </div>
 
-            <!-- Fixture count badge -->
+            <!-- Fixture count badge: w-3 h-3 ตรงกับ NetworkBuilder -->
             <div
               v-if="getNodeFixtureCount(node) > 0"
-              class="absolute -top-1 -right-1 w-4 h-4 text-white text-xs rounded-full flex items-center justify-center font-bold"
-              :style="{ backgroundColor: pipeColor }"
+              class="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 text-white rounded-full flex items-center justify-center"
+              style="font-size: 8px"
             >
               {{ getNodeFixtureCount(node) }}
             </div>
@@ -384,27 +385,28 @@ const getLayerColor = (layerIndex: number) => {
   return colors[layerIndex % colors.length];
 };
 
+// ✅ สี node ตรงกับ NetworkBuilder (ใช้ custom Tailwind colors จาก tailwind.config.js)
 const getNodeClass = (node: any) => {
-  const nodeType = (node.type || "default").toLowerCase();
-  const typeClasses: Record<string, string> = {
-    source: "bg-green-500 border-green-600",
-    endpoint: "bg-red-500 border-red-600",
-    junction: "bg-blue-500 border-blue-600",
-    fixture: "bg-yellow-500 border-yellow-600",
-    default: "bg-white border-gray-400"
+  const type = (node.type || "JUNCTION").toUpperCase();
+  const classes: Record<string, string> = {
+    SOURCE:  "bg-success-500 border-success-600",   // #22c55e
+    JUNCTION:"bg-gray-500 border-gray-600",
+    FIXTURE: "bg-primary-500 border-primary-600",   // #3b82f6
+    RISER:   "bg-warning-500 border-warning-600"    // #f59e0b
   };
-  return typeClasses[nodeType] || typeClasses.default;
+  return classes[type] || "bg-gray-500 border-gray-600";
 };
 
+// ✅ Icons ตรงกับ NetworkBuilder — copy มาจาก nodeTypes array ใน NetworkBuilder.vue
 const getNodeIcon = (nodeType: string) => {
-  const type = (nodeType || "junction").toLowerCase();
+  const type = (nodeType || "JUNCTION").toUpperCase();
   const icons: Record<string, string> = {
-    source: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>`,
-    endpoint: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`,
-    junction: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z" /></svg>`,
-    fixture: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>`
+    SOURCE:  `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>`,
+    JUNCTION:`<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`,
+    FIXTURE: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>`,
+    RISER:   `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>`
   };
-  return icons[type] || icons.junction;
+  return icons[type] || icons.JUNCTION;
 };
 
 const getNodeFixtureCount = (node: any) => {

@@ -490,9 +490,47 @@ const loadBlueprints = async () => {
   try {
     const versionId = parseInt(route.params.versionId as string);
     blueprints.value = await documentsApi.listByVersion(versionId);
-    // Auto-select all blueprints if available
-    if (blueprints.value.length > 0 && selectedBlueprints.value.length === 0) {
-      selectedBlueprints.value = [...blueprints.value];
+
+    // Load order from localStorage and reorder
+    const orderKey = `network_blueprints_order_${versionId}`;
+    const savedOrder = localStorage.getItem(orderKey);
+
+    if (savedOrder && blueprints.value.length === 2) {
+      try {
+        const orderIds = JSON.parse(savedOrder);
+        const reordered = [...blueprints.value];
+        reordered.sort((a, b) => {
+          const indexA = orderIds.indexOf(a.id);
+          const indexB = orderIds.indexOf(b.id);
+          return indexA - indexB;
+        });
+        blueprints.value = reordered;
+      } catch (e) {
+        console.warn("Failed to parse saved order, using default");
+      }
+    }
+
+    // Load selected blueprints from localStorage
+    const storageKey = `network_blueprints_${versionId}`;
+    const savedSelection = localStorage.getItem(storageKey);
+
+    if (savedSelection) {
+      try {
+        const savedIds = JSON.parse(savedSelection);
+        selectedBlueprints.value = blueprints.value.filter((bp) =>
+          savedIds.includes(bp.id)
+        );
+      } catch (e) {
+        // Auto-select all if parse fails
+        if (blueprints.value.length > 0) {
+          selectedBlueprints.value = [...blueprints.value];
+        }
+      }
+    } else {
+      // Auto-select all if no saved selection
+      if (blueprints.value.length > 0) {
+        selectedBlueprints.value = [...blueprints.value];
+      }
     }
   } catch (error: any) {
     console.error("Failed to load blueprints from API:", error);
@@ -524,6 +562,12 @@ const toggleBlueprint = (blueprint: any) => {
     selectedBlueprints.value.push(blueprint);
     toast.success(`เลือก Blueprint: ${blueprint.floorText}`);
   }
+
+  // Save to localStorage
+  const versionId = parseInt(route.params.versionId as string);
+  const storageKey = `network_blueprints_${versionId}`;
+  const selectedIds = selectedBlueprints.value.map((bp) => bp.id);
+  localStorage.setItem(storageKey, JSON.stringify(selectedIds));
 };
 
 // Load data on mount

@@ -289,13 +289,6 @@
             >
               🔧 Pipes
             </button>
-            <button
-              @click="resetNetwork"
-              class="text-xs text-gray-600 hover:text-gray-700 hover:bg-gray-100 px-2 py-1 rounded transition-colors"
-              title="รีเซ็ต Network (ลบทั้งหมด)"
-            >
-              🔄 Reset
-            </button>
           </div>
         </div>
       </div>
@@ -4174,6 +4167,12 @@ const swapFloors = () => {
   const temp = blueprints.value[0];
   blueprints.value[0] = blueprints.value[1];
   blueprints.value[1] = temp;
+
+  // Save order to localStorage
+  const versionId = props.versionId;
+  const storageKey = `network_blueprints_order_${versionId}`;
+  const orderIds = blueprints.value.map((bp) => bp.id);
+  localStorage.setItem(storageKey, JSON.stringify(orderIds));
 
   toast.success("สลับตำแหน่งชั้นเรียบร้อย");
 };

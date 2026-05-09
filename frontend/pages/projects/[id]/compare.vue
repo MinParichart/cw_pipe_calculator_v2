@@ -249,6 +249,7 @@
               </h3>
             </div>
 
+            <!-- Top-bottom: grid-cols-1 ให้ canvas ใหญ่ เห็นรายละเอียดชัดขึ้น -->
             <div class="grid grid-cols-1 gap-6">
               <!-- Version A Network -->
               <div class="border-2 border-blue-200 rounded-lg overflow-hidden">
@@ -257,7 +258,8 @@
                     {{ versionA?.name || `Version ${versionA?.versionNumber}` }}
                   </h4>
                 </div>
-                <div class="p-0 bg-gray-50 h-screen">
+                <!-- ไม่มี h-screen → ความสูงตาม NetworkComparisonViewer เอง -->
+                <div class="p-0 bg-gray-50">
                   <NetworkComparisonViewer
                     v-if="versionAData?.snapshotNetwork"
                     :network-data="versionAData.snapshotNetwork"
@@ -265,7 +267,7 @@
                   />
                   <div
                     v-else
-                    class="flex items-center justify-center h-full text-gray-400"
+                    class="flex items-center justify-center py-16 text-gray-400"
                   >
                     <div class="text-center">
                       <svg
@@ -296,7 +298,8 @@
                     {{ versionB?.name || `Version ${versionB?.versionNumber}` }}
                   </h4>
                 </div>
-                <div class="p-0 bg-gray-50 h-screen">
+                <!-- ไม่มี h-screen → ความสูงตาม NetworkComparisonViewer เอง -->
+                <div class="p-0 bg-gray-50">
                   <NetworkComparisonViewer
                     v-if="versionBData?.snapshotNetwork"
                     :network-data="versionBData.snapshotNetwork"
@@ -304,7 +307,7 @@
                   />
                   <div
                     v-else
-                    class="flex items-center justify-center h-full text-gray-400"
+                    class="flex items-center justify-center py-16 text-gray-400"
                   >
                     <div class="text-center">
                       <svg

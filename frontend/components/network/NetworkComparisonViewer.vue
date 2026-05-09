@@ -1,14 +1,19 @@
 <template>
-  <div class="flex-1 relative overflow-auto h-full w-full bg-gray-100">
-    <!-- Canvas Container -->
+  <!-- Outer: ความกว้างเต็ม, ความสูง auto ตาม content จริง -->
+  <div ref="canvasContainerRef" class="relative w-full bg-gray-100 overflow-hidden">
+    <!-- Height wrapper: กำหนดความสูงด้วย pixel ที่คำนวณจาก canvas * zoom -->
     <div
-      ref="canvasContainerRef"
-      class="flex-1 bg-gray-100 relative h-full w-full"
+      class="relative w-full"
+      :style="{ height: Math.ceil(effectiveCanvasHeight * zoom) + 'px' }"
     >
-      <!-- Zoom Wrapper - หุ้ม Blueprint, Pipes, Nodes ทั้งหมด -->
+      <!-- Zoom Wrapper - ขนาดตรงกับ canvas ที่ build มาจาก NetworkBuilder -->
       <div
-        class="absolute inset-0 origin-top-left"
         :style="{
+          position: 'absolute',
+          top: '0',
+          left: '0',
+          width: effectiveCanvasWidth + 'px',
+          height: effectiveCanvasHeight + 'px',
           transform: `scale(${zoom})`,
           transformOrigin: 'top left'
         }"
@@ -232,9 +237,10 @@
         </div>
       </div>
     </div>
+    <!-- /Height wrapper -->
 
     <!-- Zoom controls -->
-    <div class="absolute bottom-4 right-4 flex flex-col gap-2 z-50">
+    <div class="absolute bottom-4 right-4 flex flex-col gap-2 z-50" style="pointer-events: auto">
       <button
         @click="zoomIn"
         class="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 border border-gray-200"
@@ -293,11 +299,13 @@
         </svg>
       </button>
     </div>
+    <!-- /Zoom controls -->
   </div>
+  <!-- /canvasContainerRef outer -->
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
   networkData?: any;
@@ -305,6 +313,43 @@ const props = defineProps<{
 }>();
 
 const zoom = ref(1);
+const canvasContainerRef = ref<HTMLDivElement | null>(null);
+const containerWidth = ref(0);
+const containerHeight = ref(0);
+
+// ✅ ขนาด canvas ที่แท้จริง — ดึงจาก snapshot ก่อน ถ้าไม่มีค่อย fallback bounding box
+const effectiveCanvasWidth = computed(() => {
+  // Priority 1: ค่าจริงที่ save มาจาก NetworkBuilder (แม่นที่สุด)
+  if (props.networkData?.canvasWidth) return Number(props.networkData.canvasWidth);
+  // Priority 2: คำนวณจาก bounding box ของ nodes + margin
+  const nodes = props.networkData?.nodes;
+  if (nodes?.length) {
+    const maxX = Math.max(...nodes.map((n: any) => Number(n.x) || 0));
+    // ใช้ maxX * 2.5 เพื่อให้ใกล้เคียง canvas จริงมากขึ้น (node มักอยู่ตรงกลาง-ซ้าย)
+    return Math.max(maxX * 2.5, maxX + 400, 1000);
+  }
+  return containerWidth.value || 1200;
+});
+
+const effectiveCanvasHeight = computed(() => {
+  if (props.networkData?.canvasHeight) return Number(props.networkData.canvasHeight);
+  const nodes = props.networkData?.nodes;
+  if (nodes?.length) {
+    const maxY = Math.max(...nodes.map((n: any) => Number(n.y) || 0));
+    return Math.max(maxY * 2.5, maxY + 300, 700);
+  }
+  return containerHeight.value || 800;
+});
+
+// Fit zoom ให้ content พอดีกับความกว้าง container
+// ความสูงจะ auto-size ตาม effectiveCanvasHeight * zoom → ไม่มี empty space
+const fitToContainer = () => {
+  if (!canvasContainerRef.value) return;
+  const cw = canvasContainerRef.value.clientWidth;
+  if (!cw) return;
+  // Fit to width only — height wrapper จะปรับขนาดตาม content เอง
+  zoom.value = cw / effectiveCanvasWidth.value;
+};
 
 // Watch networkData changes
 watch(
@@ -560,67 +605,17 @@ const zoomOut = () => {
 };
 
 const resetView = () => {
-  zoom.value = 1;
+  fitToContainer();
 };
 
 // Auto-fit on mount
 onMounted(() => {
-  console.log("[NetworkComparisonViewer] onMounted");
-  console.log("[NetworkComparisonViewer] networkData:", props.networkData);
-  console.log("[NetworkComparisonViewer] blueprints:", props.blueprints);
-
-  if (props.networkData) {
-    console.log(
-      "[NetworkComparisonViewer] nodes:",
-      props.networkData.nodes?.length || 0
-    );
-    console.log(
-      "[NetworkComparisonViewer] pipes:",
-      props.networkData.pipes?.length || 0
-    );
-
-    if (props.networkData.pipes && props.networkData.pipes.length > 0) {
-      console.log(
-        "[NetworkComparisonViewer] Sample pipe:",
-        props.networkData.pipes[0]
-      );
+  nextTick(() => {
+    if (canvasContainerRef.value) {
+      containerWidth.value = canvasContainerRef.value.clientWidth;
     }
-  }
-
-  if (props.networkData?.nodes && props.networkData.nodes.length > 0) {
-    // Calculate bounding box
-    const xs = props.networkData.nodes.map((n: any) => n.x || 0);
-    const ys = props.networkData.nodes.map((n: any) => n.y || 0);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-
-    console.log("[NetworkComparisonViewer] Bounding box:", {
-      minX,
-      maxX,
-      minY,
-      maxY
-    });
-
-    // Auto-fit zoom
-    const container =
-      document.querySelector(".network-comparison-viewer") ||
-      document.querySelector(".relative.overflow-auto");
-    if (container) {
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
-
-      const networkWidth = maxX - minX + 100;
-      const networkHeight = maxY - minY + 100;
-
-      const zoomX = containerWidth / networkWidth;
-      const zoomY = containerHeight / networkHeight;
-      zoom.value = Math.min(zoomX, zoomY, 1);
-
-      console.log("[NetworkComparisonViewer] Auto-fit zoom:", zoom.value);
-    }
-  }
+    fitToContainer();
+  });
 });
 </script>
 

@@ -3953,6 +3953,15 @@ const findCriticalPath = async () => {
   }
 };
 
+// ✅ อ่านขนาด canvas จริง ณ ขณะนั้น เพื่อ save ลง snapshot ให้ Compare page ใช้ได้
+const getCanvasDimensions = () => {
+  const el = canvasContainerRef.value;
+  return {
+    canvasWidth: el?.clientWidth || currentNetwork.value?.canvasWidth || 1200,
+    canvasHeight: el?.clientHeight || currentNetwork.value?.canvasHeight || 800,
+  };
+};
+
 const saveNetwork = async () => {
   saving.value = true;
 
@@ -3960,6 +3969,7 @@ const saveNetwork = async () => {
     // Force emit current network state to parent (network.vue) for database save
     emit('networkChange', {
       ...currentNetwork.value,
+      ...getCanvasDimensions(),
       nodes: [...nodes.value],
       pipes: [...pipes.value]
     });
@@ -5302,6 +5312,20 @@ onMounted(() => {
 
   loadProjectParameters(); // Load project parameters from Step 1
   document.addEventListener("keydown", handleKeyDown);
+
+  // ✅ Auto-save canvas dims หลัง DOM render เสร็จ
+  // → ทำให้ Compare page รู้ขนาด canvas ที่แท้จริง แม้ user ไม่กดปุ่ม Save
+  setTimeout(() => {
+    if (props.versionId && nodes.value.length > 0 && canvasContainerRef.value) {
+      emit('networkChange', {
+        ...currentNetwork.value,
+        ...getCanvasDimensions(),
+        nodes: [...nodes.value],
+        pipes: [...pipes.value]
+      });
+      console.log('✅ [NetworkBuilder] Auto-saved canvas dims:', getCanvasDimensions());
+    }
+  }, 400);
 
   // ✅ FIX: Load zoom from localStorage on mount
   if (props.versionId) {

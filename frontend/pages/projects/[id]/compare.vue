@@ -677,7 +677,32 @@ const loadBlueprintsForVersion = async (
   );
 
   try {
-    const blueprints = await documentsApi.listByVersion(Number(versionId));
+    let blueprints = await documentsApi.listByVersion(Number(versionId));
+
+    // Load order from localStorage and reorder (same as network page)
+    const orderKey = `network_blueprints_order_${versionId}`;
+    const savedOrder = localStorage.getItem(orderKey);
+
+    if (savedOrder && blueprints?.length === 2) {
+      try {
+        const orderIds = JSON.parse(savedOrder);
+        const reordered = [...blueprints];
+        reordered.sort((a, b) => {
+          const indexA = orderIds.indexOf(a.id);
+          const indexB = orderIds.indexOf(b.id);
+          return indexA - indexB;
+        });
+        blueprints = reordered;
+        console.log(
+          `[loadBlueprintsForVersion] Reordered blueprints for Version ${versionLabel}`,
+          orderIds
+        );
+      } catch (e) {
+        console.warn(
+          `[loadBlueprintsForVersion] Failed to parse saved order, using default`
+        );
+      }
+    }
 
     console.log(
       `[loadBlueprintsForVersion] Got ${blueprints?.length || 0} blueprints for Version ${versionLabel}`

@@ -16,14 +16,31 @@
 
             <!-- Version Badge -->
             <div class="flex items-center gap-3">
-              <div class="bg-blue-100 border border-blue-200 rounded-lg px-4 py-2">
+              <div
+                class="bg-blue-100 border border-blue-200 rounded-lg px-4 py-2"
+              >
                 <div class="flex items-center gap-2">
-                  <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  <svg
+                    class="h-5 w-5 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    />
                   </svg>
                   <div>
                     <p class="text-xs text-blue-600 font-medium">Version</p>
-                    <p class="text-lg font-bold text-blue-900">{{ version?.name || `Version ${version?.versionNumber || '-'}` }}</p>
+                    <p class="text-lg font-bold text-blue-900">
+                      {{
+                        version?.name ||
+                        `Version ${version?.versionNumber || "-"}`
+                      }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -36,7 +53,7 @@
           <div class="bg-white rounded-lg shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium text-gray-900">
-                Auto Suggest Upsizing
+                Auto Suggest Sizing
               </h3>
               <svg
                 class="h-5 w-5 text-blue-500"
@@ -218,9 +235,7 @@
           <div class="mt-6 flex justify-between items-center">
             <div class="flex gap-3">
               <BackButton @click="goToPrevStep" />
-              <NextStepButton
-                @click="goToNextStep"
-              />
+              <NextStepButton @click="goToNextStep" />
             </div>
           </div>
         </div>
@@ -230,12 +245,12 @@
 </template>
 
 <script setup lang="ts">
-import VersionSteps from "~/components/workflow/VersionSteps.vue";
 import AutoSuggestUpsizing from "~/components/calculator/AutoSuggestUpsizing.vue";
 import HybridPipeSizing from "~/components/calculator/HybridPipeSizing.vue";
 import RequiredInletPressure from "~/components/calculator/RequiredInletPressure.vue";
 import BackButton from "~/components/navigation/BackButton.vue";
 import NextStepButton from "~/components/navigation/NextStepButton.vue";
+import VersionSteps from "~/components/workflow/VersionSteps.vue";
 import { versionsApi } from "~/composables/useApi";
 import { useWorkflowStore } from "~/stores/workflowStore";
 
@@ -257,8 +272,8 @@ const workflowStore = useWorkflowStore();
 const projectId = computed(() => parseInt(route.params.id as string));
 const versionId = computed(() => {
   const id = route.params.versionId;
-  if (typeof id === 'number') return id;
-  if (typeof id === 'string') {
+  if (typeof id === "number") return id;
+  if (typeof id === "string") {
     const parsed = parseInt(id, 10);
     return isNaN(parsed) ? null : parsed;
   }
@@ -285,7 +300,7 @@ const loadVersion = async () => {
     const data = await versionsApi.get(versionId.value);
     if (data) {
       version.value = data;
-      console.log('✅ Version loaded:', {
+      console.log("✅ Version loaded:", {
         id: data.id,
         name: data.name,
         hasSnapshotNetwork: !!data.snapshotNetwork,
@@ -293,8 +308,8 @@ const loadVersion = async () => {
       });
     }
   } catch (err: any) {
-    console.error('Failed to load version:', err);
-    toast.error('ไม่สามารถโหลด Version ได้');
+    console.error("Failed to load version:", err);
+    toast.error("ไม่สามารถโหลด Version ได้");
   }
 };
 
@@ -302,16 +317,16 @@ const loadNetworkFromVersion = () => {
   try {
     if (version.value?.snapshotNetwork) {
       networkData.value = JSON.parse(version.value.snapshotNetwork);
-      console.log('✅ Network loaded from snapshot:', {
+      console.log("✅ Network loaded from snapshot:", {
         nodes: networkData.value?.nodes?.length || 0,
         pipes: networkData.value?.pipes?.length || 0
       });
     } else {
-      console.log('ℹ️ No snapshotNetwork found');
+      console.log("ℹ️ No snapshotNetwork found");
       networkData.value = null;
     }
   } catch (error) {
-    console.error('Failed to parse network snapshot:', error);
+    console.error("Failed to parse network snapshot:", error);
     networkData.value = null;
   }
 };
@@ -321,21 +336,21 @@ const loadCalculationSummary = async () => {
     // TODO: Load from version.snapshotResults if available
     if (version.value?.snapshotResults) {
       const results = JSON.parse(version.value.snapshotResults);
-      console.log('✅ Calculation results loaded from snapshot');
+      console.log("✅ Calculation results loaded from snapshot");
       // Parse results if needed
       hasCalculated.value = true;
     } else {
       hasCalculated.value = false;
     }
   } catch (error) {
-    console.error('Failed to parse calculation results:', error);
+    console.error("Failed to parse calculation results:", error);
     hasCalculated.value = false;
   }
 };
 
 const onSuggestionChange = () => {
   workflowStore.markStepComplete("calculation");
-  console.log('✅ [Step 5 - V2] Suggestion changed');
+  console.log("✅ [Step 5 - V2] Suggestion changed");
 };
 
 const onSummaryChange = (summary: any) => {
@@ -349,7 +364,10 @@ const onSummaryChange = (summary: any) => {
       flowRate: summary.stats.flowRate || 0,
       maxPipeSize: summary.stats.maxPipeSize || "-"
     };
-    console.log("[Calculation] Calculation summary updated:", calculationSummary.value);
+    console.log(
+      "[Calculation] Calculation summary updated:",
+      calculationSummary.value
+    );
   }
 
   console.log("[Calculation] Pipe sizes summary received:", summary);
@@ -370,18 +388,21 @@ const saveCalculationSnapshot = async (results: any) => {
       snapshotResults: JSON.stringify(snapshotResults)
     });
 
-    console.log('✅ Calculation snapshot saved');
+    console.log("✅ Calculation snapshot saved");
   } catch (error) {
-    console.error('Failed to save calculation snapshot:', error);
+    console.error("Failed to save calculation snapshot:", error);
   }
 };
 
 // Debounced version - รอ 1000ms ก่อน save เพื่อป้องกันการ save ซ้ำ
-const debouncedSaveCalculationSnapshot = debounce(saveCalculationSnapshot, 1000);
+const debouncedSaveCalculationSnapshot = debounce(
+  saveCalculationSnapshot,
+  1000
+);
 
 const onSizingChange = () => {
   workflowStore.markStepComplete("calculation");
-  console.log('✅ [Step 5 - V2] Sizing changed');
+  console.log("✅ [Step 5 - V2] Sizing changed");
 };
 
 // Reference to RequiredInletPressure component
@@ -409,10 +430,10 @@ const onNetworkChange = async (updatedNetwork: any) => {
     await versionsApi.update(versionId.value, {
       snapshotNetwork: JSON.stringify(updatedNetwork)
     });
-    console.log('✅ Network snapshot saved after size change');
+    console.log("✅ Network snapshot saved after size change");
   } catch (error) {
-    console.error('Failed to save network snapshot:', error);
-    toast.error('ไม่สามารถบันทึก Network ได้');
+    console.error("Failed to save network snapshot:", error);
+    toast.error("ไม่สามารถบันทึก Network ได้");
   }
 };
 
@@ -422,11 +443,15 @@ const saveCalculation = () => {
 };
 
 const goToNextStep = () => {
-  router.push(`/projects/${route.params.id}/versions/${route.params.versionId}/audit`);
+  router.push(
+    `/projects/${route.params.id}/versions/${route.params.versionId}/audit`
+  );
 };
 
 const goToPrevStep = () => {
-  router.push(`/projects/${route.params.id}/versions/${route.params.versionId}/fixtures`);
+  router.push(
+    `/projects/${route.params.id}/versions/${route.params.versionId}/fixtures`
+  );
 };
 
 // Load data on mount

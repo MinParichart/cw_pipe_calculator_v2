@@ -2,7 +2,7 @@
   <div class="card">
     <div class="flex items-center justify-between mb-4">
       <div>
-        <h3 class="text-lg font-medium text-gray-900">Auto-Suggest Upsizing</h3>
+        <h3 class="text-lg font-medium text-gray-900">Auto-Suggest Sizing</h3>
         <p class="text-sm text-gray-600 mt-1">
           วิเคราะห์และแนะนำขนาดท่อที่เหมาะสม - Water Factor + Auto Selection
         </p>

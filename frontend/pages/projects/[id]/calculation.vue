@@ -14,7 +14,7 @@
           <div class="bg-white rounded-lg shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium text-gray-900">
-                Auto Suggest Upsizing
+                Auto Suggest Sizing
               </h3>
               <svg
                 class="h-5 w-5 text-blue-500"

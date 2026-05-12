@@ -14,7 +14,7 @@
                   อัปโหลด Blueprint
                 </h1>
                 <p class="mt-1 text-sm text-gray-600">
-                  Upload reference file (DXF blueprint)
+                  Upload reference file (JPG, PNG blueprint)
                 </p>
               </div>
             </div>
@@ -55,7 +55,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Blueprint Upload Form -->
-          <div class="lg:col-span-2">
+          <div class="lg:col-span-1">
             <div class="bg-white rounded-lg shadow-sm p-6">
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900">
@@ -125,8 +125,9 @@
                         v-model="blueprintType"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       >
+                        <option value="">เลือกประเภท...</option>
                         <option value="floor_plan">
-                          Floor Plan (แปลนชั้น)
+                          Floor Plan (แปลนพื้น)
                         </option>
                         <option value="elevation">Elevation (ด้านข้าง)</option>
                         <option value="section">Section (ตัดแบบ)</option>
@@ -337,8 +338,8 @@
           </div>
 
           <!-- Uploaded Blueprints List -->
-          <div class="lg:col-span-1">
-            <div class="bg-white rounded-lg shadow-sm p-6 sticky top-6">
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-sm p-6">
               <h3 class="text-lg font-medium text-gray-900 mb-4">
                 Blueprint ที่อัปโหลดแล้ว
                 <span class="text-sm font-normal text-gray-500"
@@ -346,9 +347,9 @@
                 >
               </h3>
 
-              <div v-if="blueprints.length === 0" class="text-center py-8">
+              <div v-if="blueprints.length === 0" class="text-center py-12">
                 <svg
-                  class="h-12 w-12 mx-auto mb-4 text-gray-300"
+                  class="h-16 w-16 mx-auto mb-4 text-gray-300"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -360,67 +361,70 @@
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <p class="text-gray-500 text-sm">ยังไม่ได้อัปโหลด Blueprint</p>
+                <p class="text-gray-500 text-base">
+                  ยังไม่ได้อัปโหลด Blueprint
+                </p>
+                <p class="text-gray-400 text-sm mt-1">
+                  อัปโหลด Blueprint เพื่อเริ่มใช้งาน
+                </p>
               </div>
 
-              <div v-else class="space-y-3">
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div
                   v-for="bp in blueprints"
                   :key="bp.id"
-                  class="border rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                  class="border rounded-lg overflow-hidden hover:shadow-lg transition-all cursor-pointer"
                   :class="
                     currentBlueprintId === bp.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200'
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-gray-200 hover:border-blue-300'
                   "
                   @click="previewBlueprint(bp)"
                 >
-                  <div class="flex gap-3">
-                    <div class="w-20 h-20 flex-shrink-0">
-                      <img
-                        :src="bp.url"
-                        :alt="bp.name"
-                        class="w-full h-full object-cover rounded"
-                      />
+                  <div class="aspect-video w-full bg-gray-100">
+                    <img
+                      :src="bp.url"
+                      :alt="bp.name"
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div class="p-4">
+                    <p
+                      class="text-base font-semibold text-gray-900 truncate mb-2"
+                    >
+                      {{ bp.name }}
+                    </p>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                      <span
+                        class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                      >
+                        {{ bp.floorText }}
+                      </span>
+                      <span
+                        class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800"
+                      >
+                        {{ bp.typeText }}
+                      </span>
                     </div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-sm font-medium text-gray-900 truncate">
-                        {{ bp.name }}
-                      </p>
-                      <div class="flex flex-wrap gap-1 mt-1">
-                        <span
-                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
-                        >
-                          {{ bp.floorText }}
-                        </span>
-                        <span
-                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
-                        >
-                          {{ bp.typeText }}
-                        </span>
-                      </div>
-                      <p class="text-xs text-gray-500 mt-1">
-                        Scale: {{ bp.scale }}
-                      </p>
-                      <div class="mt-2 flex items-center justify-between">
-                        <span class="text-xs text-gray-400">{{
-                          formatDateShort(bp.createdAt)
-                        }}</span>
-                        <div class="flex gap-2">
-                          <button
-                            @click.stop="openEditModal(bp)"
-                            class="text-blue-600 hover:text-blue-700 text-xs"
-                          >
-                            แก้ไข
-                          </button>
-                          <button
-                            @click.stop="deleteBlueprint(bp.id)"
-                            class="text-red-600 hover:text-red-700 text-xs"
-                          >
-                            ลบ
-                          </button>
-                        </div>
-                      </div>
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-gray-400"> uploaded </span>
+                      <span class="text-gray-400">
+                        {{ formatDateShort(bp.createdAt) }}
+                      </span>
+                    </div>
+                    <div class="mt-3 flex gap-2 pt-3 border-t">
+                      <button
+                        @click.stop="openEditModal(bp)"
+                        class="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 text-sm font-medium"
+                      >
+                        แก้ไข
+                      </button>
+                      <button
+                        @click.stop="deleteBlueprint(bp.id)"
+                        class="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 text-sm font-medium"
+                      >
+                        ลบ
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -529,7 +533,8 @@
                   v-model="editingBlueprint.editType"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 >
-                  <option value="floor_plan">Floor Plan (แปลนชั้น)</option>
+                  <option value="">เลือกประเภท...</option>
+                  <option value="floor_plan">Floor Plan (แปลนพื้น)</option>
                   <option value="elevation">Elevation (ด้านข้าง)</option>
                   <option value="section">Section (ตัดแบบ)</option>
                   <option value="detail">Detail (รายละเอียด)</option>
@@ -674,7 +679,7 @@ const loading = ref(true);
 const version = ref<any>(null);
 const blueprintFile = ref<File | null>(null);
 const blueprintFloor = ref("");
-const blueprintType = ref("floor_plan");
+const blueprintType = ref("");
 const manualNotes = ref("");
 const saving = ref(false);
 const blueprints = ref<any[]>([]);
@@ -790,7 +795,7 @@ const clearFile = () => {
 
 const cancelUpload = () => {
   blueprintFloor.value = "";
-  blueprintType.value = "floor_plan";
+  blueprintType.value = "";
   blueprintFile.value = null;
   manualNotes.value = "";
 };
@@ -906,7 +911,7 @@ const saveBlueprint = async () => {
     // Reset form
     blueprintFile.value = null;
     blueprintFloor.value = "";
-    blueprintType.value = "floor_plan";
+    blueprintType.value = "";
     manualNotes.value = "";
     if (fileInput.value) {
       fileInput.value.value = "";

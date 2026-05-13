@@ -61,190 +61,200 @@
             </div>
           </div>
 
-          <!-- Project & Criteria Section - Combined Card -->
-          <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
+          <!-- Project & Criteria Section - Combined Card with 2-Column Layout -->
+          <div class="bg-white rounded-lg shadow-md border border-gray-200 mb-6 overflow-hidden">
             <!-- Card Header -->
-            <div class="mb-6">
-              <h3 class="text-xl font-bold text-gray-900">ข้อมูลโปรเจกต์และเกณฑ์การออกแบบ</h3>
-              <p class="text-sm text-gray-600 mt-1">รายละเอียดโปรเจกต์และค่าพารามิเตอร์สำหรับการคำนวณ</p>
+            <div class="bg-gradient-to-r from-blue-50 to-green-50 px-6 py-4 border-b border-gray-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    ข้อมูลโปรเจกต์และเกณฑ์การออกแบบ
+                  </h3>
+                  <p class="text-xs text-gray-600 mt-1">Project Information & Design Criteria</p>
+                </div>
+              </div>
             </div>
 
-            <!-- Project Details Section -->
-            <div class="mb-6">
-              <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
-                <h4 class="text-base font-semibold text-gray-800 flex items-center gap-2">
-                  <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  รายละเอียดโปรเจกต์
-                </h4>
-                <button
-                  v-if="!editingProjectDetails"
-                  @click="editProjectDetails"
-                  class="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  แก้ไข
-                </button>
-              </div>
+            <!-- 2-Column Grid Layout -->
+            <div class="p-6">
+              <!-- View Mode (Both sections visible in 2 columns) -->
+              <div v-if="!editingProjectDetails && !editingCriteria" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left Column: Project Details -->
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
+                      <span class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                      รายละเอียดโปรเจกต์
+                    </h4>
+                    <button
+                      @click="editProjectDetails"
+                      class="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                    >
+                      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      แก้ไข
+                    </button>
+                  </div>
 
-              <!-- View Mode -->
-              <div v-if="!editingProjectDetails">
-                <div class="space-y-3 text-sm">
-                  <div>
-                    <dt class="text-gray-600">ชื่อโปรเจกต์:</dt>
-                    <dd class="font-medium text-gray-900 mt-1">
-                      {{ project.name }}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt class="text-gray-600">รายละเอียด:</dt>
-                    <dd class="text-gray-700 mt-1">
-                      {{ project.description || "-" }}
-                    </dd>
-                  </div>
-                  <div class="grid grid-cols-2 gap-4">
+                  <!-- Project Info Card -->
+                  <div class="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-200">
                     <div>
-                      <dt class="text-gray-600">ประเภทอาคาร:</dt>
-                      <dd class="font-medium text-gray-900 mt-1">
-                        {{ getBuildingTypeText(criteria?.buildingType) }}
-                      </dd>
+                      <label class="text-xs text-gray-500 block mb-1">ชื่อโปรเจกต์</label>
+                      <p class="text-sm font-medium text-gray-900">{{ project.name }}</p>
                     </div>
+
                     <div>
-                      <dt class="text-gray-600">จำนวนชั้น:</dt>
-                      <dd class="font-medium text-gray-900 mt-1">
-                        {{ criteria?.floors || "-" }} ชั้น
-                      </dd>
+                      <label class="text-xs text-gray-500 block mb-1">รายละเอียด</label>
+                      <p class="text-sm text-gray-700">{{ project.description || "-" }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="text-xs text-gray-500 block mb-1">ประเภทอาคาร</label>
+                        <p class="text-sm font-medium text-gray-900">{{ getBuildingTypeText(criteria?.buildingType) }}</p>
+                      </div>
+                      <div>
+                        <label class="text-xs text-gray-500 block mb-1">จำนวนชั้น</label>
+                        <p class="text-sm font-medium text-gray-900">{{ criteria?.floors || "-" }} ชั้น</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column: Design Criteria -->
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
+                      <span class="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                      เกณฑ์การออกแบบ
+                    </h4>
+                    <button
+                      @click="editingCriteria = true"
+                      class="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                    >
+                      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      แก้ไข
+                    </button>
+                  </div>
+
+                  <!-- Empty State -->
+                  <div v-if="!criteria" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                    <svg class="h-10 w-10 text-yellow-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p class="text-sm text-yellow-800 font-medium mb-1">ยังไม่ได้ตั้งค่าเกณฑ์การคำนวณ</p>
+                    <button
+                      @click="editingCriteria = true"
+                      class="mt-2 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 font-medium"
+                    >
+                      เริ่มตั้งค่า
+                    </button>
+                  </div>
+
+                  <!-- Criteria Display (if exists) -->
+                  <div v-else class="space-y-3">
+                    <!-- Velocity Card -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div class="flex items-center gap-2 mb-2">
+                        <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <h5 class="text-xs font-bold text-blue-900 uppercase">Velocity</h5>
+                      </div>
+                      <div class="grid grid-cols-3 gap-2 text-xs">
+                        <div class="text-center">
+                          <div class="text-gray-600">ต่ำสุด</div>
+                          <div class="font-bold text-blue-900">{{ criteria?.velocityMinimum || "-" }} <span class="text-xs text-gray-500">m/s</span></div>
+                        </div>
+                        <div class="text-center border-l border-r border-blue-200">
+                          <div class="text-gray-600">เหมาะสม</div>
+                          <div class="font-bold text-green-700">{{ criteria?.velocityRecommended || "-" }} <span class="text-xs text-gray-500">m/s</span></div>
+                        </div>
+                        <div class="text-center">
+                          <div class="text-gray-600">สูงสุด</div>
+                          <div class="font-bold text-blue-900">{{ criteria?.velocityMaximum || "-" }} <span class="text-xs text-gray-500">m/s</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Calculation Card -->
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div class="flex items-center gap-2 mb-2">
+                        <svg class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <h5 class="text-xs font-bold text-green-900 uppercase">Calculation</h5>
+                      </div>
+                      <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span class="text-gray-600">Curve:</span>
+                          <span class="font-medium text-gray-900 ml-1">Hunter's</span>
+                        </div>
+                        <div>
+                          <span class="text-gray-600">C-Factor:</span>
+                          <span class="font-medium text-gray-900 ml-1">{{ criteria?.cFactor || "-" }}</span>
+                        </div>
+                        <div v-if="criteria?.cFactor === 150">
+                          <span class="text-gray-600">PVC Class:</span>
+                          <span class="font-bold text-blue-900 ml-1">{{ criteria?.pvcClass || 7 }} <span class="text-gray-500">bar</span></span>
+                        </div>
+                        <div>
+                          <span class="text-gray-600">Minor Loss:</span>
+                          <span class="font-medium text-gray-900 ml-1">{{ criteria?.minorLossFactor || "-" }}%</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Edit Mode -->
-              <ProjectDetailsForm
-                v-else
-                :project="project"
-                :criteria="criteria"
-                @submit="saveProjectDetails"
-                @cancel="editingProjectDetails = false"
-              />
-            </div>
-
-            <!-- Design Criteria Section -->
-            <div>
-              <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
-                <h4 class="text-base font-semibold text-gray-800 flex items-center gap-2">
-                  <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                  เกณฑ์การออกแบบ
-                </h4>
-                <button
-                  v-if="!editingCriteria"
-                  @click="editingCriteria = true"
-                  class="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  แก้ไข
-                </button>
-              </div>
-
-              <!-- View Mode -->
-              <div
-                v-if="!editingCriteria && criteria"
-                class="grid grid-cols-1 md:grid-cols-2 gap-4"
-              >
-                <!-- Velocity Card -->
-                <div class="border border-blue-200 bg-blue-50 rounded-lg p-4">
-                  <h5 class="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                    <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <!-- Edit Mode - Project Details -->
+              <div v-else-if="editingProjectDetails">
+                <div class="mb-4">
+                  <button
+                    @click="editingProjectDetails = false"
+                    class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                  >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
-                    ความเร็วน้ำในท่อ
-                  </h5>
-                  <dl class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                      <dt class="text-gray-600">ต่ำสุด:</dt>
-                      <dd class="font-medium text-gray-900">
-                        {{ criteria?.velocityMinimum || "-" }} m/s
-                      </dd>
-                    </div>
-                    <div class="flex justify-between">
-                      <dt class="text-gray-600">เหมาะสม:</dt>
-                      <dd class="font-medium text-gray-900">
-                        {{ criteria?.velocityRecommended || "-" }} m/s
-                      </dd>
-                    </div>
-                    <div class="flex justify-between">
-                      <dt class="text-gray-600">สูงสุด:</dt>
-                      <dd class="font-medium text-gray-900">
-                        {{ criteria?.velocityMaximum || "-" }} m/s
-                      </dd>
-                    </div>
-                  </dl>
+                    กลับ
+                  </button>
                 </div>
+                <ProjectDetailsForm
+                  :project="project"
+                  :criteria="criteria"
+                  @submit="saveProjectDetails"
+                  @cancel="editingProjectDetails = false"
+                />
+              </div>
 
-                <!-- Calculation Mode Card -->
-                <div class="border border-green-200 bg-green-50 rounded-lg p-4">
-                  <h5 class="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
-                    <svg class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              <!-- Edit Mode - Criteria -->
+              <div v-else-if="editingCriteria">
+                <div class="mb-4">
+                  <button
+                    @click="editingCriteria = false"
+                    class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                  >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
-                    โหมดการคำนวณ
-                  </h5>
-                  <dl class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                      <dt class="text-gray-600">Curve:</dt>
-                      <dd class="font-medium text-gray-900">Hunter's Curve</dd>
-                    </div>
-                    <div class="flex justify-between">
-                      <dt class="text-gray-600">C-Factor:</dt>
-                      <dd class="font-medium text-gray-900">
-                        {{ criteria?.cFactor || "-" }} ({{
-                          getCFactorText(criteria?.cFactor)
-                        }})
-                      </dd>
-                    </div>
-                    <!-- PVC Class (แสดงเฉพาะเมื่อเป็น PVC) -->
-                    <div v-if="criteria?.cFactor === 150" class="flex justify-between">
-                      <dt class="text-gray-600">PVC Class:</dt>
-                      <dd class="font-medium text-blue-900">
-                        {{ criteria?.pvcClass || 7 }} bar
-                      </dd>
-                    </div>
-                    <div class="flex justify-between">
-                      <dt class="text-gray-600">Demand:</dt>
-                      <dd class="font-medium text-gray-900">
-                        {{ getDemandModeText(criteria?.demandMode) }}
-                      </dd>
-                    </div>
-                    <div class="flex justify-between">
-                      <dt class="text-gray-600">Minor Loss:</dt>
-                      <dd class="font-medium text-gray-900">
-                        {{ criteria?.minorLossFactor || "-" }}%
-                      </dd>
-                    </div>
-                  </dl>
+                    กลับ
+                  </button>
                 </div>
+                <CriteriaForm
+                  :criteria="criteria"
+                  :project-id="parseInt(route.params.id as string)"
+                  @submit="saveCriteria"
+                  @cancel="editingCriteria = false"
+                />
               </div>
-
-              <!-- Empty State -->
-              <div v-else-if="!criteria" class="text-center py-8">
-                <p class="text-gray-500 text-sm">ยังไม่ได้ตั้งค่าเกณฑ์การคำนวณ</p>
-                <button
-                  @click="editingCriteria = true"
-                  class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-                >
-                  เริ่มตั้งค่า
-                </button>
-              </div>
-
-              <!-- Edit Mode -->
-              <CriteriaForm
-                v-else
-                :criteria="criteria"
-                :project-id="parseInt(route.params.id as string)"
-                @submit="saveCriteria"
-                @cancel="editingCriteria = false"
-              />
             </div>
           </div>
 

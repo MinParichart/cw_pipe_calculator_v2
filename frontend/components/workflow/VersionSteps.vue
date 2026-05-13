@@ -140,7 +140,13 @@ const VERSION_STEPS: Step[] = [
     order: 4,
     path: "calculation"
   },
-  { id: "versionAudit", label: "Audit", order: 5, path: "audit" }
+  {
+    id: "versionReport",
+    label: "Report",
+    order: 5,
+    path: "report"
+  },
+  { id: "versionAudit", label: "Audit", order: 6, path: "audit" }
 ];
 
 const props = defineProps<{

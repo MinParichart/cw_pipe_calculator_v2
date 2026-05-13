@@ -13,6 +13,7 @@ export type VersionStep =
   | 'versionNetwork'
   | 'versionFixtures'
   | 'versionCalculation'
+  | 'versionReport'
   | 'versionAudit'
   | 'versionCompare'
 
@@ -54,6 +55,7 @@ export const useWorkflowStore = defineStore('workflow', {
         'versionNetwork',
         'versionFixtures',
         'versionCalculation',
+        'versionReport',
         'versionAudit',
         'versionCompare',
       ]
@@ -79,6 +81,7 @@ export const useWorkflowStore = defineStore('workflow', {
         versionNetwork: 'network',
         versionFixtures: 'fixtures',
         versionCalculation: 'calculation',
+        versionReport: 'report',
         versionAudit: 'audit',
         versionCompare: 'compare',
       }
@@ -141,6 +144,7 @@ export const useWorkflowStore = defineStore('workflow', {
           'network': 'versionNetwork',
           'fixtures': 'versionFixtures',
           'calculation': 'versionCalculation',
+          'report': 'versionReport',
           'audit': 'versionAudit',
         }
         return versionStepMap[versionStep] || 'versionNetwork'

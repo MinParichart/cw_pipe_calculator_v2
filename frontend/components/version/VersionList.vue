@@ -74,6 +74,7 @@ interface Version {
   versionNumber: number;
   isCurrent: boolean;
   createdAt: string;
+  updatedAt: string;
   snapshotNetwork?: string;
   snapshotFixtures?: string;
   snapshotResults?: string;

@@ -36,6 +36,22 @@
         {{ version.description }}
       </p>
 
+      <!-- Dates -->
+      <div class="flex flex-wrap gap-3 text-xs text-gray-500">
+        <div class="flex items-center gap-1">
+          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Created: {{ formatDate(version.createdAt) }}</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>Updated: {{ formatDate(version.updatedAt) }}</span>
+        </div>
+      </div>
+
       <!-- Snapshot Status -->
       <div class="flex flex-wrap gap-2 text-xs">
         <span v-if="hasSnapshot('network')" class="px-2 py-1 bg-blue-50 text-blue-700 rounded">
@@ -155,6 +171,7 @@ interface Version {
   versionNumber: number
   isCurrent: boolean
   createdAt: string
+  updatedAt: string
   snapshotNetwork?: string
   snapshotFixtures?: string
   snapshotResults?: string

@@ -99,6 +99,9 @@ export class ProjectService {
       cFactor?: number
       systemType?: 'FLUSH_TANK' | 'FLUSH_VALVE'
       buildingType?: 'APARTMENT' | 'OFFICE' | 'HOSPITAL' | 'SCHOOL' | 'HOTEL'
+      floors?: number
+      pvcClass?: number
+      minorLossFactor?: number
       staticHead?: number
       residualPressure?: number
     }

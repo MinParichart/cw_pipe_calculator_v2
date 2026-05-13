@@ -65,22 +65,30 @@
                   :class="{
                     'border-blue-500 bg-blue-50': form.buildingType === type.value,
                     'border-red-500': errors.buildingType && form.buildingType !== type.value,
-                    'border-gray-300': !errors.buildingType && form.buildingType !== type.value
+                    'border-gray-300': !errors.buildingType && form.buildingType !== type.value,
+                    'opacity-50 cursor-not-allowed bg-gray-100': type.disabled,
+                    'cursor-pointer': !type.disabled
                   }"
                 >
                   <input
                     v-model="form.buildingType"
                     type="radio"
                     :value="type.value"
+                    :disabled="type.disabled"
                     class="sr-only"
                   />
                   <div class="flex items-center">
-                    <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="h-6 w-6" :class="type.disabled ? 'text-gray-400' : 'text-blue-600'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    <span class="ml-2 text-sm font-medium text-gray-900">
-                      {{ type.label }}
-                    </span>
+                    <div class="ml-2">
+                      <span class="text-sm font-medium" :class="type.disabled ? 'text-gray-500' : 'text-gray-900'">
+                        {{ type.label }}
+                      </span>
+                      <span v-if="type.disabled" class="block text-xs text-gray-400">
+                        (ยังไม่รองรับ)
+                      </span>
+                    </div>
                   </div>
                 </label>
               </div>
@@ -155,11 +163,11 @@ const errors = ref<{
 }>({})
 
 const buildingTypes = [
-  { value: 'APARTMENT', label: 'ที่พักอาศัย' },
-  { value: 'OFFICE', label: 'สำนักงาน' },
-  { value: 'HOSPITAL', label: 'โรงพยาบาล' },
-  { value: 'SCHOOL', label: 'โรงเรียน' },
-  { value: 'HOTEL', label: 'โรงแรม' },
+  { value: 'APARTMENT', label: 'ที่พักอาศัย', disabled: false },
+  { value: 'OFFICE', label: 'สำนักงาน', disabled: true },
+  { value: 'HOSPITAL', label: 'โรงพยาบาล', disabled: true },
+  { value: 'SCHOOL', label: 'โรงเรียน', disabled: true },
+  { value: 'HOTEL', label: 'โรงแรม', disabled: true },
 ]
 
 const validateForm = (): boolean => {
@@ -173,8 +181,9 @@ const validateForm = (): boolean => {
   }
 
   // Validate Building Type
-  if (!form.value.buildingType) {
-    errors.value.buildingType = 'กรุณาเลือกประเภทอาคาร'
+  const selectedBuildingType = buildingTypes.find(bt => bt.value === form.value.buildingType)
+  if (!form.value.buildingType || !selectedBuildingType || selectedBuildingType.disabled) {
+    errors.value.buildingType = 'กรุณาเลือกประเภทอาคารที่รองรับ'
     isValid = false
   }
 

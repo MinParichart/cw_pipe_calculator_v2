@@ -281,6 +281,7 @@
                           <h5 class="text-xs font-bold text-blue-900 uppercase tracking-wide">Velocity Ranges</h5>
                         </div>
                       </div>
+                      <div class="p-3">
                       <!-- Compact 3-column layout -->
                       <div class="grid grid-cols-3 gap-1.5 mb-1.5">
                         <!-- Critical Low -->

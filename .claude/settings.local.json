@@ -117,7 +117,10 @@
       "Bash(cmd /c \"if exist .nuxt rd /s /q .nuxt\")",
       "Bash(del /F /Q \"components\\\\ui\\\\StepIndicator.vue\" \"pages\\\\preview.vue\")",
       "Bash(find . -name *.ts -path */stores/*)",
-      "Bash(timeout 5 bash -c 'while ! nc -z localhost 3003 2>/dev/null; do sleep 0.5; done; echo \"\"Backend ready\"\"')"
+      "Bash(timeout 5 bash -c 'while ! nc -z localhost 3003 2>/dev/null; do sleep 0.5; done; echo \"\"Backend ready\"\"')",
+      "Bash(grep -n \"^\\\\s*<div\" pages/projects/[id]/index.vue)",
+      "Bash(grep -n \"^\\\\s*</div>\" pages/projects/[id]/index.vue)",
+      "Bash(node:*)"
     ]
   }
 }

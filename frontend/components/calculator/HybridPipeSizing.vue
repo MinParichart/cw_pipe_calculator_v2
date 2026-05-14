@@ -94,28 +94,25 @@
           </div>
         </div>
 
-        <div
-          class="mt-3 pt-3 border-t border-purple-200 text-xs text-purple-700"
-        >
-          <p class="flex items-start">
-            <svg
-              class="h-4 w-4 mr-1 flex-shrink-0 mt-0.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
+        <div class="mt-3">
+          <div class="flex items-center gap-2 text-sm text-gray-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <svg class="h-4 w-4 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span
-              ><strong>อ้างอิง:</strong> ตาราง Fixture Units (Private Use)
-              สำหรับที่พักอาศัย ≤ 2 ชั้น</span
+            <span class="flex-1">
+              อ้างอิง: ตาราง Fixture Units (Private Use) สำหรับที่พักอาศัย ≤ 2 ชั้น
+            </span>
+            <NuxtLink
+              to="/reference"
+              target="_blank"
+              class="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex-shrink-0"
             >
-          </p>
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              ดูตาราง
+            </NuxtLink>
+          </div>
         </div>
       </div>
     </div>

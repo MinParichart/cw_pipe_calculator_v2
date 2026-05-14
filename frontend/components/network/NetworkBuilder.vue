@@ -732,6 +732,7 @@
                 }"
                 @click.stop="selectNode(node)"
                 @mousedown.stop="startDragNode(node, $event)"
+                @contextmenu.prevent.stop="showNodeContextMenu($event, node)"
                 :data-node-id="node.id"
                 :data-node-type="node.type"
               >
@@ -2071,6 +2072,39 @@
         </div>
       </div>
     </div>
+
+    <!-- Node Context Menu -->
+    <ClientOnly>
+      <div
+        v-if="isMounted && contextMenu.show"
+        :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
+        class="fixed bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50 min-w-[150px]"
+      >
+        <button
+          @click="copyNode"
+          class="w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm"
+        >
+          <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span>Copy Node</span>
+        </button>
+      </div>
+
+      <!-- Click outside to close context menu -->
+      <div
+        v-if="isMounted && contextMenu.show"
+        @click="hideContextMenu"
+        class="fixed inset-0 z-40"
+      ></div>
+    </ClientOnly>
+
+    <!-- Click outside to close context menu -->
+    <div
+      v-if="contextMenu.show"
+      @click="hideContextMenu"
+      class="fixed inset-0 z-40"
+    ></div>
   </div>
 </template>
 
@@ -2190,6 +2224,15 @@ const calibrationPoints = ref<{ x: number; y: number }[]>([]);
 const showFixtureModal = ref(false);
 const selectedNode = ref<any>(null);
 const selectedNodeFixtures = ref<any[]>([]);
+
+// Context menu state
+const contextMenu = ref({
+  show: false,
+  x: 0,
+  y: 0,
+  targetNodeId: null as number | null
+});
+const isMounted = ref(false);
 
 // Local state for quantity inputs (to allow typing without immediate re-render)
 const fixtureInputValues = reactive<Record<string, number>>({});
@@ -3164,6 +3207,7 @@ const onMouseUpPanel = () => {
 
 // Add window event listeners for panel dragging
 onMounted(() => {
+  isMounted.value = true;
   window.addEventListener("mousemove", onMouseMovePanel);
   window.addEventListener("mouseup", onMouseUpPanel);
 });
@@ -3360,6 +3404,117 @@ const selectNode = (node: any) => {
     addPipe(drawingPipeFrom.value, node.id);
     drawingPipeFrom.value = null;
   }
+};
+
+// Context menu functions
+const showNodeContextMenu = (event: MouseEvent, node: any) => {
+  event.preventDefault();
+  event.stopPropagation();
+  console.log('🖱️ Right-click detected on node:', node.name, 'ID:', node.id);
+  contextMenu.value = {
+    show: true,
+    x: event.clientX,
+    y: event.clientY,
+    targetNodeId: node.id
+  };
+  console.log('✅ Context menu shown:', contextMenu.value);
+};
+
+const hideContextMenu = () => {
+  console.log('❌ Hiding context menu');
+  contextMenu.value.show = false;
+  contextMenu.value.targetNodeId = null;
+};
+
+const generateCopyName = (originalName: string): string => {
+  console.log('📝 Generating copy name for:', originalName);
+
+  // Handle undefined or empty name
+  if (!originalName || typeof originalName !== 'string') {
+    originalName = 'Node';
+  }
+
+  // Check if already has (Copy) or (Copy N)
+  const copyRegex = /^(.+?)\s*(\(Copy(?:\s+(\d+))?\))?$/;
+  const match = originalName.match(copyRegex);
+
+  if (!match || !match[2]) {
+    // First copy
+    const result = `${originalName} (Copy)`;
+    console.log('✨ First copy, result:', result);
+    return result;
+  }
+
+  const baseName = match[1];
+  const currentNum = match[3] ? parseInt(match[3]) : 1;
+
+  // Check if next number is available
+  const nextNum = currentNum + 1;
+  const newName = `${baseName} (Copy ${nextNum})`;
+
+  // Verify this name doesn't exist
+  const exists = nodes.value.some(n => n.name === newName);
+  const result = exists ? `${baseName} (Copy ${nextNum + 1})` : newName;
+  console.log('✨ Nth copy, result:', result);
+  return result;
+};
+
+const copyNode = () => {
+  console.log('🔄 Copy node clicked, targetNodeId:', contextMenu.value.targetNodeId);
+  console.log('📋 Current nodes count:', nodes.value.length);
+
+  const sourceNode = nodes.value.find(n => n.id === contextMenu.value.targetNodeId);
+  if (!sourceNode) {
+    console.error('❌ Source node not found for ID:', contextMenu.value.targetNodeId);
+    console.error('❌ Available node IDs:', nodes.value.map(n => n.id));
+    toast.error('ไม่พบ Node ที่จะคัดลอก');
+    return;
+  }
+
+  console.log('✅ Found source node:', sourceNode);
+  console.log('🔍 Source node properties:', {
+    id: sourceNode.id,
+    name: sourceNode.name,
+    label: sourceNode.label,
+    type: sourceNode.type,
+    x: sourceNode.x,
+    y: sourceNode.y,
+    allKeys: Object.keys(sourceNode)
+  });
+
+  // Try to get name from multiple possible properties
+  const originalName = sourceNode.name || sourceNode.label || sourceNode.type || 'Node';
+
+  console.log('📝 Using name:', originalName);
+
+  // Generate new name
+  const newName = generateCopyName(originalName);
+
+  console.log('🆕 Creating new node with name:', newName);
+
+  // Create copy with offset position
+  const newNode = {
+    ...sourceNode,
+    id: Date.now(), // New unique ID
+    name: newName,
+    label: newName, // Update label too if it exists
+    x: sourceNode.x + 60, // Offset x position
+    y: sourceNode.y + 60, // Offset y position
+    fixtures: sourceNode.fixtures ? JSON.parse(JSON.stringify(sourceNode.fixtures)) : [] // Deep copy fixtures
+  };
+
+  console.log('🆕 New node created:', newNode);
+
+  nodes.value.push(newNode);
+  console.log('✅ Node pushed to array, new count:', nodes.value.length);
+
+  hideContextMenu();
+
+  // Select the new node
+  selectNode(newNode);
+
+  toast.success(`คัดลอก Node "${originalName}" เรียบร้อย`);
+  console.log('🎉 Node copied successfully:', newName);
 };
 
 // Load fixtures for a specific node

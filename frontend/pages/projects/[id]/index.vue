@@ -90,8 +90,7 @@
             class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden mb-6"
           >
             <!-- Card Header with Gradient -->
-            <!-- <div class="bg-gradient-to-r from-blue-50 to-green-50 px-6 py-4 border-b border-gray-100"> -->
-            <div class="px-6 py-4 border-gray-100">
+            <div class="bg-gradient-to-r from-blue-50 to-green-50 px-6 py-4 border-b border-gray-100">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div
@@ -124,7 +123,7 @@
             </div>
 
             <!-- 2-Column Grid Layout -->
-            <div class="p-6">
+            <div class="p-6 bg-gray-50">
               <!-- View Mode (Both sections visible in 2 columns) -->
               <div
                 v-if="!editingProjectDetails && !editingCriteria"
@@ -165,8 +164,18 @@
 
                   <!-- Project Info Card -->
                   <div
-                    class="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-200"
+                    class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 overflow-hidden"
                   >
+                    <!-- Mini Header -->
+                    <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-2 border-b border-blue-200">
+                      <div class="flex items-center gap-2">
+                        <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <h5 class="text-xs font-bold text-blue-900 uppercase tracking-wide">Project Details</h5>
+                      </div>
+                    </div>
+                    <div class="p-4 space-y-3">
                     <div>
                       <label class="text-xs text-gray-500 block mb-1"
                         >ชื่อโปรเจกต์</label
@@ -202,6 +211,7 @@
                           {{ criteria?.floors || "-" }} ชั้น
                         </p>
                       </div>
+                    </div>
                     </div>
                   </div>
                 </div>
@@ -260,25 +270,16 @@
                   <div v-else class="space-y-3">
                     <!-- Velocity Ranges - Compact Grid -->
                     <div
-                      class="bg-blue-50 border border-blue-200 rounded-lg p-3"
+                      class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 overflow-hidden"
                     >
-                      <div class="flex items-center gap-2 mb-2">
-                        <svg
-                          class="h-4 w-4 text-blue-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M13 10V3L4 14h7v7l9-11h-7z"
-                          />
-                        </svg>
-                        <h5 class="text-xs font-bold text-blue-900 uppercase">
-                          Velocity Ranges
-                        </h5>
+                      <!-- Mini Header -->
+                      <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-3 py-2 border-b border-blue-200">
+                        <div class="flex items-center gap-2">
+                          <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          <h5 class="text-xs font-bold text-blue-900 uppercase tracking-wide">Velocity Ranges</h5>
+                        </div>
                       </div>
                       <!-- Compact 3-column layout -->
                       <div class="grid grid-cols-3 gap-1.5 mb-1.5">
@@ -346,30 +347,24 @@
                           </div>
                         </div>
                       </div>
+                      </div>
                     </div>
 
                     <!-- Calculation Settings -->
                     <div
-                      class="bg-green-50 border border-green-200 rounded-lg p-3"
+                      class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 overflow-hidden"
                     >
-                      <div class="flex items-center gap-2 mb-2">
-                        <svg
-                          class="h-4 w-4 text-green-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                          />
-                        </svg>
-                        <h5 class="text-xs font-bold text-green-900 uppercase">
-                          Calculation Settings
-                        </h5>
+                      <!-- Mini Header -->
+                      <div class="bg-gradient-to-r from-green-50 to-green-100 px-3 py-2 border-b border-green-200">
+                        <div class="flex items-center gap-2">
+                          <svg class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          <h5 class="text-xs font-bold text-green-900 uppercase tracking-wide">Calculation Settings</h5>
+                        </div>
                       </div>
+                      <div class="p-3">
+
                       <div class="grid grid-cols-2 gap-2 text-xs">
                         <div
                           class="bg-white rounded p-2 border border-green-300"
@@ -405,6 +400,7 @@
                             >{{ criteria?.minorLossFactor || "-" }}%</span
                           >
                         </div>
+                      </div>
                       </div>
                     </div>
                   </div>

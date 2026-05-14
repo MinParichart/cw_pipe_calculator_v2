@@ -64,6 +64,7 @@
         :version="version"
         @continue="(version) => $emit('continue', version)"
         @duplicate="(version) => $emit('duplicate', version)"
+        @viewAudit="(version) => $emit('viewAudit', version)"
         @delete="(version) => $emit('delete', version)"
         @update="(id, data) => $emit('update', id, data)"
       />
@@ -109,6 +110,7 @@ defineEmits<{
   create: [];
   continue: [version: Version];
   duplicate: [version: Version];
+  viewAudit: [version: Version];
   delete: [version: Version];
   update: [versionId: number, data: { name?: string; description?: string }];
 }>();

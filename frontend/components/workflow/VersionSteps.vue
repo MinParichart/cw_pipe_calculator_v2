@@ -145,8 +145,14 @@ const VERSION_STEPS: Step[] = [
     label: "Report",
     order: 5,
     path: "report"
-  },
-  { id: "versionAudit", label: "Audit", order: 6, path: "audit" }
+  }
+  // Audit Step removed - accessible via Version Card action button
+  // {
+  //   id: "versionAudit",
+  //   label: "Audit",
+  //   order: 6,
+  //   path: "audit"
+  // }
 ];
 
 const props = defineProps<{

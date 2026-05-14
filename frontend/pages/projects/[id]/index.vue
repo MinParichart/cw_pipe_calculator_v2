@@ -71,6 +71,7 @@
               @create="showCreateModal = true"
               @continue="handleContinueVersion"
               @duplicate="handleDuplicateVersion"
+              @viewAudit="handleViewAudit"
               @delete="handleDeleteVersion"
               @update="handleUpdateVersion"
             />
@@ -716,6 +717,10 @@ const handleDuplicateVersion = async (version: any) => {
   } catch (error: any) {
     toast.error(error.message || "ล้มเหลือ");
   }
+};
+
+const handleViewAudit = (version: any) => {
+  router.push(`/projects/${route.params.id}/versions/${version.id}/audit`);
 };
 
 const handleDeleteVersion = async (version: any) => {

@@ -209,6 +209,14 @@
       </button>
 
       <button
+        @click="$emit('viewAudit', version)"
+        class="px-3 py-2 text-sm font-medium text-purple-600 bg-white border border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all shadow-sm"
+        title="ดู Audit Log"
+      >
+        📜
+      </button>
+
+      <button
         @click="$emit('delete', version)"
         class="px-3 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-all shadow-sm"
         title="ลบ Version"
@@ -314,6 +322,7 @@ const emit = defineEmits<{
   continue: [version: Version];
   duplicate: [version: Version];
   delete: [version: Version];
+  viewAudit: [version: Version];
   update: [versionId: number, data: { name?: string; description?: string }];
 }>();
 

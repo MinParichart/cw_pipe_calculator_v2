@@ -62,7 +62,9 @@
           </div>
 
           <!-- Versions List Section -->
-          <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
+          <div
+            class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6"
+          >
             <VersionList
               :versions="versions"
               :loading="loading"
@@ -83,21 +85,38 @@
           </div>
 
           <!-- Project & Criteria Section - Combined Card with Improved UX -->
-          <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden mb-6">
+          <div
+            class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden mb-6"
+          >
             <!-- Card Header with Gradient -->
-            <div class="bg-gradient-to-r from-blue-50 to-green-50 px-6 py-4 border-b border-gray-100">
+            <!-- <div class="bg-gradient-to-r from-blue-50 to-green-50 px-6 py-4 border-b border-gray-100"> -->
+            <div class="px-6 py-4 border-gray-100">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center shadow-md">
-                    <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <div
+                    class="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center shadow-md"
+                  >
+                    <svg
+                      class="h-7 w-7 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
                     </svg>
                   </div>
                   <div>
                     <h3 class="text-lg font-bold text-gray-900">
                       ข้อมูลโปรเจกต์และเกณฑ์การออกแบบ
                     </h3>
-                    <p class="text-xs text-gray-600">Project Information & Design Criteria</p>
+                    <p class="text-xs text-gray-600">
+                      Project Information & Design Criteria
+                    </p>
                   </div>
                 </div>
               </div>
@@ -106,45 +125,81 @@
             <!-- 2-Column Grid Layout -->
             <div class="p-6">
               <!-- View Mode (Both sections visible in 2 columns) -->
-              <div v-if="!editingProjectDetails && !editingCriteria" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div
+                v-if="!editingProjectDetails && !editingCriteria"
+                class="grid grid-cols-1 lg:grid-cols-2 gap-6"
+              >
                 <!-- Left Column: Project Details -->
                 <div class="space-y-3">
                   <div class="flex items-center justify-between">
-                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                      <span class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                    <h4
+                      class="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2"
+                    >
+                      <span
+                        class="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold"
+                        >1</span
+                      >
                       รายละเอียดโปรเจกต์
                     </h4>
                     <button
                       @click="editProjectDetails"
                       class="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-lg font-medium flex items-center gap-1 transition-colors"
                     >
-                      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      <svg
+                        class="h-3 w-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
                       </svg>
                       แก้ไข
                     </button>
                   </div>
 
                   <!-- Project Info Card -->
-                  <div class="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-200">
+                  <div
+                    class="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-200"
+                  >
                     <div>
-                      <label class="text-xs text-gray-500 block mb-1">ชื่อโปรเจกต์</label>
-                      <p class="text-sm font-medium text-gray-900">{{ project.name }}</p>
+                      <label class="text-xs text-gray-500 block mb-1"
+                        >ชื่อโปรเจกต์</label
+                      >
+                      <p class="text-sm font-medium text-gray-900">
+                        {{ project.name }}
+                      </p>
                     </div>
 
                     <div>
-                      <label class="text-xs text-gray-500 block mb-1">รายละเอียด</label>
-                      <p class="text-sm text-gray-700">{{ project.description || "-" }}</p>
+                      <label class="text-xs text-gray-500 block mb-1"
+                        >รายละเอียด</label
+                      >
+                      <p class="text-sm text-gray-700">
+                        {{ project.description || "-" }}
+                      </p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                       <div>
-                        <label class="text-xs text-gray-500 block mb-1">ประเภทอาคาร</label>
-                        <p class="text-sm font-medium text-gray-900">{{ getBuildingTypeText(criteria?.buildingType) }}</p>
+                        <label class="text-xs text-gray-500 block mb-1"
+                          >ประเภทอาคาร</label
+                        >
+                        <p class="text-sm font-medium text-gray-900">
+                          {{ getBuildingTypeText(criteria?.buildingType) }}
+                        </p>
                       </div>
                       <div>
-                        <label class="text-xs text-gray-500 block mb-1">จำนวนชั้น</label>
-                        <p class="text-sm font-medium text-gray-900">{{ criteria?.floors || "-" }} ชั้น</p>
+                        <label class="text-xs text-gray-500 block mb-1"
+                          >จำนวนชั้น</label
+                        >
+                        <p class="text-sm font-medium text-gray-900">
+                          {{ criteria?.floors || "-" }} ชั้น
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -153,25 +208,45 @@
                 <!-- Right Column: Design Criteria -->
                 <div class="space-y-3">
                   <div class="flex items-center justify-between">
-                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                      <span class="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                    <h4
+                      class="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-2"
+                    >
+                      <span
+                        class="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs font-bold"
+                        >2</span
+                      >
                       เกณฑ์การออกแบบ
                     </h4>
                     <button
                       @click="editingCriteria = true"
                       class="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-lg font-medium flex items-center gap-1 transition-colors"
                     >
-                      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      <svg
+                        class="h-3 w-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
                       </svg>
                       แก้ไข
                     </button>
                   </div>
 
                   <!-- Empty State -->
-                  <div v-if="!criteria" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                  <div
+                    v-if="!criteria"
+                    class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center"
+                  >
                     <div class="text-yellow-400 text-4xl mb-2">⚠️</div>
-                    <p class="text-sm text-yellow-800 font-medium mb-1">ยังไม่ได้ตั้งค่าเกณฑ์การคำนวณ</p>
+                    <p class="text-sm text-yellow-800 font-medium mb-1">
+                      ยังไม่ได้ตั้งค่าเกณฑ์การคำนวณ
+                    </p>
                     <button
                       @click="editingCriteria = true"
                       class="mt-3 px-4 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 font-medium transition-colors shadow-sm"
@@ -183,75 +258,151 @@
                   <!-- Criteria Display (if exists) -->
                   <div v-else class="space-y-3">
                     <!-- Velocity Ranges - Compact Grid -->
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div
+                      class="bg-blue-50 border border-blue-200 rounded-lg p-3"
+                    >
                       <div class="flex items-center gap-2 mb-2">
-                        <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        <svg
+                          class="h-4 w-4 text-blue-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
                         </svg>
-                        <h5 class="text-xs font-bold text-blue-900 uppercase">Velocity Ranges</h5>
+                        <h5 class="text-xs font-bold text-blue-900 uppercase">
+                          Velocity Ranges
+                        </h5>
                       </div>
                       <!-- Compact 3-column layout -->
                       <div class="grid grid-cols-3 gap-1.5 mb-1.5">
                         <!-- Critical Low -->
-                        <div class="text-center p-2 bg-red-50 border border-red-200 rounded">
+                        <div
+                          class="text-center p-2 bg-red-50 border border-red-200 rounded"
+                        >
                           <div class="text-red-500 text-sm mb-0.5">❌</div>
-                          <div class="text-xs text-red-700 font-semibold">Critical</div>
-                          <div class="text-xs text-red-900 font-bold">&lt; {{ criteria?.velocityMinimum || 0.6 }}</div>
+                          <div class="text-xs text-red-700 font-semibold">
+                            Critical
+                          </div>
+                          <div class="text-xs text-red-900 font-bold">
+                            &lt; {{ criteria?.velocityMinimum || 0.6 }}
+                          </div>
                         </div>
                         <!-- Warning Low -->
-                        <div class="text-center p-2 bg-yellow-50 border border-yellow-200 rounded">
+                        <div
+                          class="text-center p-2 bg-yellow-50 border border-yellow-200 rounded"
+                        >
                           <div class="text-yellow-500 text-sm mb-0.5">⚠️</div>
-                          <div class="text-xs text-yellow-700 font-semibold">Warning</div>
-                          <div class="text-xs text-yellow-900 font-bold">{{ criteria?.velocityMinimum || 0.6 }}-1.2</div>
+                          <div class="text-xs text-yellow-700 font-semibold">
+                            Warning
+                          </div>
+                          <div class="text-xs text-yellow-900 font-bold">
+                            {{ criteria?.velocityMinimum || 0.6 }}-1.2
+                          </div>
                         </div>
                         <!-- OK -->
-                        <div class="text-center p-2 bg-green-50 border border-green-200 rounded">
+                        <div
+                          class="text-center p-2 bg-green-50 border border-green-200 rounded"
+                        >
                           <div class="text-green-500 text-sm mb-0.5">✅</div>
-                          <div class="text-xs text-green-700 font-semibold">OK</div>
-                          <div class="text-xs text-green-900 font-bold">1.2-2.4</div>
+                          <div class="text-xs text-green-700 font-semibold">
+                            OK
+                          </div>
+                          <div class="text-xs text-green-900 font-bold">
+                            1.2-2.4
+                          </div>
                         </div>
                       </div>
                       <!-- 2-column layout for high ranges -->
                       <div class="grid grid-cols-2 gap-1.5">
                         <!-- Warning High -->
-                        <div class="text-center p-2 bg-yellow-50 border border-yellow-200 rounded">
+                        <div
+                          class="text-center p-2 bg-yellow-50 border border-yellow-200 rounded"
+                        >
                           <div class="text-yellow-500 text-sm mb-0.5">⚠️</div>
-                          <div class="text-xs text-yellow-700 font-semibold">Warning</div>
-                          <div class="text-xs text-yellow-900 font-bold">2.4-{{ criteria?.velocityMaximum || 3.0 }}</div>
+                          <div class="text-xs text-yellow-700 font-semibold">
+                            Warning
+                          </div>
+                          <div class="text-xs text-yellow-900 font-bold">
+                            2.4-{{ criteria?.velocityMaximum || 3.0 }}
+                          </div>
                         </div>
                         <!-- Critical High -->
-                        <div class="text-center p-2 bg-red-50 border border-red-200 rounded">
+                        <div
+                          class="text-center p-2 bg-red-50 border border-red-200 rounded"
+                        >
                           <div class="text-red-500 text-sm mb-0.5">❌</div>
-                          <div class="text-xs text-red-700 font-semibold">Critical</div>
-                          <div class="text-xs text-red-900 font-bold">&gt; {{ criteria?.velocityMaximum || 3.0 }}</div>
+                          <div class="text-xs text-red-700 font-semibold">
+                            Critical
+                          </div>
+                          <div class="text-xs text-red-900 font-bold">
+                            &gt; {{ criteria?.velocityMaximum || 3.0 }}
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     <!-- Calculation Settings -->
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div
+                      class="bg-green-50 border border-green-200 rounded-lg p-3"
+                    >
                       <div class="flex items-center gap-2 mb-2">
-                        <svg class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        <svg
+                          class="h-4 w-4 text-green-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                          />
                         </svg>
-                        <h5 class="text-xs font-bold text-green-900 uppercase">Calculation Settings</h5>
+                        <h5 class="text-xs font-bold text-green-900 uppercase">
+                          Calculation Settings
+                        </h5>
                       </div>
                       <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div class="bg-white rounded p-2 border border-green-300">
+                        <div
+                          class="bg-white rounded p-2 border border-green-300"
+                        >
                           <span class="text-gray-600 block">Curve</span>
-                          <span class="font-medium text-gray-900">Hunter's</span>
+                          <span class="font-medium text-gray-900"
+                            >Hunter's</span
+                          >
                         </div>
-                        <div class="bg-white rounded p-2 border border-green-300">
+                        <div
+                          class="bg-white rounded p-2 border border-green-300"
+                        >
                           <span class="text-gray-600 block">C-Factor</span>
-                          <span class="font-medium text-gray-900">{{ criteria?.cFactor || "-" }}</span>
+                          <span class="font-medium text-gray-900">{{
+                            criteria?.cFactor || "-"
+                          }}</span>
                         </div>
-                        <div v-if="criteria?.cFactor === 150" class="bg-white rounded p-2 border border-green-300">
+                        <div
+                          v-if="criteria?.cFactor === 150"
+                          class="bg-white rounded p-2 border border-green-300"
+                        >
                           <span class="text-gray-600 block">PVC Class</span>
-                          <span class="font-bold text-blue-900">{{ criteria?.pvcClass || 7 }} <span class="text-gray-500">bar</span></span>
+                          <span class="font-bold text-blue-900"
+                            >{{ criteria?.pvcClass || 7 }}
+                            <span class="text-gray-500">bar</span></span
+                          >
                         </div>
-                        <div class="bg-white rounded p-2 border border-green-300">
+                        <div
+                          class="bg-white rounded p-2 border border-green-300"
+                        >
                           <span class="text-gray-600 block">Minor Loss</span>
-                          <span class="font-medium text-gray-900">{{ criteria?.minorLossFactor || "-" }}%</span>
+                          <span class="font-medium text-gray-900"
+                            >{{ criteria?.minorLossFactor || "-" }}%</span
+                          >
                         </div>
                       </div>
                     </div>
@@ -266,8 +417,18 @@
                     @click="editingProjectDetails = false"
                     class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded-lg transition-colors"
                   >
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    <svg
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 19l-7-7 7-7"
+                      />
                     </svg>
                     กลับ
                   </button>
@@ -287,8 +448,18 @@
                     @click="editingCriteria = false"
                     class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded-lg transition-colors"
                   >
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    <svg
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 19l-7-7 7-7"
+                      />
                     </svg>
                     กลับ
                   </button>
@@ -304,7 +475,9 @@
           </div>
 
           <!-- Actions Card -->
-          <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
+          <div
+            class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6"
+          >
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium text-gray-900">การจัดการ</h3>
               <svg
@@ -328,8 +501,18 @@
                 class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="versions.length < 2"
               >
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                <svg
+                  class="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
                 </svg>
                 เปรียบเทียบ Version
               </button>
@@ -372,13 +555,13 @@
 
 <script setup lang="ts">
 import CriteriaForm from "~/components/criteria/CriteriaForm.vue";
-import ProjectDetailsForm from "~/components/project/ProjectDetailsForm.vue";
 import BackButton from "~/components/navigation/BackButton.vue";
-import VersionList from "~/components/version/VersionList.vue";
+import ProjectDetailsForm from "~/components/project/ProjectDetailsForm.vue";
 import CreateVersionModal from "~/components/version/CreateVersionModal.vue";
+import VersionList from "~/components/version/VersionList.vue";
 import { projectsApi } from "~/composables/useApi";
-import { useWorkflowStore } from "~/stores/workflowStore";
 import { useVersionStore } from "~/stores/versionStore";
+import { useWorkflowStore } from "~/stores/workflowStore";
 
 const route = useRoute();
 const router = useRouter();
@@ -510,10 +693,14 @@ const handleContinueVersion = (version: any) => {
     router.push(`/projects/${route.params.id}/versions/${version.id}/fixtures`);
   } else if (!version.snapshotResults) {
     // Go to Step 5: Calculate
-    router.push(`/projects/${route.params.id}/versions/${version.id}/calculation`);
+    router.push(
+      `/projects/${route.params.id}/versions/${version.id}/calculation`
+    );
   } else {
     // All complete, view results
-    router.push(`/projects/${route.params.id}/versions/${version.id}/calculation`);
+    router.push(
+      `/projects/${route.params.id}/versions/${version.id}/calculation`
+    );
   }
 };
 
@@ -521,13 +708,13 @@ const handleDuplicateVersion = async (version: any) => {
   try {
     const result = await versionStore.duplicateVersion(version.id);
     if (result.success) {
-      toast.success('คัดลอกเวอร์ชันสำเร็จ');
+      toast.success("คัดลอกเวอร์ชันสำเร็จ");
       await loadVersions();
     } else {
-      toast.error(result.error?.message || 'ล้มเหลือ');
+      toast.error(result.error?.message || "ล้มเหลือ");
     }
   } catch (error: any) {
-    toast.error(error.message || 'ล้มเหลือ');
+    toast.error(error.message || "ล้มเหลือ");
   }
 };
 
@@ -539,34 +726,37 @@ const handleDeleteVersion = async (version: any) => {
   try {
     const result = await versionStore.deleteVersion(version.id);
     if (result.success) {
-      toast.success('ลบเวอร์ชันสำเร็จ');
+      toast.success("ลบเวอร์ชันสำเร็จ");
       await loadVersions();
     } else {
-      toast.error(result.error?.message || 'ล้มเหลือ');
+      toast.error(result.error?.message || "ล้มเหลือ");
     }
   } catch (error: any) {
-    toast.error(error.message || 'ล้มเหลือ');
+    toast.error(error.message || "ล้มเหลือ");
   }
 };
 
-const handleUpdateVersion = async (versionId: number, data: { name?: string; description?: string }) => {
-  console.log('🔧 handleUpdateVersion called:', { versionId, data });
+const handleUpdateVersion = async (
+  versionId: number,
+  data: { name?: string; description?: string }
+) => {
+  console.log("🔧 handleUpdateVersion called:", { versionId, data });
 
   try {
     const result = await versionStore.updateVersion(versionId, data);
 
-    console.log('🔧 versionStore.updateVersion result:', result);
+    console.log("🔧 versionStore.updateVersion result:", result);
 
     if (result.success) {
-      toast.success('บันทึกการเปลี่ยนแปลงสำเร็จ');
+      toast.success("บันทึกการเปลี่ยนแปลงสำเร็จ");
       await loadVersions();
     } else {
-      console.error('❌ Update failed:', result.error);
-      toast.error(result.error?.message || 'ล้มเหลือ');
+      console.error("❌ Update failed:", result.error);
+      toast.error(result.error?.message || "ล้มเหลือ");
     }
   } catch (error: any) {
-    console.error('❌ Update error:', error);
-    toast.error(error.message || 'ล้มเหลือ');
+    console.error("❌ Update error:", error);
+    toast.error(error.message || "ล้มเหลือ");
   }
 };
 

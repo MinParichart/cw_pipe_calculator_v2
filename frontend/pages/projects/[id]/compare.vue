@@ -114,15 +114,15 @@
                 <div class="flex justify-between">
                   <span class="text-gray-600">Version A:</span>
                   <span class="font-medium"
-                    >{{ versionAData?.nodes?.length || 0 }} nodes,
-                    {{ versionAData?.pipes?.length || 0 }} pipes</span
+                    >{{ versionAData?.snapshotNetwork?.nodes?.length || 0 }} nodes,
+                    {{ versionAData?.snapshotNetwork?.pipes?.length || 0 }} pipes</span
                   >
                 </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600">Version B:</span>
                   <span class="font-medium"
-                    >{{ versionBData?.nodes?.length || 0 }} nodes,
-                    {{ versionBData?.pipes?.length || 0 }} pipes</span
+                    >{{ versionBData?.snapshotNetwork?.nodes?.length || 0 }} nodes,
+                    {{ versionBData?.snapshotNetwork?.pipes?.length || 0 }} pipes</span
                   >
                 </div>
                 <div class="flex justify-between border-t pt-2">
@@ -131,15 +131,15 @@
                     class="font-bold"
                     :class="
                       getDiffClass(
-                        versionBData?.nodes?.length || 0,
-                        versionAData?.nodes?.length || 0
+                        versionBData?.snapshotNetwork?.nodes?.length || 0,
+                        versionAData?.snapshotNetwork?.nodes?.length || 0
                       )
                     "
                   >
                     {{
                       formatDiff(
-                        versionBData?.nodes?.length || 0,
-                        versionAData?.nodes?.length || 0
+                        versionBData?.snapshotNetwork?.nodes?.length || 0,
+                        versionAData?.snapshotNetwork?.nodes?.length || 0
                       )
                     }}
                     nodes
@@ -593,22 +593,11 @@ const parseVersionData = (version: any) => {
 };
 
 const countFixtures = (data: any) => {
-  if (!data?.snapshotFixtures) return 0;
-  try {
-    const fixtures =
-      typeof data.snapshotFixtures === "string"
-        ? JSON.parse(data.snapshotFixtures)
-        : data.snapshotFixtures;
-
-    if (fixtures?.nodes) {
-      return fixtures.nodes.reduce((total: number, node: any) => {
-        return total + (node.fixtures?.length || 0);
-      }, 0);
-    }
-  } catch (error) {
-    console.error("Error counting fixtures:", error);
-  }
-  return 0;
+  const nodes = data?.snapshotNetwork?.nodes || [];
+  return nodes.reduce((total: number, node: any) => {
+    if (!node.fixtures?.length) return total;
+    return total + node.fixtures.reduce((sum: number, f: any) => sum + (Number(f.quantity) || 1), 0);
+  }, 0);
 };
 
 const hasCalculation = (data: any) => {

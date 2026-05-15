@@ -257,7 +257,7 @@
                     {{ versionA?.name || `Version ${versionA?.versionNumber}` }}
                   </h4>
                 </div>
-                <div class="p-0 bg-gray-50 h-screen">
+                <div class="p-0 bg-gray-50 overflow-hidden">
                   <NetworkComparisonViewer
                     v-if="versionAData?.snapshotNetwork"
                     :network-data="versionAData.snapshotNetwork"
@@ -296,7 +296,7 @@
                     {{ versionB?.name || `Version ${versionB?.versionNumber}` }}
                   </h4>
                 </div>
-                <div class="p-0 bg-gray-50 h-screen">
+                <div class="p-0 bg-gray-50 overflow-hidden">
                   <NetworkComparisonViewer
                     v-if="versionBData?.snapshotNetwork"
                     :network-data="versionBData.snapshotNetwork"

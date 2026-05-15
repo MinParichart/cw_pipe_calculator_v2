@@ -1,9 +1,9 @@
 <template>
-  <div class="flex-1 relative overflow-auto h-full w-full bg-gray-100">
+  <div class="relative overflow-auto w-full bg-gray-100">
     <!-- Canvas Container -->
     <div
       ref="canvasContainerRef"
-      class="flex-1 bg-gray-100 relative h-full w-full"
+      class="relative bg-gray-100 w-full"
     >
       <!-- Zoom Wrapper - ใช้ขนาด canvas เดียวกับ NetworkBuilder เพื่อให้ตำแหน่ง node/pipe ตรงกัน -->
       <div

@@ -120,7 +120,9 @@
       "Bash(timeout 5 bash -c 'while ! nc -z localhost 3003 2>/dev/null; do sleep 0.5; done; echo \"\"Backend ready\"\"')",
       "Bash(grep -n \"^\\\\s*<div\" pages/projects/[id]/index.vue)",
       "Bash(grep -n \"^\\\\s*</div>\" pages/projects/[id]/index.vue)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)"
     ]
   }
 }

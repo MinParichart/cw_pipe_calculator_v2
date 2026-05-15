@@ -1,19 +1,16 @@
 <template>
-  <!-- Outer: ความกว้างเต็ม, ความสูง auto ตาม content จริง -->
-  <div ref="canvasContainerRef" class="relative w-full bg-gray-100 overflow-hidden">
-    <!-- Height wrapper: กำหนดความสูงด้วย pixel ที่คำนวณจาก canvas * zoom -->
+  <div class="flex-1 relative overflow-auto h-full w-full bg-gray-100">
+    <!-- Canvas Container -->
     <div
-      class="relative w-full"
-      :style="{ height: Math.ceil(effectiveCanvasHeight * zoom) + 'px' }"
+      ref="canvasContainerRef"
+      class="flex-1 bg-gray-100 relative h-full w-full"
     >
-      <!-- Zoom Wrapper - ขนาดตรงกับ canvas ที่ build มาจาก NetworkBuilder -->
+      <!-- Zoom Wrapper - ใช้ขนาด canvas เดียวกับ NetworkBuilder เพื่อให้ตำแหน่ง node/pipe ตรงกัน -->
       <div
+        class="origin-top-left"
         :style="{
-          position: 'absolute',
-          top: '0',
-          left: '0',
-          width: effectiveCanvasWidth + 'px',
-          height: effectiveCanvasHeight + 'px',
+          width: canvasWidth + 'px',
+          height: canvasHeight + 'px',
           transform: `scale(${zoom})`,
           transformOrigin: 'top left'
         }"
@@ -171,7 +168,7 @@
           </g>
         </svg>
 
-        <!-- Nodes Layer (z-index: 10) — ขนาดและสีตรงกับ NetworkBuilder -->
+        <!-- Nodes Layer (z-index: 10) -->
         <div
           v-if="networkData?.nodes"
           class="absolute inset-0"
@@ -180,7 +177,7 @@
           <div
             v-for="node in networkData.nodes"
             :key="node.id"
-            class="absolute transform -translate-x-1/2 -translate-y-1/2"
+            class="absolute transform -translate-x-1/2 -translate-y-1/2 transition-shadow"
             :style="{
               left: `${node.x}px`,
               top: `${node.y}px`,
@@ -188,14 +185,14 @@
               pointerEvents: 'auto'
             }"
           >
-            <!-- Node circle: w-3 h-3 ตรงกับ NetworkBuilder -->
+            <!-- Node circle -->
             <div
               class="flex items-center justify-center w-3 h-3 rounded-full border-2 shadow-sm"
               :class="getNodeClass(node)"
             >
               <span
                 v-html="getNodeIcon(node.type)"
-                class="text-white text-[10px]"
+                class="text-white text-xs"
               ></span>
             </div>
 
@@ -203,16 +200,15 @@
             <div
               v-if="node.label"
               class="absolute top-full mt-1 text-xs font-medium text-gray-700 whitespace-nowrap bg-white px-1 rounded"
-              style="font-size: 10px"
             >
               {{ node.label }}
             </div>
 
-            <!-- Fixture count badge: w-3 h-3 ตรงกับ NetworkBuilder -->
+            <!-- Fixture count badge -->
             <div
               v-if="getNodeFixtureCount(node) > 0"
-              class="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 text-white rounded-full flex items-center justify-center"
-              style="font-size: 8px"
+              class="absolute -top-1 -right-1 w-4 h-4 text-white text-xs rounded-full flex items-center justify-center font-bold"
+              :style="{ backgroundColor: pipeColor }"
             >
               {{ getNodeFixtureCount(node) }}
             </div>
@@ -238,10 +234,9 @@
         </div>
       </div>
     </div>
-    <!-- /Height wrapper -->
 
     <!-- Zoom controls -->
-    <div class="absolute bottom-4 right-4 flex flex-col gap-2 z-50" style="pointer-events: auto">
+    <div class="absolute bottom-4 right-4 flex flex-col gap-2 z-50">
       <button
         @click="zoomIn"
         class="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 border border-gray-200"
@@ -300,13 +295,11 @@
         </svg>
       </button>
     </div>
-    <!-- /Zoom controls -->
   </div>
-  <!-- /canvasContainerRef outer -->
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
   networkData?: any;
@@ -314,43 +307,24 @@ const props = defineProps<{
 }>();
 
 const zoom = ref(1);
-const canvasContainerRef = ref<HTMLDivElement | null>(null);
-const containerWidth = ref(0);
-const containerHeight = ref(0);
 
-// ✅ ขนาด canvas ที่แท้จริง — ดึงจาก snapshot ก่อน ถ้าไม่มีค่อย fallback bounding box
-const effectiveCanvasWidth = computed(() => {
-  // Priority 1: ค่าจริงที่ save มาจาก NetworkBuilder (แม่นที่สุด)
-  if (props.networkData?.canvasWidth) return Number(props.networkData.canvasWidth);
-  // Priority 2: คำนวณจาก bounding box ของ nodes + margin
-  const nodes = props.networkData?.nodes;
-  if (nodes?.length) {
-    const maxX = Math.max(...nodes.map((n: any) => Number(n.x) || 0));
-    // ใช้ maxX * 2.5 เพื่อให้ใกล้เคียง canvas จริงมากขึ้น (node มักอยู่ตรงกลาง-ซ้าย)
-    return Math.max(maxX * 2.5, maxX + 400, 1000);
-  }
-  return containerWidth.value || 1200;
+// ขนาด canvas - ใช้ค่าที่บันทึกจาก NetworkBuilder (canvasWidth/canvasHeight)
+// หรือคำนวณจาก bounding box ของ node เป็น fallback
+const canvasWidth = computed(() => {
+  if (props.networkData?.canvasWidth) return props.networkData.canvasWidth;
+  const nodeList = props.networkData?.nodes || [];
+  if (nodeList.length === 0) return 1200;
+  const maxX = Math.max(...nodeList.map((n: any) => Number(n.x) || 0));
+  return Math.max(maxX + 300, 1200);
 });
 
-const effectiveCanvasHeight = computed(() => {
-  if (props.networkData?.canvasHeight) return Number(props.networkData.canvasHeight);
-  const nodes = props.networkData?.nodes;
-  if (nodes?.length) {
-    const maxY = Math.max(...nodes.map((n: any) => Number(n.y) || 0));
-    return Math.max(maxY * 2.5, maxY + 300, 700);
-  }
-  return containerHeight.value || 800;
+const canvasHeight = computed(() => {
+  if (props.networkData?.canvasHeight) return props.networkData.canvasHeight;
+  const nodeList = props.networkData?.nodes || [];
+  if (nodeList.length === 0) return 800;
+  const maxY = Math.max(...nodeList.map((n: any) => Number(n.y) || 0));
+  return Math.max(maxY + 300, 800);
 });
-
-// Fit zoom ให้ content พอดีกับความกว้าง container
-// ความสูงจะ auto-size ตาม effectiveCanvasHeight * zoom → ไม่มี empty space
-const fitToContainer = () => {
-  if (!canvasContainerRef.value) return;
-  const cw = canvasContainerRef.value.clientWidth;
-  if (!cw) return;
-  // Fit to width only — height wrapper จะปรับขนาดตาม content เอง
-  zoom.value = cw / effectiveCanvasWidth.value;
-};
 
 // Watch networkData changes
 watch(
@@ -385,28 +359,26 @@ const getLayerColor = (layerIndex: number) => {
   return colors[layerIndex % colors.length];
 };
 
-// ✅ สี node ตรงกับ NetworkBuilder (ใช้ custom Tailwind colors จาก tailwind.config.js)
+// ตรงกับ NetworkBuilder getNodeClass เป๊ะๆ
 const getNodeClass = (node: any) => {
-  const type = (node.type || "JUNCTION").toUpperCase();
   const classes: Record<string, string> = {
-    SOURCE:  "bg-success-500 border-success-600",   // #22c55e
-    JUNCTION:"bg-gray-500 border-gray-600",
-    FIXTURE: "bg-primary-500 border-primary-600",   // #3b82f6
-    RISER:   "bg-warning-500 border-warning-600"    // #f59e0b
+    SOURCE: "bg-success-500 border-success-600",
+    JUNCTION: "bg-gray-500 border-gray-600",
+    FIXTURE: "bg-primary-500 border-primary-600",
+    RISER: "bg-warning-500 border-warning-600"
   };
-  return classes[type] || "bg-gray-500 border-gray-600";
+  return classes[node.type] || "bg-gray-500 border-gray-600";
 };
 
-// ✅ Icons ตรงกับ NetworkBuilder — copy มาจาก nodeTypes array ใน NetworkBuilder.vue
+// ตรงกับ NetworkBuilder nodeTypes เป๊ะๆ (ใช้ uppercase type เหมือนกัน)
 const getNodeIcon = (nodeType: string) => {
-  const type = (nodeType || "JUNCTION").toUpperCase();
   const icons: Record<string, string> = {
-    SOURCE:  `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>`,
-    JUNCTION:`<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`,
+    SOURCE: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>`,
+    JUNCTION: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`,
     FIXTURE: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>`,
-    RISER:   `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>`
+    RISER: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>`
   };
-  return icons[type] || icons.JUNCTION;
+  return icons[nodeType] || icons.JUNCTION;
 };
 
 const getNodeFixtureCount = (node: any) => {
@@ -607,17 +579,35 @@ const zoomOut = () => {
 };
 
 const resetView = () => {
-  fitToContainer();
+  zoom.value = 1;
 };
 
 // Auto-fit on mount
 onMounted(() => {
-  nextTick(() => {
-    if (canvasContainerRef.value) {
-      containerWidth.value = canvasContainerRef.value.clientWidth;
+  console.log("[NetworkComparisonViewer] onMounted");
+  console.log("[NetworkComparisonViewer] networkData:", props.networkData);
+  console.log("[NetworkComparisonViewer] blueprints:", props.blueprints);
+
+  if (props.networkData) {
+    console.log(
+      "[NetworkComparisonViewer] nodes:",
+      props.networkData.nodes?.length || 0
+    );
+    console.log(
+      "[NetworkComparisonViewer] pipes:",
+      props.networkData.pipes?.length || 0
+    );
+
+    if (props.networkData.pipes && props.networkData.pipes.length > 0) {
+      console.log(
+        "[NetworkComparisonViewer] Sample pipe:",
+        props.networkData.pipes[0]
+      );
     }
-    fitToContainer();
-  });
+  }
+
+  // ❌ ไม่ใช้ auto-fit zoom เพราะทำให้ scale ไม่ตรงกับ NetworkBuilder
+  // canvas dimensions ถูกกำหนดจาก canvasWidth/canvasHeight computed แล้ว
 });
 </script>
 

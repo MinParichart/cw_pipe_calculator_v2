@@ -52,13 +52,12 @@
             <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
-            <NuxtLink
-              to="/projects"
-              class="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-              @click="$emit('navigate')"
+            <button
+              @click="toggleProjectsMenu"
+              class="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors text-left flex-1"
             >
               โปรเจกต์ [{{ totalProjectCount }}]
-            </NuxtLink>
+            </button>
           </div>
           <div class="flex items-center gap-2">
             <NuxtLink
@@ -315,6 +314,10 @@ const toggleProjectsMenu = () => {
   // ถ้าเปิดเมนูครั้งแรกและยังไม่โหลด projects ให้โหลด
   if (showProjectsMenu.value && projects.value.length === 0) {
     fetchProjects()
+  }
+  // Navigate to /projects เฉพาะตอนเปิด
+  if (showProjectsMenu.value) {
+    navigateTo('/projects')
   }
 }
 

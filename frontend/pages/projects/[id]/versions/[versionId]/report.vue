@@ -73,34 +73,6 @@
 
         <div v-else class="space-y-6">
 
-          <!-- ===== SUMMARY STAT CARDS (hidden on print) ===== -->
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 print:hidden">
-            <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-blue-500">
-              <p class="text-xs font-medium text-gray-500 uppercase">Nodes</p>
-              <p class="text-2xl font-bold text-gray-900 mt-1">{{ networkData?.nodes?.length || 0 }}</p>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-green-500">
-              <p class="text-xs font-medium text-gray-500 uppercase">Pipes</p>
-              <p class="text-2xl font-bold text-gray-900 mt-1">{{ networkData?.pipes?.length || 0 }}</p>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-purple-500">
-              <p class="text-xs font-medium text-gray-500 uppercase">Fixtures</p>
-              <p class="text-2xl font-bold text-gray-900 mt-1">{{ totalFixtureCount }}</p>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-orange-500">
-              <p class="text-xs font-medium text-gray-500 uppercase">Length (m)</p>
-              <p class="text-2xl font-bold text-gray-900 mt-1">{{ totalPipeLength.toFixed(1) }}</p>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-red-500">
-              <p class="text-xs font-medium text-gray-500 uppercase">Total FU</p>
-              <p class="text-2xl font-bold text-gray-900 mt-1">{{ calcStats?.totalFU || 0 }}</p>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-teal-500">
-              <p class="text-xs font-medium text-gray-500 uppercase">Max Flow (GPM)</p>
-              <p class="text-2xl font-bold text-gray-900 mt-1">{{ calcStats?.flowRate || '-' }}</p>
-            </div>
-          </div>
-
           <!-- ===== PRINTABLE REPORT AREA ===== -->
           <div id="report-printable" class="bg-white shadow-lg overflow-hidden print:shadow-none">
 
@@ -210,7 +182,7 @@
             </div>
 
             <!-- PAGE 2: Critical Path Pipe Sizing Table -->
-            <div class="report-page p-10 print:p-8 print:break-before-page border-t-4 border-red-500">
+            <div class="report-page p-10 print:p-8 border-t-4 border-red-500">
               <h3 class="text-base font-bold text-red-800 mb-4 pb-1 border-b-2 border-red-500 uppercase tracking-wide flex items-center gap-2">
                 <span class="inline-block w-3 h-3 bg-red-500 rounded-full"></span>
                 Critical Path Pipes
@@ -325,7 +297,7 @@
             </div>
 
             <!-- PAGE 3: Branch Pipes Table -->
-            <div class="report-page p-10 print:p-8 print:break-before-page border-t-4 border-blue-500">
+            <div class="report-page p-10 print:p-8 border-t-4 border-blue-500">
               <h3 class="text-base font-bold text-blue-800 mb-4 pb-1 border-b-2 border-blue-500 uppercase tracking-wide flex items-center gap-2">
                 <span class="inline-block w-3 h-3 bg-blue-500 rounded-full"></span>
                 Branch Pipes
@@ -439,7 +411,7 @@
             </div>
 
             <!-- PAGE 4: Fixtures Summary -->
-            <div class="report-page p-10 print:p-8 print:break-before-page border-t-4 border-purple-500">
+            <div class="report-page p-10 print:p-8 border-t-4 border-purple-500">
               <h3 class="text-base font-bold text-purple-800 mb-4 pb-1 border-b-2 border-purple-500 uppercase tracking-wide">
                 Fixtures Summary — สรุปสุขภัณฑ์
               </h3>
@@ -1085,7 +1057,58 @@ const loadData = async () => {
 }
 
 // ===== ACTIONS =====
-const printReport = () => window.print()
+const printReport = () => {
+  const el = document.getElementById('report-printable')
+  if (!el) { window.print(); return }
+
+  const win = window.open('', '_blank', 'width=900,height=1200')
+  if (!win) { alert('กรุณาอนุญาต popup เพื่อ print'); return }
+
+  win.document.write(`<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <title>รายงานผลการคำนวณขนาดท่อ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <style>
+    @page { size: A4 portrait; margin: 14mm 12mm; }
+    body {
+      font-family: 'Sarabun', 'Inter', sans-serif;
+      background: white;
+      margin: 0;
+      padding: 0;
+      font-size: 10pt;
+      color: #000;
+    }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    /* ไม่บังคับขึ้นหน้าใหม่ — ให้ content ไหลต่อกันตามธรรมชาติ */
+    .report-page {
+      break-before: auto !important;
+      page-break-before: auto !important;
+      break-after: auto !important;
+      page-break-after: auto !important;
+      break-inside: auto !important;
+      page-break-inside: auto !important;
+      margin-bottom: 6mm;
+    }
+    tr { page-break-inside: avoid; break-inside: avoid; }
+    table { font-size: 8pt !important; border-collapse: collapse; width: 100%; }
+    th, td { padding: 3px 5px !important; }
+  </style>
+</head>
+<body>
+  ${el.outerHTML}
+  <script>
+    // Wait for Tailwind + fonts to load then print
+    window.addEventListener('load', function() {
+      setTimeout(function() { window.print(); window.close(); }, 1200);
+    });
+  <\/script>
+</body>
+</html>`)
+  win.document.close()
+}
 
 const goToCalculation = () =>
   router.push(`/projects/${projectId.value}/versions/${versionId.value}/calculation`)
@@ -1105,13 +1128,77 @@ definePageMeta({ layout: 'dashboard' })
 </script>
 
 <style scoped>
+/* ── Screen: center printable area ── */
+#report-printable {
+  max-width: 210mm;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+<!-- Global print styles: targets layout elements outside this component -->
+<style>
 @media print {
-  @page { size: A4; margin: 15mm; }
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm;
+  }
+
+  /* Hide layout chrome */
+  nav,
+  aside,
+  .sidebar,
+  [class*="sidebar"] { display: none !important; }
+
+  /* Reset main wrapper — remove top padding from nav, remove sidebar margin */
+  html, body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 10pt !important;
+    color: #000 !important;
+  }
+  main {
+    padding-top: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Hide UI elements */
   .print\:hidden { display: none !important; }
-  body { background: white !important; }
-  .report-page { page-break-after: always; break-after: page; }
-  .report-page:last-of-type { page-break-after: avoid; break-after: avoid; }
-  #report-printable { box-shadow: none !important; width: 100% !important; }
+
+  /* Printable area: fill page, no shadow */
+  #report-printable {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Page breaks between report sections */
+  .report-page {
+    page-break-after: always;
+    break-after: page;
+    padding: 6mm 0 !important;
+  }
+  .report-page:last-of-type {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Don't split rows across pages */
   tr { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Table font size for A4 */
+  table { font-size: 8pt !important; }
+  th, td { padding: 3px 5px !important; }
+
+  /* Print background colors (table headers, status badges) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
 </style>

@@ -3095,17 +3095,28 @@ const analyzePipesV2 = async () => {
           }
         });
 
+        // Helper: map a suggestion to full pipe record for snapshotResults
+        const toPipeRecord = (p: any) => ({
+          pipeId:           p.pipeId,
+          segmentName:      p.segmentName,
+          length:           p.pipeLength,
+          totalFU:          p.fixtureUnits,
+          gpm:              p.flowRate?.gpm  ?? 0,
+          lps:              p.flowRate?.lps  ?? 0,
+          velocity:         p.velocity       ?? 0,
+          frictionLoss:     p.majorLoss      ?? 0,   // total m for the segment
+          frictionLossRate: p.frictionLoss   ?? 0,   // m/100m
+          nominalDiameter:  p.currentSize?.mm ?? 15,
+          status:           p.status         ?? "OK",
+          isCriticalPath:   p.isCriticalPath ?? false,
+          // keep legacy fields for the summary display cards
+          sizeMM:    p.currentSize?.mm      ?? 15,
+          sizeInches: p.currentSize?.inches ?? "1/2"
+        });
+
         const summary = {
-          criticalPath: criticalPath.map((p) => ({
-            segmentName: p.segmentName,
-            sizeMM: p.currentSize.mm,
-            sizeInches: p.currentSize.inches
-          })),
-          branch: branchPipesData.map((p) => ({
-            segmentName: p.segmentName,
-            sizeMM: p.currentSize.mm,
-            sizeInches: p.currentSize.inches
-          })),
+          criticalPath: criticalPath.map(toPipeRecord),
+          branch:       branchPipesData.map(toPipeRecord),
           stats: {
             totalFixtures,
             totalFU,

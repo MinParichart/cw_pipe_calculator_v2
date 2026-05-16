@@ -259,7 +259,7 @@
                         <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.length?.toFixed(1) || '-' }}</td>
                         <td class="px-3 py-2 text-right font-semibold text-gray-800 border-b border-gray-100">{{ pipe.totalFU ?? '-' }}</td>
                         <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.gpm?.toFixed(2) || '-' }}</td>
-                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.lps?.toFixed(3) || '-' }}</td>
+                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.lps?.toFixed(2) || '-' }}</td>
                         <td class="px-3 py-2 text-center border-b border-gray-100">
                           <span class="inline-block bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded">
                             {{ pipe.nominalDiameter || '-' }}mm
@@ -271,7 +271,7 @@
                           </span>
                         </td>
                         <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">
-                          {{ pipe.frictionLoss != null ? pipe.frictionLoss.toFixed(4) : '-' }}
+                          {{ pipe.frictionLoss != null ? pipe.frictionLoss.toFixed(2) : '-' }}
                         </td>
                         <td class="px-3 py-2 text-center border-b border-gray-100">
                           <span :class="getStatusBadgeClass(pipe.status)" class="text-xs font-medium px-2 py-0.5 rounded-full">
@@ -374,7 +374,7 @@
                         <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.length?.toFixed(1) || '-' }}</td>
                         <td class="px-3 py-2 text-right font-semibold text-gray-800 border-b border-gray-100">{{ pipe.totalFU ?? '-' }}</td>
                         <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.gpm?.toFixed(2) || '-' }}</td>
-                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.lps?.toFixed(3) || '-' }}</td>
+                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.lps?.toFixed(2) || '-' }}</td>
                         <td class="px-3 py-2 text-center border-b border-gray-100">
                           <span class="inline-block bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded">
                             {{ pipe.nominalDiameter || '-' }}mm
@@ -386,7 +386,7 @@
                           </span>
                         </td>
                         <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">
-                          {{ pipe.frictionLoss != null ? pipe.frictionLoss.toFixed(4) : '-' }}
+                          {{ pipe.frictionLoss != null ? pipe.frictionLoss.toFixed(2) : '-' }}
                         </td>
                         <td class="px-3 py-2 text-center border-b border-gray-100">
                           <span :class="getStatusBadgeClass(pipe.status)" class="text-xs font-medium px-2 py-0.5 rounded-full">
@@ -570,6 +570,7 @@ import VersionSteps from '~/components/workflow/VersionSteps.vue'
 import { projectsApi, versionsApi } from '~/composables/useApi'
 import { useWorkflowStore } from '~/stores/workflowStore'
 import { calculateUPCGPM } from '~/shared/constants/hunterCurve.ts'
+import { calculatePVCInternalDiameterWorstCase } from '../../../../../../shared/constants/pipes.ts'
 
 // ===== PIPE SIZES TABLE (from Hazen-Williams calc, same as AutoSuggestUpsizing) =====
 const PIPE_SIZES = [
@@ -782,8 +783,69 @@ const computePipeFUAndGPM = (targetNodeId: number | string) => {
   return { totalFU, hunterGPM: adjustedHunterGPM, hoseBibbGPM, totalGPM, waterFactorPct }
 }
 
-// Build enriched pipe list — FU/GPM computed directly from snapshotNetwork (same algorithm as fixtures.vue)
-// This ensures newly added pipes always show data without needing to re-visit the fixtures page
+// ===== FIXTURE DATA MAP from snapshotFixtures (authoritative FU/GPM source from fixtures page) =====
+const fixtureDataMap = computed(() => {
+  const map = new Map<string, any>()
+  const pipes = fixturesData.value?.pipes || []
+  pipes.forEach((p: any) => {
+    if (p.pipeId != null) map.set(String(p.pipeId), p)
+  })
+  return map
+})
+
+// Map pipe IDs → results from snapshotResults (exact values saved by step 4 calculate page)
+const resultsMap = computed(() => {
+  const map = new Map<string, any>()
+  if (!resultsData.value) return map
+  const allPipes = [
+    ...(resultsData.value.criticalPath || []),
+    ...(resultsData.value.branch || [])
+  ]
+  allPipes.forEach((p: any) => {
+    if (p.pipeId != null) map.set(String(p.pipeId), p)
+  })
+  return map
+})
+
+// Helper: compute velocity + friction loss from m³/s flow rate and pipe size
+// Uses PVC worst-case formula (same as calculate page) when cFactor=150
+const calcHydraulics = (m3s: number, nominalDiameter: number, pipeLength: number) => {
+  if (m3s <= 0) return { velocity: null, frictionLoss: null, frictionLossRate: null, status: 'OK' as const }
+
+  const cFactor  = criteria.value?.cFactor  || 150
+  const pvcClass = criteria.value?.pvcClass || 7
+
+  let d = 0
+  if (cFactor === 150) {
+    // PVC pipe: use worst-case PVC formula — same internal diameter as calculate page
+    d = calculatePVCInternalDiameterWorstCase(nominalDiameter, pvcClass)
+  }
+  if (!d || d <= 0) {
+    // Fallback to nominal-size table (non-PVC materials or PVC lookup failed)
+    const pipeSize = PIPE_SIZES.find(s => s.mm === nominalDiameter)
+    if (!pipeSize) return { velocity: null, frictionLoss: null, frictionLossRate: null, status: 'OK' as const }
+    d = pipeSize.internalDiameterM
+  }
+
+  const area     = Math.PI * Math.pow(d / 2, 2)
+  const velocity = m3s / area
+
+  let status: 'OK' | 'WARNING' | 'CRITICAL' = 'OK'
+  if (velocity < 0.6 || velocity > 3.0)      status = 'CRITICAL'
+  else if (velocity < 1.2 || velocity > 2.4) status = 'WARNING'
+
+  // Hazen-Williams rate: (10.583 / D^4.87) × (Q/C)^1.85 × 100  [m/100m]
+  const frictionLossRate = (10.583 / Math.pow(d, 4.87)) * Math.pow(m3s / cFactor, 1.85) * 100
+  const frictionLoss = pipeLength > 0 ? frictionLossRate * pipeLength / 100 : null
+
+  return { velocity, frictionLoss, frictionLossRate, status }
+}
+
+// Build enriched pipe list
+// Source priority:
+//   1. snapshotResults  — exact values from step 4 (velocity/frictionLoss guaranteed to match)
+//   2. snapshotFixtures — FU/GPM for recalculation (fallback for pipes not yet in results)
+//   3. BFS from nodes   — last resort for pipes not in either snapshot
 const enrichedPipes = computed(() => {
   if (!networkData.value?.pipes) return []
 
@@ -791,70 +853,99 @@ const enrichedPipes = computed(() => {
   ;(networkData.value.nodes || []).forEach((n: any) => nodesMap.set(String(n.id), n))
 
   return networkData.value.pipes.map((pipe: any) => {
-    const srcNode = nodesMap.get(String(pipe.sourceNodeId))
-    const tgtNode = nodesMap.get(String(pipe.targetNodeId))
+    const srcNode  = nodesMap.get(String(pipe.sourceNodeId))
+    const tgtNode  = nodesMap.get(String(pipe.targetNodeId))
     const srcLabel = srcNode?.label || srcNode?.name || `Node${pipe.sourceNodeId}`
     const tgtLabel = tgtNode?.label || tgtNode?.name || `Node${pipe.targetNodeId}`
     const segmentName = `${srcLabel} → ${tgtLabel}`
-
-    // Compute FU + GPM via traceDownstream from this pipe's targetNode
-    // Returns adjusted GPM (water factor applied) — matches AutoSuggestUpsizing logic
-    const computed = computePipeFUAndGPM(pipe.targetNodeId)
-    const totalFU = computed.totalFU
-    const gpm     = computed.totalGPM > 0 ? computed.totalGPM : null
-    // 1 GPM = 0.0630902 L/s = 6.30902e-5 m³/s
-    const lps     = gpm != null ? gpm * 0.0630902 : null
-    const m3s     = gpm != null ? gpm * 6.30902e-5 : null   // direct conversion (avoids rounding through lps)
 
     // Always convert nominalSize to number (NetworkBuilder stores it as string "15")
     const nominalDiameter: number | null =
       pipe.nominalSize != null ? Number(pipe.nominalSize) :
       pipe.nominalDiameter != null ? Number(pipe.nominalDiameter) : null
 
-    let velocity: number | null = null
-    let frictionLoss: number | null = null
-    let frictionLossRate: number | null = null  // m/100m (same unit as calc page display)
-    let status: 'OK' | 'WARNING' | 'CRITICAL' = 'OK'
+    // ── PRIMARY: snapshotResults — exact values from step 4 calculate page ──────────────
+    const resultRecord = resultsMap.value.get(String(pipe.id))
+    if (resultRecord) {
+      const gpm  = resultRecord.gpm  ?? 0
+      const lps  = resultRecord.lps  ?? (gpm * 0.0630902)
+      const velocity        = resultRecord.velocity        ?? null
+      const frictionLoss    = resultRecord.frictionLoss    ?? null  // total m (majorLoss)
+      const frictionLossRate = resultRecord.frictionLossRate ?? null // m/100m rate
+      const totalFU         = resultRecord.totalFU         ?? 0
+      const isCriticalPath  = resultRecord.isCriticalPath  ?? (pipe.isCriticalPath ?? false)
 
-    if (m3s != null && m3s > 0 && nominalDiameter) {
-      const pipeSize = PIPE_SIZES.find(s => s.mm === nominalDiameter)
-      if (pipeSize) {
-        const d    = pipeSize.internalDiameterM
-        const area = Math.PI * Math.pow(d / 2, 2)
-        velocity   = m3s / area
-
-        if (velocity < 0.6 || velocity > 3.0) status = 'CRITICAL'
+      let status: 'OK' | 'WARNING' | 'CRITICAL' = 'OK'
+      if (velocity != null) {
+        if (velocity < 0.6 || velocity > 3.0)      status = 'CRITICAL'
         else if (velocity < 1.2 || velocity > 2.4) status = 'WARNING'
-        else status = 'OK'
+      }
 
-        // Hazen-Williams friction loss rate (m/100m) — same formula as AutoSuggestUpsizing
-        // h_f_rate = (10.583 / D^4.87) × (Q/C)^1.85 × 100
-        const cFactor = criteria.value?.cFactor || 150
-        frictionLossRate = (10.583 / Math.pow(d, 4.87)) *
-                           Math.pow(m3s / cFactor, 1.85) * 100
-
-        // Total friction head loss for this segment (m) = rate × length / 100
-        if (pipe.length) {
-          frictionLoss = frictionLossRate * pipe.length / 100
-        }
+      return {
+        id:              pipe.id,
+        sourceNodeId:    pipe.sourceNodeId,
+        targetNodeId:    pipe.targetNodeId,
+        segmentName,
+        length:          pipe.length,
+        nominalDiameter: nominalDiameter ?? resultRecord.sizeMM ?? resultRecord.nominalDiameter,
+        isCriticalPath,
+        totalFU,
+        gpm,
+        lps,
+        velocity,
+        frictionLoss,
+        frictionLossRate,
+        status,
       }
     }
 
+    // ── FALLBACK: snapshotFixtures or BFS → recalculate hydraulics ───────────────────────
+    let totalFU = 0
+    let gpm: number | null = null
+    let lps: number | null = null
+    let m3s: number | null = null
+
+    const fixData = fixtureDataMap.value.get(String(pipe.id))
+    if (fixData) {
+      totalFU = fixData.totalFU || 0
+      const rawHunterGPM = fixData.hunterGPM || 0
+      const hoseBibbGPM  = fixData.hoseBibbGPM || 0
+      const wf = getWaterFactorPercent(totalFU) / 100
+      const adjustedGPM = rawHunterGPM * wf + hoseBibbGPM
+      if (adjustedGPM > 0) {
+        gpm = adjustedGPM
+        lps = gpm * 0.0630902
+        m3s = gpm * 6.30902e-5
+      }
+    } else {
+      const bfs = computePipeFUAndGPM(pipe.targetNodeId)
+      totalFU = bfs.totalFU
+      if (bfs.totalGPM > 0) {
+        gpm = bfs.totalGPM
+        lps = gpm * 0.0630902
+        m3s = gpm * 6.30902e-5
+      }
+    }
+
+    const hydraulics = (m3s != null && nominalDiameter)
+      ? calcHydraulics(m3s, nominalDiameter, pipe.length || 0)
+      : { velocity: null, frictionLoss: null, frictionLossRate: null, status: 'OK' as const }
+
     return {
-      id: pipe.id,
-      sourceNodeId: pipe.sourceNodeId,
-      targetNodeId: pipe.targetNodeId,
+      id:              pipe.id,
+      sourceNodeId:    pipe.sourceNodeId,
+      targetNodeId:    pipe.targetNodeId,
       segmentName,
-      length: pipe.length,
+      length:          pipe.length,
       nominalDiameter,
-      isCriticalPath: pipe.isCriticalPath ?? false,
+      isCriticalPath:  pipe.isCriticalPath ?? false,
       totalFU,
       gpm,
       lps,
-      velocity,
-      frictionLossRate,   // m/100m — same unit as calculation page
-      frictionLoss,       // total m for this segment = rate × length / 100
-      status,
+      velocity:        hydraulics.velocity,
+      frictionLoss:    hydraulics.frictionLoss,
+      frictionLossRate: hydraulics.frictionLossRate,
+      status:          hydraulics.status,
     }
   })
 })

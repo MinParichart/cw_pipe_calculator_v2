@@ -486,7 +486,7 @@
 import { computed, onMounted, ref } from 'vue'
 import BackButton from '~/components/navigation/BackButton.vue'
 import VersionSteps from '~/components/workflow/VersionSteps.vue'
-import { versionsApi, useApi } from '~/composables/useApi'
+import { versionsApi, projectsApi } from '~/composables/useApi'
 import { useWorkflowStore } from '~/stores/workflowStore'
 
 // ===== PIPE SIZES TABLE (from Hazen-Williams calc, same as AutoSuggestUpsizing) =====
@@ -513,7 +513,6 @@ const FIXTURE_LABELS: Record<string, string> = {
 
 const route  = useRoute()
 const router = useRouter()
-const api    = useApi()
 const workflowStore = useWorkflowStore()
 
 const projectId = computed(() => parseInt(route.params.id as string))
@@ -576,7 +575,7 @@ const enrichedPipes = computed(() => {
   ;(networkData.value.nodes || []).forEach((n: any) => nodesMap.set(String(n.id), n))
 
   const fixtureMap = new Map<string, any>()
-  ;(fixturesData.value?.pipes || []).forEach((p: any) => fixtureMap.set(String(p.id), p))
+  ;(fixturesData.value?.pipes || []).forEach((p: any) => fixtureMap.set(String(p.pipeId), p))
 
   return networkData.value.pipes.map((pipe: any) => {
     const srcNode = nodesMap.get(String(pipe.sourceNodeId))
@@ -609,7 +608,7 @@ const enrichedPipes = computed(() => {
       segmentName,
       length: pipe.length,
       nominalDiameter: pipe.nominalDiameter,
-      isCriticalPath: pipe.isCriticalPath || false,
+      isCriticalPath: pipe.isCriticalPath ?? fixPipe?.isCriticalPath ?? false,
       totalFU,
       gpm,
       lps,
@@ -700,11 +699,11 @@ const loadData = async () => {
     }
 
     const [projectRes, criteriaRes] = await Promise.all([
-      api.get(`/projects/${pId}`),
-      api.get(`/projects/${pId}/criteria`).catch(() => ({ data: null }))
+      projectsApi.get(pId),
+      projectsApi.getCriteria(pId).catch(() => null)
     ])
-    projectData.value = projectRes.data
-    criteria.value    = criteriaRes.data
+    projectData.value = projectRes
+    criteria.value    = criteriaRes
 
   } catch (error) {
     console.error('Error loading report data:', error)

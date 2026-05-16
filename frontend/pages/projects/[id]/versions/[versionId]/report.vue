@@ -141,30 +141,28 @@
                 <h3 class="text-base font-bold text-gray-900 mb-3 pb-1 border-b-2 border-gray-800 uppercase tracking-wide">
                   Design Criteria
                 </h3>
-                <div class="grid grid-cols-3 gap-4 text-sm">
+                <div class="grid grid-cols-2 gap-4 text-sm">
                   <div class="bg-gray-50 rounded p-3 border border-gray-200">
                     <p class="text-xs text-gray-500 mb-1">System Type</p>
                     <p class="font-bold text-gray-900">{{ criteria?.systemType || '-' }}</p>
                   </div>
                   <div class="bg-gray-50 rounded p-3 border border-gray-200">
                     <p class="text-xs text-gray-500 mb-1">Building Type</p>
-                    <p class="font-bold text-gray-900">{{ criteria?.buildingType || '-' }}</p>
+                    <p class="font-bold text-gray-900">ที่อยู่อาศัย</p>
                   </div>
                   <div class="bg-gray-50 rounded p-3 border border-gray-200">
                     <p class="text-xs text-gray-500 mb-1">C-Factor (Hazen-Williams)</p>
                     <p class="font-bold text-gray-900">{{ criteria?.cFactor || '-' }}</p>
                   </div>
-                  <div class="bg-gray-50 rounded p-3 border border-gray-200">
-                    <p class="text-xs text-gray-500 mb-1">Velocity Min (m/s)</p>
-                    <p class="font-bold text-gray-900">{{ criteria?.velocityMin ?? '-' }}</p>
-                  </div>
-                  <div class="bg-gray-50 rounded p-3 border border-gray-200">
-                    <p class="text-xs text-gray-500 mb-1">Velocity Max (m/s)</p>
-                    <p class="font-bold text-gray-900">{{ criteria?.velocityMax ?? '-' }}</p>
-                  </div>
-                  <div class="bg-gray-50 rounded p-3 border border-gray-200">
-                    <p class="text-xs text-gray-500 mb-1">Static Head (m)</p>
-                    <p class="font-bold text-gray-900">{{ criteria?.staticHead ?? '-' }}</p>
+                  <div class="bg-gray-50 rounded p-3 border border-gray-200 flex gap-4">
+                    <div>
+                      <p class="text-xs text-gray-500 mb-1">Velocity Min (m/s)</p>
+                      <p class="font-bold text-gray-900">{{ criteria?.velocityMin ?? '-' }}</p>
+                    </div>
+                    <div class="border-l border-gray-300 pl-4">
+                      <p class="text-xs text-gray-500 mb-1">Velocity Max (m/s)</p>
+                      <p class="font-bold text-gray-900">{{ criteria?.velocityMax ?? '-' }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -227,6 +225,7 @@
                 <table class="w-full text-sm border-collapse">
                   <thead>
                     <tr class="bg-red-700 text-white">
+                      <th class="px-3 py-2 text-left text-xs font-semibold w-6"></th>
                       <th class="px-3 py-2 text-left text-xs font-semibold">#</th>
                       <th class="px-3 py-2 text-left text-xs font-semibold">Segment</th>
                       <th class="px-3 py-2 text-right text-xs font-semibold">Length (m)</th>
@@ -235,41 +234,84 @@
                       <th class="px-3 py-2 text-right text-xs font-semibold">Flow (LPS)</th>
                       <th class="px-3 py-2 text-center text-xs font-semibold">Size (mm)</th>
                       <th class="px-3 py-2 text-right text-xs font-semibold">Velocity (m/s)</th>
+                      <th class="px-3 py-2 text-right text-xs font-semibold">Friction Loss (m)</th>
                       <th class="px-3 py-2 text-center text-xs font-semibold">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr
-                      v-for="(pipe, idx) in criticalPathPipes"
-                      :key="pipe.id"
-                      :class="[
-                        idx % 2 === 0 ? 'bg-white' : 'bg-red-50',
-                        pipe.status === 'CRITICAL' ? 'bg-red-100' : '',
-                        pipe.status === 'WARNING' ? 'bg-yellow-50' : ''
-                      ]"
-                    >
-                      <td class="px-3 py-2 text-gray-500 text-xs border-b border-gray-100">{{ idx + 1 }}</td>
-                      <td class="px-3 py-2 font-medium text-gray-800 border-b border-gray-100">{{ pipe.segmentName }}</td>
-                      <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.length?.toFixed(1) || '-' }}</td>
-                      <td class="px-3 py-2 text-right font-semibold text-gray-800 border-b border-gray-100">{{ pipe.totalFU ?? '-' }}</td>
-                      <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.gpm?.toFixed(2) || '-' }}</td>
-                      <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.lps?.toFixed(3) || '-' }}</td>
-                      <td class="px-3 py-2 text-center border-b border-gray-100">
-                        <span class="inline-block bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded">
-                          {{ pipe.nominalDiameter || '-' }}mm
-                        </span>
-                      </td>
-                      <td class="px-3 py-2 text-right border-b border-gray-100">
-                        <span :class="getVelocityTextClass(pipe.status)" class="font-semibold text-sm">
-                          {{ pipe.velocity?.toFixed(2) || '-' }}
-                        </span>
-                      </td>
-                      <td class="px-3 py-2 text-center border-b border-gray-100">
-                        <span :class="getStatusBadgeClass(pipe.status)" class="text-xs font-medium px-2 py-0.5 rounded-full">
-                          {{ getStatusLabel(pipe.status) }}
-                        </span>
-                      </td>
-                    </tr>
+                    <template v-for="(pipe, idx) in criticalPathPipes" :key="pipe.id">
+                      <!-- Main pipe row -->
+                      <tr
+                        class="cursor-pointer hover:brightness-95 transition-all"
+                        :class="[
+                          idx % 2 === 0 ? 'bg-white' : 'bg-red-50',
+                          pipe.status === 'CRITICAL' ? '!bg-red-100' : '',
+                          pipe.status === 'WARNING' ? '!bg-yellow-50' : ''
+                        ]"
+                        @click="togglePipeRow(pipe.id)"
+                      >
+                        <td class="px-2 py-2 text-center border-b border-gray-100 print:hidden">
+                          <span class="inline-block transition-transform duration-200 text-gray-400 text-xs"
+                                :class="expandedPipes.has(String(pipe.id)) ? 'rotate-90' : ''">▶</span>
+                        </td>
+                        <td class="px-3 py-2 text-gray-500 text-xs border-b border-gray-100">{{ idx + 1 }}</td>
+                        <td class="px-3 py-2 font-medium text-gray-800 border-b border-gray-100">{{ pipe.segmentName }}</td>
+                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.length?.toFixed(1) || '-' }}</td>
+                        <td class="px-3 py-2 text-right font-semibold text-gray-800 border-b border-gray-100">{{ pipe.totalFU ?? '-' }}</td>
+                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.gpm?.toFixed(2) || '-' }}</td>
+                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.lps?.toFixed(3) || '-' }}</td>
+                        <td class="px-3 py-2 text-center border-b border-gray-100">
+                          <span class="inline-block bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded">
+                            {{ pipe.nominalDiameter || '-' }}mm
+                          </span>
+                        </td>
+                        <td class="px-3 py-2 text-right border-b border-gray-100">
+                          <span :class="getVelocityTextClass(pipe.status)" class="font-semibold text-sm">
+                            {{ pipe.velocity?.toFixed(2) || '-' }}
+                          </span>
+                        </td>
+                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">
+                          {{ pipe.frictionLoss != null ? pipe.frictionLoss.toFixed(4) : '-' }}
+                        </td>
+                        <td class="px-3 py-2 text-center border-b border-gray-100">
+                          <span :class="getStatusBadgeClass(pipe.status)" class="text-xs font-medium px-2 py-0.5 rounded-full">
+                            {{ getStatusLabel(pipe.status) }}
+                          </span>
+                        </td>
+                      </tr>
+                      <!-- Expand row — fixtures at this pipe's nodes -->
+                      <template v-if="expandedPipes.has(String(pipe.id))">
+                        <tr v-if="getPipeNodeFixtures(pipe).length === 0" class="print:hidden">
+                          <td colspan="11" class="px-6 py-2 text-xs text-gray-400 italic border-b border-red-100 bg-red-50/40">
+                            ไม่มี fixture ที่ node นี้
+                          </td>
+                        </tr>
+                        <tr v-for="nodeGroup in getPipeNodeFixtures(pipe)" :key="nodeGroup.nodeLabel"
+                            class="bg-red-50/60 print:hidden">
+                          <td colspan="11" class="px-6 py-3 border-b border-red-100">
+                            <p class="text-xs font-semibold text-red-700 mb-2">📍 Node: {{ nodeGroup.nodeLabel }}</p>
+                            <table class="w-full text-xs border-collapse">
+                              <thead>
+                                <tr class="text-gray-500">
+                                  <th class="text-left pb-1 pr-4">สุขภัณฑ์</th>
+                                  <th class="text-right pb-1 pr-4">FU/ชิ้น</th>
+                                  <th class="text-right pb-1 pr-4">จำนวน</th>
+                                  <th class="text-right pb-1">FU รวม</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr v-for="f in nodeGroup.fixtures" :key="f.type">
+                                  <td class="pr-4 py-0.5 text-gray-700">{{ f.label }}</td>
+                                  <td class="pr-4 py-0.5 text-right text-gray-600">{{ f.fuPerUnit }}</td>
+                                  <td class="pr-4 py-0.5 text-right text-gray-600">{{ f.quantity }}</td>
+                                  <td class="py-0.5 text-right font-semibold text-red-800">{{ f.totalFU }}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </template>
+                    </template>
                   </tbody>
                 </table>
               </div>
@@ -298,6 +340,7 @@
                 <table class="w-full text-sm border-collapse">
                   <thead>
                     <tr class="bg-blue-700 text-white">
+                      <th class="px-3 py-2 text-left text-xs font-semibold w-6 print:hidden"></th>
                       <th class="px-3 py-2 text-left text-xs font-semibold">#</th>
                       <th class="px-3 py-2 text-left text-xs font-semibold">Segment</th>
                       <th class="px-3 py-2 text-right text-xs font-semibold">Length (m)</th>
@@ -306,41 +349,84 @@
                       <th class="px-3 py-2 text-right text-xs font-semibold">Flow (LPS)</th>
                       <th class="px-3 py-2 text-center text-xs font-semibold">Size (mm)</th>
                       <th class="px-3 py-2 text-right text-xs font-semibold">Velocity (m/s)</th>
+                      <th class="px-3 py-2 text-right text-xs font-semibold">Friction Loss (m)</th>
                       <th class="px-3 py-2 text-center text-xs font-semibold">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr
-                      v-for="(pipe, idx) in branchPipes"
-                      :key="pipe.id"
-                      :class="[
-                        idx % 2 === 0 ? 'bg-white' : 'bg-blue-50',
-                        pipe.status === 'CRITICAL' ? 'bg-red-100' : '',
-                        pipe.status === 'WARNING' ? 'bg-yellow-50' : ''
-                      ]"
-                    >
-                      <td class="px-3 py-2 text-gray-500 text-xs border-b border-gray-100">{{ idx + 1 }}</td>
-                      <td class="px-3 py-2 font-medium text-gray-800 border-b border-gray-100">{{ pipe.segmentName }}</td>
-                      <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.length?.toFixed(1) || '-' }}</td>
-                      <td class="px-3 py-2 text-right font-semibold text-gray-800 border-b border-gray-100">{{ pipe.totalFU ?? '-' }}</td>
-                      <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.gpm?.toFixed(2) || '-' }}</td>
-                      <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.lps?.toFixed(3) || '-' }}</td>
-                      <td class="px-3 py-2 text-center border-b border-gray-100">
-                        <span class="inline-block bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded">
-                          {{ pipe.nominalDiameter || '-' }}mm
-                        </span>
-                      </td>
-                      <td class="px-3 py-2 text-right border-b border-gray-100">
-                        <span :class="getVelocityTextClass(pipe.status)" class="font-semibold text-sm">
-                          {{ pipe.velocity?.toFixed(2) || '-' }}
-                        </span>
-                      </td>
-                      <td class="px-3 py-2 text-center border-b border-gray-100">
-                        <span :class="getStatusBadgeClass(pipe.status)" class="text-xs font-medium px-2 py-0.5 rounded-full">
-                          {{ getStatusLabel(pipe.status) }}
-                        </span>
-                      </td>
-                    </tr>
+                    <template v-for="(pipe, idx) in branchPipes" :key="pipe.id">
+                      <!-- Main pipe row -->
+                      <tr
+                        class="cursor-pointer hover:brightness-95 transition-all"
+                        :class="[
+                          idx % 2 === 0 ? 'bg-white' : 'bg-blue-50',
+                          pipe.status === 'CRITICAL' ? '!bg-red-100' : '',
+                          pipe.status === 'WARNING' ? '!bg-yellow-50' : ''
+                        ]"
+                        @click="togglePipeRow(pipe.id)"
+                      >
+                        <td class="px-2 py-2 text-center border-b border-gray-100 print:hidden">
+                          <span class="inline-block transition-transform duration-200 text-gray-400 text-xs"
+                                :class="expandedPipes.has(String(pipe.id)) ? 'rotate-90' : ''">▶</span>
+                        </td>
+                        <td class="px-3 py-2 text-gray-500 text-xs border-b border-gray-100">{{ idx + 1 }}</td>
+                        <td class="px-3 py-2 font-medium text-gray-800 border-b border-gray-100">{{ pipe.segmentName }}</td>
+                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.length?.toFixed(1) || '-' }}</td>
+                        <td class="px-3 py-2 text-right font-semibold text-gray-800 border-b border-gray-100">{{ pipe.totalFU ?? '-' }}</td>
+                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.gpm?.toFixed(2) || '-' }}</td>
+                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">{{ pipe.lps?.toFixed(3) || '-' }}</td>
+                        <td class="px-3 py-2 text-center border-b border-gray-100">
+                          <span class="inline-block bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded">
+                            {{ pipe.nominalDiameter || '-' }}mm
+                          </span>
+                        </td>
+                        <td class="px-3 py-2 text-right border-b border-gray-100">
+                          <span :class="getVelocityTextClass(pipe.status)" class="font-semibold text-sm">
+                            {{ pipe.velocity?.toFixed(2) || '-' }}
+                          </span>
+                        </td>
+                        <td class="px-3 py-2 text-right text-gray-700 border-b border-gray-100">
+                          {{ pipe.frictionLoss != null ? pipe.frictionLoss.toFixed(4) : '-' }}
+                        </td>
+                        <td class="px-3 py-2 text-center border-b border-gray-100">
+                          <span :class="getStatusBadgeClass(pipe.status)" class="text-xs font-medium px-2 py-0.5 rounded-full">
+                            {{ getStatusLabel(pipe.status) }}
+                          </span>
+                        </td>
+                      </tr>
+                      <!-- Expand row — fixtures at this pipe's nodes -->
+                      <template v-if="expandedPipes.has(String(pipe.id))">
+                        <tr v-if="getPipeNodeFixtures(pipe).length === 0" class="print:hidden">
+                          <td colspan="11" class="px-6 py-2 text-xs text-gray-400 italic border-b border-blue-100 bg-blue-50/40">
+                            ไม่มี fixture ที่ node นี้
+                          </td>
+                        </tr>
+                        <tr v-for="nodeGroup in getPipeNodeFixtures(pipe)" :key="nodeGroup.nodeLabel"
+                            class="bg-blue-50/60 print:hidden">
+                          <td colspan="11" class="px-6 py-3 border-b border-blue-100">
+                            <p class="text-xs font-semibold text-blue-700 mb-2">📍 Node: {{ nodeGroup.nodeLabel }}</p>
+                            <table class="w-full text-xs border-collapse">
+                              <thead>
+                                <tr class="text-gray-500">
+                                  <th class="text-left pb-1 pr-4">สุขภัณฑ์</th>
+                                  <th class="text-right pb-1 pr-4">FU/ชิ้น</th>
+                                  <th class="text-right pb-1 pr-4">จำนวน</th>
+                                  <th class="text-right pb-1">FU รวม</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr v-for="f in nodeGroup.fixtures" :key="f.type">
+                                  <td class="pr-4 py-0.5 text-gray-700">{{ f.label }}</td>
+                                  <td class="pr-4 py-0.5 text-right text-gray-600">{{ f.fuPerUnit }}</td>
+                                  <td class="pr-4 py-0.5 text-right text-gray-600">{{ f.quantity }}</td>
+                                  <td class="py-0.5 text-right font-semibold text-blue-800">{{ f.totalFU }}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </template>
+                    </template>
                   </tbody>
                 </table>
               </div>
@@ -438,12 +524,7 @@
                   <span class="text-gray-600">Branch Pipes:</span>
                   <span class="font-semibold text-blue-700">{{ branchPipes.length }} เส้น</span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Pipes ต้องการ Upsize:</span>
-                  <span class="font-semibold" :class="pipesNeedingUpsize > 0 ? 'text-yellow-700' : 'text-green-700'">
-                    {{ pipesNeedingUpsize }} เส้น
-                  </span>
-                </div>
+
                 <div class="flex justify-between">
                   <span class="text-gray-600">Version Status:</span>
                   <span :class="version?.isCurrent ? 'text-green-600 font-semibold' : 'text-gray-600'">
@@ -486,8 +567,9 @@
 import { computed, onMounted, ref } from 'vue'
 import BackButton from '~/components/navigation/BackButton.vue'
 import VersionSteps from '~/components/workflow/VersionSteps.vue'
-import { versionsApi, projectsApi } from '~/composables/useApi'
+import { projectsApi, versionsApi } from '~/composables/useApi'
 import { useWorkflowStore } from '~/stores/workflowStore'
+import { calculateUPCGPM } from '~/shared/constants/hunterCurve.ts'
 
 // ===== PIPE SIZES TABLE (from Hazen-Williams calc, same as AutoSuggestUpsizing) =====
 const PIPE_SIZES = [
@@ -536,13 +618,47 @@ const fixturesData = ref<any>(null)  // parsed snapshotFixtures
 const resultsData  = ref<any>(null)  // parsed snapshotResults
 
 // ===== COMPUTED =====
-const hasData = computed(() => !!networkData.value && !!resultsData.value)
+const hasData = computed(() => !!networkData.value)
 
 const reportDate = computed(() => new Date().toLocaleDateString('th-TH', {
   year: 'numeric', month: 'long', day: 'numeric'
 }))
 
-const calcStats = computed(() => resultsData.value?.pipeSizesSummary?.stats || null)
+const calcStats = computed(() => {
+  const pipes = enrichedPipes.value
+  if (!pipes.length) return null
+
+  // Total FU = FU ของ pipe ที่ออกจาก SOURCE node โดยตรง
+  // (pipe นี้รองรับ flow จาก fixture ทุกตัวในระบบ)
+  const sourceNode = (networkData.value?.nodes || []).find((n: any) =>
+    n.type === 'SOURCE' || n.type === 'source'
+  )
+  let totalFU = 0
+  if (sourceNode) {
+    const sourcePipe = pipes.find((p: any) =>
+      String(p.sourceNodeId) === String(sourceNode.id)
+    )
+    totalFU = sourcePipe?.totalFU || 0
+  }
+  // ถ้าหา SOURCE ไม่เจอ ใช้ FU สูงสุดจาก critical path เป็น fallback
+  if (totalFU === 0) {
+    const criticalPipes = pipes.filter((p: any) => p.isCriticalPath)
+    const pool = criticalPipes.length ? criticalPipes : pipes
+    totalFU = pool.reduce((max: number, p: any) => Math.max(max, p.totalFU || 0), 0)
+  }
+
+  // Flow rate สูงสุดบน Critical Path (pipe ที่อยู่ใกล้ SOURCE ที่สุด)
+  const criticalPipes = pipes.filter((p: any) => p.isCriticalPath)
+  const gpmPool = criticalPipes.length ? criticalPipes : pipes
+  const flowRateVal = gpmPool.reduce((max: number, p: any) => Math.max(max, p.gpm || 0), 0)
+  const flowRate = flowRateVal > 0 ? flowRateVal.toFixed(2) : '-'
+
+  // ขนาดท่อใหญ่สุด
+  const maxSizeMM = Math.max(...pipes.map((p: any) => p.nominalDiameter || 0))
+  const maxPipeSize = maxSizeMM > 0 ? `${maxSizeMM}mm` : '-'
+
+  return { totalFU, flowRate, maxPipeSize }
+})
 
 // Total pipe length from networkData
 const totalPipeLength = computed(() => {
@@ -567,15 +683,112 @@ const totalFixtureCount = computed(() => {
   return total
 })
 
-// Build enriched pipe list: join networkData.pipes + fixturesData.pipes, compute velocity
+// ===== FIXTURES COMPUTATION (same algorithm as fixtures.vue) =====
+
+const getStandardFU = (type: string): number => {
+  const FU: Record<string, number> = {
+    WC_TANK: 3, WC_VALVE: 6, LAVATORY: 1, BATHTUB: 2, SHOWER: 2,
+    HOSE_BIBB: 0, KITCHEN_SINK: 2, LAUNDRY_TRAY: 3, DISHWASHER: 1,
+    WASHING_MACHINE_3_5KG: 2, WASHING_MACHINE_7KG: 4
+  }
+  return FU[type?.trim().toUpperCase()] ?? 1
+}
+
+// Water Factor Table (same as AutoSuggestUpsizing) — applied to Hunter GPM only, not HoseBibb
+const WATER_FACTOR_TABLE = [
+  { fuMin: 0,    fuMax: 400,  percent: 100 },
+  { fuMin: 401,  fuMax: 600,  percent: 87  },
+  { fuMin: 601,  fuMax: 900,  percent: 75  },
+  { fuMin: 901,  fuMax: 1200, percent: 64  },
+  { fuMin: 1201, fuMax: 1500, percent: 63  },
+  { fuMin: 1501, fuMax: 2000, percent: 61  },
+  { fuMin: 2001, fuMax: 2500, percent: 60  },
+  { fuMin: 2501, fuMax: 3000, percent: 59  },
+  { fuMin: 3001, fuMax: 4000, percent: 58  },
+  { fuMin: 4001, fuMax: 5000, percent: 56  },
+  { fuMin: 5001, fuMax: 8000, percent: 55  },
+]
+
+const getWaterFactorPercent = (fu: number): number => {
+  const row = WATER_FACTOR_TABLE.find(r => fu >= r.fuMin && fu <= r.fuMax)
+  return row?.percent ?? 100
+}
+
+// Trace downstream from targetNodeId — collect all fixtures (same logic as fixtures.vue)
+const traceDownstreamFixtures = (startNodeId: number | string): any[] => {
+  const nodes = networkData.value?.nodes || []
+  const pipes  = networkData.value?.pipes  || []
+  const collected: any[] = []
+  const visitedNodes = new Set<string>()
+  const visitedPipes = new Set<string>()
+
+  const trace = (nodeId: number | string) => {
+    const key = String(nodeId)
+    if (visitedNodes.has(key)) return
+    visitedNodes.add(key)
+
+    const node = nodes.find((n: any) => String(n.id) === key)
+    if (!node) return
+
+    if (node.fixtures?.length) {
+      node.fixtures.forEach((f: any) =>
+        collected.push({ ...f, nodeName: node.label || `Node ${nodeId}` })
+      )
+    }
+
+    pipes
+      .filter((p: any) => String(p.sourceNodeId) === key)
+      .forEach((p: any) => {
+        const pk = String(p.id)
+        if (!visitedPipes.has(pk)) {
+          visitedPipes.add(pk)
+          trace(p.targetNodeId)
+        }
+      })
+  }
+
+  trace(startNodeId)
+  return collected
+}
+
+// Compute FU + GPM for a pipe from network data directly (same as AutoSuggestUpsizing.analyzePipesV2)
+// Applies Water Factor to Hunter GPM (consistent with calculation page)
+const computePipeFUAndGPM = (targetNodeId: number | string) => {
+  const fixtures = traceDownstreamFixtures(targetNodeId)
+
+  let flushTankFU  = 0
+  let flushValveFU = 0
+  let hoseBibbCount = 0
+
+  fixtures.forEach((f: any) => {
+    const qty  = Number(f.quantity) || 1
+    const type = f.type?.trim().toUpperCase()
+    if (type === 'HOSE_BIBB')  hoseBibbCount += qty
+    else if (type === 'WC_VALVE') flushValveFU += getStandardFU(type) * qty
+    else                          flushTankFU  += getStandardFU(type) * qty
+  })
+
+  const totalFU     = flushTankFU + flushValveFU
+  const upc         = calculateUPCGPM(flushTankFU, flushValveFU)
+  const hunterGPM   = upc.totalGPM
+
+  // Apply Water Factor to Hunter GPM only (HoseBibb is constant flow, not factored)
+  const waterFactorPct   = getWaterFactorPercent(totalFU)
+  const adjustedHunterGPM = hunterGPM * (waterFactorPct / 100)
+
+  const hoseBibbGPM = hoseBibbCount * 5
+  const totalGPM    = adjustedHunterGPM + hoseBibbGPM   // design flow (matches calc page)
+
+  return { totalFU, hunterGPM: adjustedHunterGPM, hoseBibbGPM, totalGPM, waterFactorPct }
+}
+
+// Build enriched pipe list — FU/GPM computed directly from snapshotNetwork (same algorithm as fixtures.vue)
+// This ensures newly added pipes always show data without needing to re-visit the fixtures page
 const enrichedPipes = computed(() => {
   if (!networkData.value?.pipes) return []
 
   const nodesMap = new Map<string, any>()
   ;(networkData.value.nodes || []).forEach((n: any) => nodesMap.set(String(n.id), n))
-
-  const fixtureMap = new Map<string, any>()
-  ;(fixturesData.value?.pipes || []).forEach((p: any) => fixtureMap.set(String(p.pipeId), p))
 
   return networkData.value.pipes.map((pipe: any) => {
     const srcNode = nodesMap.get(String(pipe.sourceNodeId))
@@ -584,35 +797,63 @@ const enrichedPipes = computed(() => {
     const tgtLabel = tgtNode?.label || tgtNode?.name || `Node${pipe.targetNodeId}`
     const segmentName = `${srcLabel} → ${tgtLabel}`
 
-    const fixPipe = fixtureMap.get(String(pipe.id))
-    const totalFU = fixPipe?.totalFU ?? pipe.totalFU ?? null
-    const gpm     = fixPipe?.hunterGPM ?? pipe.hunterGPM ?? null
+    // Compute FU + GPM via traceDownstream from this pipe's targetNode
+    // Returns adjusted GPM (water factor applied) — matches AutoSuggestUpsizing logic
+    const computed = computePipeFUAndGPM(pipe.targetNodeId)
+    const totalFU = computed.totalFU
+    const gpm     = computed.totalGPM > 0 ? computed.totalGPM : null
+    // 1 GPM = 0.0630902 L/s = 6.30902e-5 m³/s
     const lps     = gpm != null ? gpm * 0.0630902 : null
+    const m3s     = gpm != null ? gpm * 6.30902e-5 : null   // direct conversion (avoids rounding through lps)
+
+    // Always convert nominalSize to number (NetworkBuilder stores it as string "15")
+    const nominalDiameter: number | null =
+      pipe.nominalSize != null ? Number(pipe.nominalSize) :
+      pipe.nominalDiameter != null ? Number(pipe.nominalDiameter) : null
 
     let velocity: number | null = null
+    let frictionLoss: number | null = null
+    let frictionLossRate: number | null = null  // m/100m (same unit as calc page display)
     let status: 'OK' | 'WARNING' | 'CRITICAL' = 'OK'
-    if (lps != null && pipe.nominalDiameter) {
-      const pipeSize = PIPE_SIZES.find(s => s.mm === pipe.nominalDiameter)
+
+    if (m3s != null && m3s > 0 && nominalDiameter) {
+      const pipeSize = PIPE_SIZES.find(s => s.mm === nominalDiameter)
       if (pipeSize) {
-        const m3s = lps / 1000
-        const area = Math.PI * Math.pow(pipeSize.internalDiameterM / 2, 2)
-        velocity = m3s / area
+        const d    = pipeSize.internalDiameterM
+        const area = Math.PI * Math.pow(d / 2, 2)
+        velocity   = m3s / area
+
         if (velocity < 0.6 || velocity > 3.0) status = 'CRITICAL'
         else if (velocity < 1.2 || velocity > 2.4) status = 'WARNING'
         else status = 'OK'
+
+        // Hazen-Williams friction loss rate (m/100m) — same formula as AutoSuggestUpsizing
+        // h_f_rate = (10.583 / D^4.87) × (Q/C)^1.85 × 100
+        const cFactor = criteria.value?.cFactor || 150
+        frictionLossRate = (10.583 / Math.pow(d, 4.87)) *
+                           Math.pow(m3s / cFactor, 1.85) * 100
+
+        // Total friction head loss for this segment (m) = rate × length / 100
+        if (pipe.length) {
+          frictionLoss = frictionLossRate * pipe.length / 100
+        }
       }
     }
 
     return {
       id: pipe.id,
+      sourceNodeId: pipe.sourceNodeId,
+      targetNodeId: pipe.targetNodeId,
       segmentName,
       length: pipe.length,
-      nominalDiameter: pipe.nominalDiameter,
-      isCriticalPath: pipe.isCriticalPath ?? fixPipe?.isCriticalPath ?? false,
+      nominalDiameter,
+      isCriticalPath: pipe.isCriticalPath ?? false,
       totalFU,
       gpm,
       lps,
       velocity,
+      frictionLossRate,   // m/100m — same unit as calculation page
+      frictionLoss,       // total m for this segment = rate × length / 100
       status,
     }
   })
@@ -655,6 +896,46 @@ const fixtureTypesSummary = computed(() => {
 
   return Object.values(groups).sort((a, b) => b.totalFU - a.totalFU)
 })
+
+// ===== EXPAND ROW STATE =====
+const expandedPipes = ref(new Set<string>())
+
+const togglePipeRow = (pipeId: string | number) => {
+  const key = String(pipeId)
+  if (expandedPipes.value.has(key)) {
+    expandedPipes.value.delete(key)
+  } else {
+    expandedPipes.value.add(key)
+  }
+  // trigger reactivity
+  expandedPipes.value = new Set(expandedPipes.value)
+}
+
+const FU_MAP_GLOBAL: Record<string, number> = {
+  WC_TANK: 3, WC_VALVE: 6, LAVATORY: 1, BATHTUB: 2, SHOWER: 2,
+  HOSE_BIBB: 0, KITCHEN_SINK: 2, WASHING_MACHINE_3_5KG: 2, WASHING_MACHINE_7KG: 4
+}
+
+// ดึง fixtures จาก node ปลายทาง (targetNodeId) และ node ต้นทาง (sourceNodeId) ของท่อนั้น
+const getPipeNodeFixtures = (pipe: any): { nodeLabel: string; fixtures: any[] }[] => {
+  const nodes = networkData.value?.nodes || []
+  const result: { nodeLabel: string; fixtures: any[] }[] = []
+
+  const ids = [pipe.targetNodeId, pipe.sourceNodeId].filter(Boolean)
+  for (const nid of ids) {
+    const node = nodes.find((n: any) => String(n.id) === String(nid))
+    if (!node || !node.fixtures?.length) continue
+    const enriched = node.fixtures.map((f: any) => ({
+      type: f.type,
+      label: FIXTURE_LABELS[f.type] || f.type,
+      quantity: f.quantity || 1,
+      fuPerUnit: FU_MAP_GLOBAL[f.type] ?? 1,
+      totalFU: (FU_MAP_GLOBAL[f.type] ?? 1) * (f.quantity || 1),
+    }))
+    result.push({ nodeLabel: node.label || node.name || `Node ${nid}`, fixtures: enriched })
+  }
+  return result
+}
 
 // ===== HELPERS =====
 const getStatusBadgeClass = (status?: string) => {

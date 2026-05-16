@@ -2699,18 +2699,118 @@ const analyzePipesV2 = async () => {
 
     if (fixturesData.length === 0) {
       console.warn(
-        "⚠️ [V2] No fixtures data found - analysis will have zero FU/GPM values"
+        "⚠️ [V2] No fixtures data found - will use BFS from networkData.nodes as fallback"
       );
     }
 
+    // ===== BFS HELPERS (fallback for newly added pipes not in snapshotFixtures) =====
+    const FU_MAP: Record<string, number> = {
+      WC_TANK: 3, WC_VALVE: 6, LAVATORY: 1, BATHTUB: 2, SHOWER: 2,
+      HOSE_BIBB: 0, KITCHEN_SINK: 2, LAUNDRY_TRAY: 3, DISHWASHER: 1,
+      WASHING_MACHINE_3_5KG: 2, WASHING_MACHINE_7KG: 4
+    };
+    const getStandardFULocal = (type: string): number =>
+      FU_MAP[type?.trim().toUpperCase()] ?? 1;
+
+    // ===== END BFS HELPERS =====
+
     // Process pipes from networkData
     const analyzedPipes = props.networkData.pipes.map((pipe: any) => {
-      // Find fixtures data for this pipe
+      // Find fixtures data for this pipe from snapshotFixtures
       const fixturesPipe = fixturesData.find((p: any) => p.pipeId === pipe.id);
 
-      const fu = fixturesPipe?.totalFU || 0;
-      const baseHunterGPM = fixturesPipe?.hunterGPM || 0;
-      const hoseBibbGPM = fixturesPipe?.hoseBibbGPM || 0;
+      let fu: number;
+      let baseHunterGPM: number;
+      let hoseBibbGPM: number;
+
+      if (fixturesPipe) {
+        // ✅ Found in snapshot — use saved values
+        fu = fixturesPipe.totalFU || 0;
+        baseHunterGPM = fixturesPipe.hunterGPM || 0;
+        hoseBibbGPM = fixturesPipe.hoseBibbGPM || 0;
+      } else {
+        // 🔥 Not in snapshot (newly added pipe) — compute via BFS from networkData.nodes
+        const nodes = props.networkData.nodes || [];
+        const pipes = props.networkData.pipes || [];
+        const collected: any[] = [];
+        const visitedNodes = new Set<string>();
+        const visitedPipes = new Set<string>();
+        const bfsTrace = (nodeId: number | string) => {
+          const key = String(nodeId);
+          if (visitedNodes.has(key)) return;
+          visitedNodes.add(key);
+          const node = nodes.find((n: any) => String(n.id) === key);
+          if (!node) return;
+          if (node.fixtures?.length) node.fixtures.forEach((f: any) => collected.push(f));
+          pipes.filter((p: any) => String(p.sourceNodeId) === key).forEach((p: any) => {
+            const pk = String(p.id);
+            if (!visitedPipes.has(pk)) { visitedPipes.add(pk); bfsTrace(p.targetNodeId); }
+          });
+        };
+        bfsTrace(pipe.targetNodeId);
+
+        let flushTankFU = 0, flushValveFU = 0, hbCount = 0;
+        collected.forEach((f: any) => {
+          const qty = Number(f.quantity) || 1;
+          const type = f.type?.trim().toUpperCase();
+          if (type === 'HOSE_BIBB') hbCount += qty;
+          else if (type === 'WC_VALVE') flushValveFU += getStandardFULocal(type) * qty;
+          else flushTankFU += getStandardFULocal(type) * qty;
+        });
+        fu = flushTankFU + flushValveFU;
+        hoseBibbGPM = hbCount * 5;
+
+        // Compute Hunter GPM using same interpolation as hunterCurve.ts
+        const totalFUForCurve = flushTankFU + flushValveFU;
+        if (flushValveFU > 0) {
+          // Flush valve curve (table data)
+          const FV_TABLE = [
+            { fu: 10, gpm: 27.0 }, { fu: 12, gpm: 28.6 }, { fu: 14, gpm: 30.2 },
+            { fu: 16, gpm: 31.8 }, { fu: 18, gpm: 33.4 }, { fu: 20, gpm: 35.0 },
+            { fu: 25, gpm: 38.0 }, { fu: 30, gpm: 41.0 }, { fu: 35, gpm: 43.5 },
+            { fu: 40, gpm: 46.5 }, { fu: 45, gpm: 49.0 }, { fu: 50, gpm: 51.5 },
+            { fu: 60, gpm: 55.0 }, { fu: 100, gpm: 67.5 }, { fu: 120, gpm: 72.5 },
+            { fu: 140, gpm: 77.5 }, { fu: 160, gpm: 82.5 }, { fu: 180, gpm: 87.0 },
+            { fu: 200, gpm: 91.5 }, { fu: 250, gpm: 101.0 }, { fu: 300, gpm: 110.0 },
+            { fu: 400, gpm: 126.0 }, { fu: 500, gpm: 142.0 }, { fu: 750, gpm: 178.0 }, { fu: 1000, gpm: 208.0 }
+          ];
+          const lower = FV_TABLE.filter(p => p.fu <= totalFUForCurve).pop();
+          const upper = FV_TABLE.find(p => p.fu >= totalFUForCurve);
+          if (!lower && upper) { baseHunterGPM = upper.gpm; }
+          else if (!upper && lower) { baseHunterGPM = lower.gpm; }
+          else if (lower && upper && lower.fu === upper.fu) { baseHunterGPM = lower.gpm; }
+          else if (lower && upper) { baseHunterGPM = lower.gpm + (totalFUForCurve - lower.fu) * ((upper.gpm - lower.gpm) / (upper.fu - lower.fu)); }
+          else { baseHunterGPM = 0; }
+        } else {
+          // Flush tank curve (table data)
+          const FT_TABLE = [
+            { fu: 6, gpm: 5.0 }, { fu: 8, gpm: 6.5 }, { fu: 10, gpm: 8.0 },
+            { fu: 12, gpm: 9.2 }, { fu: 14, gpm: 10.4 }, { fu: 16, gpm: 11.6 },
+            { fu: 18, gpm: 12.8 }, { fu: 20, gpm: 14.0 }, { fu: 25, gpm: 17.0 },
+            { fu: 30, gpm: 20.0 }, { fu: 35, gpm: 22.5 }, { fu: 40, gpm: 24.8 },
+            { fu: 45, gpm: 27.0 }, { fu: 50, gpm: 29.0 }, { fu: 60, gpm: 32.0 },
+            { fu: 70, gpm: 35.0 }, { fu: 80, gpm: 38.0 }, { fu: 90, gpm: 41.0 },
+            { fu: 100, gpm: 43.5 }, { fu: 120, gpm: 48.0 }, { fu: 140, gpm: 52.5 },
+            { fu: 160, gpm: 57.0 }, { fu: 180, gpm: 61.0 }, { fu: 200, gpm: 65.0 },
+            { fu: 250, gpm: 75.0 }, { fu: 300, gpm: 85.0 }, { fu: 400, gpm: 105.0 }, { fu: 500, gpm: 125.0 }
+          ];
+          if (totalFUForCurve <= 0) { baseHunterGPM = 0; }
+          else {
+            const lower = FT_TABLE.filter(p => p.fu <= totalFUForCurve).pop();
+            const upper = FT_TABLE.find(p => p.fu >= totalFUForCurve);
+            if (!lower && upper) {
+              const p1 = FT_TABLE[0], p2 = FT_TABLE[1];
+              const slope = (p2.gpm - p1.gpm) / (p2.fu - p1.fu);
+              baseHunterGPM = Math.max(0, p1.gpm + (totalFUForCurve - p1.fu) * slope);
+            } else if (!upper && lower) { baseHunterGPM = lower.gpm; }
+            else if (lower && upper && lower.fu === upper.fu) { baseHunterGPM = lower.gpm; }
+            else if (lower && upper) { baseHunterGPM = lower.gpm + (totalFUForCurve - lower.fu) * ((upper.gpm - lower.gpm) / (upper.fu - lower.fu)); }
+            else { baseHunterGPM = 0; }
+          }
+        }
+        console.log(`[AutoSuggest V2] Pipe ${pipe.id} (BFS fallback): FU=${fu}, HunterGPM=${baseHunterGPM.toFixed(2)}, HB=${hoseBibbGPM}`);
+      }
+
       const rawTotalGPM = baseHunterGPM + hoseBibbGPM;
 
       console.log(
@@ -2725,8 +2825,8 @@ const analyzePipesV2 = async () => {
       const flowM3S = gpmToM3S(adjustedGPM);
       const flowLPS = gpmToLPS(adjustedGPM);
 
-      // Get pipe size
-      const currentSizeMM = pipe.nominalSize || 15;
+      // Get pipe size — always convert to number (NetworkBuilder stores nominalSize as string "15")
+      const currentSizeMM = pipe.nominalSize != null ? Number(pipe.nominalSize) : 15;
       const sizeInfo =
         PIPE_SIZES.find((s) => s.mm === currentSizeMM) || PIPE_SIZES[0];
 

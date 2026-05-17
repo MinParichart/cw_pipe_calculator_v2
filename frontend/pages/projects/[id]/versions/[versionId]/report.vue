@@ -106,6 +106,16 @@
                     {{ version?.isCurrent ? 'Current Version' : 'Archived' }}
                   </span>
                 </div>
+                <!-- Project description -->
+                <div class="col-span-2 flex justify-between py-1.5 border-b border-gray-200">
+                  <span class="text-gray-500 font-medium">รายละเอียดโปรเจกต์:</span>
+                  <span class="font-semibold text-gray-900 text-right">{{ projectData?.description || '-' }}</span>
+                </div>
+                <!-- Version description -->
+                <div class="col-span-2 flex justify-between py-1.5 border-b border-gray-200">
+                  <span class="text-gray-500 font-medium">รายละเอียด Version:</span>
+                  <span class="font-semibold text-gray-900 text-right">{{ version?.description || '-' }}</span>
+                </div>
               </div>
 
               <!-- Design Criteria -->
@@ -113,28 +123,30 @@
                 <h3 class="text-base font-bold text-gray-900 mb-3 pb-1 border-b-2 border-gray-800 uppercase tracking-wide">
                   Design Criteria
                 </h3>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                  <div class="bg-gray-50 rounded p-3 border border-gray-200">
-                    <p class="text-xs text-gray-500 mb-1">System Type</p>
-                    <p class="font-bold text-gray-900">{{ criteria?.systemType || '-' }}</p>
-                  </div>
+                <div class="grid grid-cols-3 gap-4 text-sm">
                   <div class="bg-gray-50 rounded p-3 border border-gray-200">
                     <p class="text-xs text-gray-500 mb-1">Building Type</p>
-                    <p class="font-bold text-gray-900">ที่อยู่อาศัย</p>
+                    <p class="font-bold text-gray-900">{{ getBuildingTypeText(criteria?.buildingType) }}</p>
                   </div>
                   <div class="bg-gray-50 rounded p-3 border border-gray-200">
                     <p class="text-xs text-gray-500 mb-1">C-Factor (Hazen-Williams)</p>
                     <p class="font-bold text-gray-900">{{ criteria?.cFactor || '-' }}</p>
                   </div>
-                  <div class="bg-gray-50 rounded p-3 border border-gray-200 flex gap-4">
-                    <div>
-                      <p class="text-xs text-gray-500 mb-1">Velocity Min (m/s)</p>
-                      <p class="font-bold text-gray-900">{{ criteria?.velocityMin ?? '-' }}</p>
-                    </div>
-                    <div class="border-l border-gray-300 pl-4">
-                      <p class="text-xs text-gray-500 mb-1">Velocity Max (m/s)</p>
-                      <p class="font-bold text-gray-900">{{ criteria?.velocityMax ?? '-' }}</p>
-                    </div>
+                  <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                    <p class="text-xs text-gray-500 mb-1">จำนวนชั้น (Floors)</p>
+                    <p class="font-bold text-gray-900">{{ criteria?.floors ?? '-' }} ชั้น</p>
+                  </div>
+                  <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                    <p class="text-xs text-gray-500 mb-1">Velocity Min (m/s)</p>
+                    <p class="font-bold text-gray-900">{{ criteria?.velocityMin ?? '-' }}</p>
+                  </div>
+                  <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                    <p class="text-xs text-gray-500 mb-1">Velocity Max (m/s)</p>
+                    <p class="font-bold text-gray-900">{{ criteria?.velocityMax ?? '-' }}</p>
+                  </div>
+                  <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                    <p class="text-xs text-gray-500 mb-1">PVC Class</p>
+                    <p class="font-bold text-gray-900">Class {{ criteria?.pvcClass || '-' }}</p>
                   </div>
                 </div>
               </div>
@@ -1187,6 +1199,17 @@ const getStatusLabel = (status?: string) => {
   return '-'
 }
 const getFixtureLabel = (type: string) => FIXTURE_LABELS[type] || type
+
+const getBuildingTypeText = (type?: string) => ({
+  APARTMENT: 'อาคารพักอาศัย/คอนโด',
+  HOUSE:     'บ้านเดี่ยว/ทาวน์โฮม',
+  OFFICE:    'อาคารสำนักงาน',
+  HOSPITAL:  'โรงพยาบาล',
+  SCHOOL:    'โรงเรียน',
+  HOTEL:     'โรงแรม',
+  FACTORY:   'โรงงาน',
+  OTHER:     'อื่นๆ',
+}[type || ''] || type || '-')
 
 // ===== LOAD DATA =====
 const loadData = async () => {

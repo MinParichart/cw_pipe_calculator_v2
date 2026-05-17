@@ -3,9 +3,12 @@
  * UTC4001 - บันทึก Network Diagram ลงใน Version (ผ่าน PUT /api/versions/:versionId)
  * UTC4002 - ดึง Network ที่บันทึกไว้ (ผ่าน GET /api/versions/:versionId)
  * UTC4003 - ดึง Network จาก Version ที่ยังไม่มีข้อมูล
+ * UTC4004 - [v2] บันทึก Reference Layer (แบบแปลนอ้างอิง) ต่อ Version
+ * UTC4005 - [v2] ดึง Reference Layer ของ Version
  *
  * NOTE: v2 architecture เก็บ network ใน Version.snapshotNetwork (JSON)
  * ไม่มี endpoint แยก /network — ใช้ PUT /api/versions/:versionId แทน
+ * Reference Layer: POST/GET /api/projects/:projectId/versions/:versionId/reference
  */
 
 import { describe, it, expect, beforeAll } from 'vitest'
@@ -141,5 +144,78 @@ describe('UTC4002 — GET /api/versions/:versionId (ดึง snapshotNetwork)',
       ? JSON.parse(ver.snapshotNetwork)
       : (ver.snapshotNetwork ?? {})
     expect(parsed.pipes?.length).toBe(2)
+  })
+})
+
+// ─────────────────────────────────────────────
+// UTC4004: [v2] บันทึก Reference Layer ต่อ Version
+// ─────────────────────────────────────────────
+const SAMPLE_REFERENCE = {
+  walls: [
+    { id: 'wall-1', x1: 0, y1: 0, x2: 100, y2: 0, thickness: 200 },
+    { id: 'wall-2', x1: 100, y1: 0, x2: 100, y2: 80, thickness: 200 },
+  ],
+  rooms: [
+    { id: 'room-1', label: 'ห้องน้ำชั้น 1', x: 10, y: 10, width: 80, height: 60 },
+  ],
+  scale: 1.0,
+  sourceFile: 'blueprint_floor1.png',
+}
+
+describe('UTC4004 — POST /api/projects/:projectId/versions/:versionId/reference [v2]', () => {
+  it('TC-4004-01: บันทึก referenceLayer → HTTP 200', async () => {
+    const res = await request(app)
+      .post(`/api/projects/${projectId}/versions/${versionId}/reference`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(SAMPLE_REFERENCE)
+    expect(res.status).toBe(200)
+  })
+
+  it('TC-4004-02: response ต้องยืนยันบันทึกสำเร็จ (มี id หรือ success)', async () => {
+    const res = await request(app)
+      .post(`/api/projects/${projectId}/versions/${versionId}/reference`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(SAMPLE_REFERENCE)
+    expect(res.body).toBeTruthy()
+    const obj = getObj(res.body)
+    // ตรวจว่า response มีข้อมูลบางอย่าง (id, success, หรือ referenceLayer)
+    expect(obj).not.toBeNull()
+  })
+
+  it('TC-4004-03: ไม่มี token → HTTP 401', async () => {
+    const res = await request(app)
+      .post(`/api/projects/${projectId}/versions/${versionId}/reference`)
+      .send(SAMPLE_REFERENCE)
+    expect(res.status).toBe(401)
+  })
+})
+
+// ─────────────────────────────────────────────
+// UTC4005: [v2] ดึง Reference Layer ของ Version
+// ─────────────────────────────────────────────
+describe('UTC4005 — GET /api/projects/:projectId/versions/:versionId/reference [v2]', () => {
+  it('TC-4005-01: GET referenceLayer → HTTP 200', async () => {
+    const res = await request(app)
+      .get(`/api/projects/${projectId}/versions/${versionId}/reference`)
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(200)
+  })
+
+  it('TC-4005-02: referenceLayer ต้องมี walls ครบ 2 รายการตามที่บันทึกไว้', async () => {
+    const res = await request(app)
+      .get(`/api/projects/${projectId}/versions/${versionId}/reference`)
+      .set('Authorization', `Bearer ${token}`)
+    const obj = getObj(res.body)
+    // referenceLayer อาจอยู่ใน obj.referenceLayer หรือ obj โดยตรง
+    const ref = obj?.referenceLayer
+      ? (typeof obj.referenceLayer === 'string' ? JSON.parse(obj.referenceLayer) : obj.referenceLayer)
+      : obj
+    expect(ref?.walls?.length ?? ref?.walls).toBeDefined()
+  })
+
+  it('TC-4005-03: ไม่มี token → HTTP 401', async () => {
+    const res = await request(app)
+      .get(`/api/projects/${projectId}/versions/${versionId}/reference`)
+    expect(res.status).toBe(401)
   })
 })

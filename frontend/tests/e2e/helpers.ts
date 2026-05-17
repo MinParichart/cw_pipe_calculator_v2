@@ -1,32 +1,28 @@
-/**
- * Playwright Helpers — ใช้ร่วมกันทุก spec file
- */
 import { Page } from '@playwright/test'
 
+const BASE_URL = 'http://localhost:3003'
+
 export const TEST_USER = {
-  name: 'System Test User',
-  email: `stc-${Date.now()}@test.com`,
+  name: 'STC Tester',
+  email: `stc-tester-${Date.now()}@test.com`,
   password: 'Test1234!',
 }
 
-/** Login และรอจนกว่าจะ redirect ไป projects/dashboard */
-export async function login(page: Page, email: string, password: string) {
-  await page.goto('/login')
-  await page.fill('input[name="email"], input[type="email"]', email)
-  await page.fill('input[name="password"], input[type="password"]', password)
-  await page.click('button[type="submit"]')
-  await page.waitForURL(/projects|dashboard/, { timeout: 10000 })
+/** สมัครสมาชิกและ login — คืน cookie/token state */
+export async function registerAndLogin(page: Page, user = TEST_USER) {
+  await page.goto(`${BASE_URL}/register`)
+  await page.fill('[name="name"], [placeholder*="ชื่อ"], [placeholder*="name"]', user.name)
+  await page.fill('[name="email"], [type="email"]', user.email)
+  await page.fill('[name="password"], [type="password"]', user.password)
+  await page.click('button[type="submit"], button:has-text("สมัคร"), button:has-text("Register")')
+  await page.waitForURL(/login|dashboard|projects/, { timeout: 10_000 })
 }
 
-/** Register ผู้ใช้ใหม่ */
-export async function register(page: Page, name: string, email: string, password: string) {
-  await page.goto('/register')
-  await page.fill('input[name="name"], input[placeholder*="ชื่อ"]', name)
-  await page.fill('input[name="email"], input[type="email"]', email)
-  await page.fill('input[name="password"], input[type="password"]', password)
-  const confirmField = page.locator('input[name="confirmPassword"], input[name="confirm"]')
-  if (await confirmField.count() > 0) {
-    await confirmField.fill(password)
-  }
-  await page.click('button[type="submit"]')
+/** Login ด้วย user ที่มีอยู่แล้ว */
+export async function login(page: Page, user = TEST_USER) {
+  await page.goto(`${BASE_URL}/login`)
+  await page.fill('[name="email"], [type="email"]', user.email)
+  await page.fill('[name="password"], [type="password"]', user.password)
+  await page.click('button[type="submit"], button:has-text("เข้าสู่ระบบ"), button:has-text("Login")')
+  await page.waitForURL(/dashboard|projects/, { timeout: 10_000 })
 }

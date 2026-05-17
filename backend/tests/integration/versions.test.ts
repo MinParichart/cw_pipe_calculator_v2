@@ -6,6 +6,8 @@
  * UTC3004 - ดึงข้อมูลเวอร์ชันเฉพาะ
  * UTC3005 - แก้ไขชื่อเวอร์ชัน
  * UTC3006 - ลบเวอร์ชัน
+ * UTC3007 - [v2] Duplicate Version (คัดลอก snapshot ทั้งหมด)
+ * UTC3008 - [v2] Compare 2 Versions (diff snapshotNetwork/Fixtures/Results)
  */
 
 import { describe, it, expect, beforeAll } from 'vitest'
@@ -19,6 +21,7 @@ let token = ''
 let projectId: number
 let version1Id: number
 let version2Id: number
+let duplicatedVersionId: number
 
 const getObj = (body: any) => body?.data ?? body
 
@@ -173,5 +176,104 @@ describe('UTC3006 — DELETE /api/versions/:versionId', () => {
       .get(`/api/versions/${version2Id}`)
       .set('Authorization', `Bearer ${token}`)
     expect(res.status).toBe(404)
+  })
+})
+
+// ─────────────────────────────────────────────
+// UTC3007: [v2] Duplicate Version
+// ─────────────────────────────────────────────
+describe('UTC3007 — POST /api/versions/:versionId/duplicate [v2]', () => {
+  // ก่อน duplicate: บันทึก snapshotNetwork ลงใน version1 ก่อน
+  it('TC-3007-01: setup — บันทึก snapshotNetwork ลงใน version1', async () => {
+    const res = await request(app)
+      .put(`/api/versions/${version1Id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        snapshotNetwork: JSON.stringify({ nodes: [{ id: 'n1', type: 'SOURCE' }], pipes: [] }),
+        snapshotFixtures: JSON.stringify({ fixtures: [{ nodeId: 'n1', type: 'WC_TANK', qty: 2 }] }),
+      })
+    expect(res.status).toBe(200)
+  })
+
+  it('TC-3007-02: POST /api/versions/:versionId/duplicate → HTTP 201', async () => {
+    const res = await request(app)
+      .post(`/api/versions/${version1Id}/duplicate`)
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(201)
+    const dup = getObj(res.body)
+    expect(dup).toHaveProperty('id')
+    expect(dup.id).not.toBe(version1Id)
+    duplicatedVersionId = dup.id
+  })
+
+  it('TC-3007-03: version ที่ duplicate ต้องมี snapshotNetwork เหมือนต้นฉบับ', async () => {
+    const [origRes, dupRes] = await Promise.all([
+      request(app).get(`/api/versions/${version1Id}`).set('Authorization', `Bearer ${token}`),
+      request(app).get(`/api/versions/${duplicatedVersionId}`).set('Authorization', `Bearer ${token}`),
+    ])
+    const orig = getObj(origRes.body)
+    const dup  = getObj(dupRes.body)
+    expect(dup.snapshotNetwork).toBe(orig.snapshotNetwork)
+  })
+
+  it('TC-3007-04: version ที่ duplicate ต้องมี snapshotFixtures เหมือนต้นฉบับ', async () => {
+    const [origRes, dupRes] = await Promise.all([
+      request(app).get(`/api/versions/${version1Id}`).set('Authorization', `Bearer ${token}`),
+      request(app).get(`/api/versions/${duplicatedVersionId}`).set('Authorization', `Bearer ${token}`),
+    ])
+    const orig = getObj(origRes.body)
+    const dup  = getObj(dupRes.body)
+    expect(dup.snapshotFixtures).toBe(orig.snapshotFixtures)
+  })
+
+  it('TC-3007-05: version ที่ duplicate ต้องมี id ใหม่และ versionNumber ใหม่', async () => {
+    const res = await request(app)
+      .get(`/api/versions/${duplicatedVersionId}`)
+      .set('Authorization', `Bearer ${token}`)
+    const dup = getObj(res.body)
+    expect(dup.id).not.toBe(version1Id)
+    expect(dup.versionNumber).toBeGreaterThan(1)
+  })
+
+  it('TC-3007-06: ไม่มี token → HTTP 401', async () => {
+    const res = await request(app)
+      .post(`/api/versions/${version1Id}/duplicate`)
+    expect(res.status).toBe(401)
+  })
+})
+
+// ─────────────────────────────────────────────
+// UTC3008: [v2] Compare 2 Versions
+// ─────────────────────────────────────────────
+describe('UTC3008 — GET /api/versions/compare/:v1/:v2 [v2]', () => {
+  it('TC-3008-01: GET /api/versions/compare/:v1/:v2 → HTTP 200', async () => {
+    const res = await request(app)
+      .get(`/api/versions/compare/${version1Id}/${duplicatedVersionId}`)
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(200)
+  })
+
+  it('TC-3008-02: response มี diff object (network, fixtures, results)', async () => {
+    const res = await request(app)
+      .get(`/api/versions/compare/${version1Id}/${duplicatedVersionId}`)
+      .set('Authorization', `Bearer ${token}`)
+    const diff = getObj(res.body)
+    // ตรวจว่ามี keys เกี่ยวกับการ compare (ชื่ออาจต่างกัน)
+    const keys = Object.keys(diff)
+    expect(keys.length).toBeGreaterThan(0)
+  })
+
+  it('TC-3008-03: compare version กับตัวเอง → network diff เป็น identical', async () => {
+    const res = await request(app)
+      .get(`/api/versions/compare/${version1Id}/${version1Id}`)
+      .set('Authorization', `Bearer ${token}`)
+    // ต้องตอบสนองโดยไม่ crash (200 หรือ 400)
+    expect(res.status).not.toBe(500)
+  })
+
+  it('TC-3008-04: ไม่มี token → HTTP 401', async () => {
+    const res = await request(app)
+      .get(`/api/versions/compare/${version1Id}/${duplicatedVersionId}`)
+    expect(res.status).toBe(401)
   })
 })

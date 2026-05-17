@@ -9,7 +9,7 @@ export default defineConfig({
   timeout: 30000,
 
   use: {
-    baseURL: 'http://localhost:3002',   // Frontend v2 port
+    baseURL: 'http://localhost:3003',   // Frontend v2 port
     headless: true,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -26,7 +26,7 @@ export default defineConfig({
   // รัน dev server ก่อนเทส (ถ้าต้องการ)
   // webServer: {
   //   command: 'npm run dev',
-  //   url: 'http://localhost:3002',
+  //   url: 'http://localhost:3003',
   //   reuseExistingServer: true,
   // },
 })

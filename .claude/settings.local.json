@@ -122,7 +122,8 @@
       "Bash(grep -n \"^\\\\s*</div>\" pages/projects/[id]/index.vue)",
       "Bash(node:*)",
       "Bash(git log:*)",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "Bash(npx playwright:*)"
     ]
   }
 }

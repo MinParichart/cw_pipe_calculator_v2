@@ -32,7 +32,7 @@ async function setupAndGetNetworkUrl(page: Page): Promise<string> {
   }
   // สร้าง project
   await page.goto(`${BASE}/projects/new`)
-  await page.fill('[name="username"]', `STC5 Project ${UNIQUE}`)
+  await page.fill('#name', `STC5 Project ${UNIQUE}`)
   await page.click('button[type="submit"], button:has-text("สร้าง")')
   await page.waitForURL(/\/projects\/\w+/, { timeout: 10_000 })
   const projectUrl = page.url()
@@ -66,11 +66,12 @@ test.describe('STC5 — Network Builder', () => {
   })
 
   async function gotoNetwork(page: Page) {
-    await page.goto(`${BASE}/login`)
+    await page.goto(`${BASE}/`)
+    await page.waitForLoadState('networkidle')
     await page.fill('[name="email"]', USER.email)
     await page.fill('[name="password"]', USER.password)
     await page.click('button[type="submit"]')
-    await page.waitForURL(/dashboard|projects/, { timeout: 10_000 })
+    await page.waitForURL(/\/projects/, { timeout: 10_000 })
     if (networkUrl) await page.goto(networkUrl)
   }
 
@@ -159,4 +160,6 @@ test.describe('STC5 — Network Builder', () => {
     const canvas = page.locator('canvas, svg[class*="network"], [class*="canvas"]')
     await expect(canvas.first()).toBeVisible({ timeout: 10_000 })
   })
+
+  
 })

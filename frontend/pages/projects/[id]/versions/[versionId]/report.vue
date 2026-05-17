@@ -472,6 +472,103 @@
               </div>
             </div>
 
+            <!-- PAGE 5: Network Diagram -->
+            <div v-if="networkSVGData" class="report-page p-10 print:p-8 border-t-4 border-gray-700">
+              <h3 class="text-base font-bold text-gray-800 mb-4 pb-1 border-b-2 border-gray-700 uppercase tracking-wide">
+                Network Diagram — ผังระบบท่อ
+              </h3>
+
+              <!-- Legend -->
+              <div class="flex gap-6 mb-4 text-xs text-gray-600">
+                <span class="flex items-center gap-1.5">
+                  <svg width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e" stroke="#16a34a" stroke-width="1.5"/></svg>
+                  SOURCE (ต้นทาง)
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <svg width="14" height="14"><circle cx="7" cy="7" r="6" fill="#6b7280" stroke="#4b5563" stroke-width="1.5"/></svg>
+                  JUNCTION (จุดเชื่อม)
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <svg width="14" height="14"><circle cx="7" cy="7" r="6" fill="#3b82f6" stroke="#2563eb" stroke-width="1.5"/></svg>
+                  TERMINAL (ปลายทาง)
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#dc2626" stroke-width="2.5"/></svg>
+                  Critical Path
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#6b7280" stroke-width="1.5"/></svg>
+                  Branch
+                </span>
+              </div>
+
+              <!-- SVG Network: width 100%, height auto from viewBox aspect ratio -->
+              <div class="border border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
+                <svg
+                  :viewBox="networkSVGData.viewBox"
+                  xmlns="http://www.w3.org/2000/svg"
+                  style="width:100%;height:auto;max-height:520px;display:block;"
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  <!-- Pipes (drawn first, below nodes) -->
+                  <g v-for="pipe in networkSVGData.pipes" :key="pipe.id">
+                    <polyline
+                      :points="pipe.points"
+                      :stroke="pipe.isCriticalPath ? '#dc2626' : '#94a3b8'"
+                      :stroke-width="pipe.isCriticalPath ? 3.5 : 2"
+                      fill="none"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <!-- Pipe label with white bg to prevent overlap -->
+                    <rect
+                      v-if="pipe.labelX != null"
+                      :x="pipe.labelX - 28"
+                      :y="pipe.labelY - 14"
+                      width="56" height="14"
+                      fill="white" fill-opacity="0.85" rx="2"
+                    />
+                    <text
+                      v-if="pipe.labelX != null"
+                      :x="pipe.labelX"
+                      :y="pipe.labelY - 3"
+                      text-anchor="middle"
+                      font-size="10"
+                      fill="#374151"
+                      font-family="sans-serif"
+                    >{{ pipe.nominalSize }}mm · {{ pipe.length?.toFixed(1) }}m</text>
+                  </g>
+
+                  <!-- Nodes (drawn on top) -->
+                  <g v-for="node in networkSVGData.nodes" :key="node.id">
+                    <!-- Shadow -->
+                    <circle :cx="node.x+2" :cy="node.y+2" r="22" fill="#00000018"/>
+                    <!-- Main circle -->
+                    <circle :cx="node.x" :cy="node.y" r="22" :fill="node.fill" :stroke="node.stroke" stroke-width="2.5"/>
+                    <!-- Label inside (short labels fit well) -->
+                    <text
+                      :x="node.x" :y="node.y + 5"
+                      text-anchor="middle"
+                      font-size="12" font-weight="700" fill="white"
+                      font-family="sans-serif"
+                    >{{ node.label.length <= 4 ? node.label : node.abbr }}</text>
+                    <!-- Label above if label was truncated -->
+                    <text
+                      v-if="node.label.length > 4"
+                      :x="node.x" :y="node.y - 28"
+                      text-anchor="middle"
+                      font-size="11" font-weight="600" fill="#111827"
+                      font-family="sans-serif"
+                    >{{ node.label }}</text>
+                  </g>
+                </svg>
+              </div>
+
+              <p class="text-xs text-gray-400 mt-2 text-right">
+                {{ networkSVGData.nodes.length }} nodes · {{ networkSVGData.pipes.length }} pipes
+              </p>
+            </div>
+
             <!-- REPORT FOOTER -->
             <div class="p-8 border-t-2 border-gray-300 bg-gray-50">
               <div class="flex justify-between items-center text-xs text-gray-500">
@@ -924,6 +1021,76 @@ const enrichedPipes = computed(() => {
 
 const criticalPathPipes = computed(() => enrichedPipes.value.filter(p => p.isCriticalPath))
 const branchPipes       = computed(() => enrichedPipes.value.filter(p => !p.isCriticalPath))
+
+// ===== NETWORK SVG DIAGRAM (static render from snapshotNetwork) =====
+const networkSVGData = computed(() => {
+  const rawNodes = networkData.value?.nodes
+  const rawPipes = networkData.value?.pipes
+  if (!rawNodes?.length) return null
+
+  const PAD = 70  // padding around diagram
+
+  // Bounding box
+  const xs = rawNodes.map((n: any) => n.x)
+  const ys = rawNodes.map((n: any) => n.y)
+  const minX = Math.min(...xs) - PAD
+  const minY = Math.min(...ys) - PAD
+  const maxX = Math.max(...xs) + PAD
+  const maxY = Math.max(...ys) + PAD
+  const W = maxX - minX
+  const H = maxY - minY
+
+  // Node colours
+  const NODE_COLOR: Record<string, { fill: string; stroke: string }> = {
+    SOURCE:   { fill: '#22c55e', stroke: '#16a34a' },
+    JUNCTION: { fill: '#6b7280', stroke: '#4b5563' },
+    TERMINAL: { fill: '#3b82f6', stroke: '#2563eb' },
+    FIXTURE:  { fill: '#3b82f6', stroke: '#2563eb' },
+    RISER:    { fill: '#f59e0b', stroke: '#d97706' },
+  }
+  const NODE_ABBR: Record<string, string> = {
+    SOURCE: 'S', JUNCTION: 'J', TERMINAL: 'T', FIXTURE: 'F', RISER: 'R'
+  }
+
+  const nodes = rawNodes.map((n: any) => ({
+    ...n,
+    fill:   (NODE_COLOR[n.type] ?? NODE_COLOR.JUNCTION).fill,
+    stroke: (NODE_COLOR[n.type] ?? NODE_COLOR.JUNCTION).stroke,
+    abbr:   NODE_ABBR[n.type] ?? n.type?.[0] ?? '?',
+    label:  n.label || n.name || `N${n.id}`,
+  }))
+
+  const nodeMap = new Map(rawNodes.map((n: any) => [String(n.id), n]))
+
+  const pipes = (rawPipes || []).map((p: any) => {
+    const src = nodeMap.get(String(p.sourceNodeId))
+    const tgt = nodeMap.get(String(p.targetNodeId))
+    if (!src || !tgt) return null
+    const midX = (src.x + tgt.x) / 2
+    const points = `${src.x},${src.y} ${midX},${src.y} ${midX},${tgt.y} ${tgt.x},${tgt.y}`
+    // Place label on the longest sub-segment to avoid clustering
+    const hDist = Math.abs(tgt.x - src.x)
+    const vDist = Math.abs(tgt.y - src.y)
+    let labelX: number, labelY: number
+    if (vDist > hDist) {
+      // Vertical segment longer → label beside it
+      labelX = midX + 34
+      labelY = (src.y + tgt.y) / 2
+    } else {
+      // Horizontal segment longer → label above first horizontal
+      labelX = (src.x + midX) / 2
+      labelY = src.y
+    }
+    return {
+      id: p.id, points,
+      isCriticalPath: p.isCriticalPath ?? false,
+      nominalSize: p.nominalSize ?? p.nominalDiameter ?? '-',
+      length: p.length, labelX, labelY,
+    }
+  }).filter(Boolean)
+
+  return { nodes, pipes, viewBox: `${minX} ${minY} ${W} ${H}` }
+})
 
 const pipesNeedingUpsize = computed(() =>
   enrichedPipes.value.filter(p => p.status === 'WARNING' || p.status === 'CRITICAL').length

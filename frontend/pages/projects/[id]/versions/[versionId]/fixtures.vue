@@ -78,6 +78,39 @@
 
         <!-- Pipe FU Loading Analysis -->
         <div v-else class="space-y-6">
+
+          <!-- ⚠️ Warning: FIXTURE nodes with no fixtures assigned -->
+          <div
+            v-if="emptyFixtureNodes.length > 0"
+            class="bg-orange-50 border border-orange-300 rounded-lg p-4 flex items-start gap-3"
+          >
+            <svg class="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            <div>
+              <p class="font-medium text-orange-900">
+                พบ FIXTURE node ที่ยังไม่ได้เพิ่มสุขภัณฑ์ ({{ emptyFixtureNodes.length }} node)
+              </p>
+              <p class="text-sm text-orange-700 mt-1">
+                Nodes:
+                <span
+                  v-for="(n, i) in emptyFixtureNodes"
+                  :key="n.id"
+                  class="font-mono bg-orange-100 px-1 rounded"
+                >{{ n.label || `Node ${n.id}` }}<span v-if="i < emptyFixtureNodes.length - 1">, </span></span>
+              </p>
+              <p class="text-sm text-orange-700 mt-1">
+                กรุณากลับไปที่
+                <button
+                  @click="router.push(`/projects/${route.params.id}/versions/${route.params.versionId}/network`)"
+                  class="text-blue-600 underline hover:text-blue-700"
+                >Step: Network</button>
+                แล้วคลิก node เหล่านี้เพื่อเพิ่มสุขภัณฑ์ มิฉะนั้น FU จะเป็น 0 และขนาดท่อจะคำนวณผิดพลาด
+              </p>
+            </div>
+          </div>
+
           <!-- Overall Summary -->
           <div class="bg-white rounded-lg shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
@@ -229,6 +262,14 @@ const loading = ref(true);
 console.log("🚀 [Step 4 - V2] Fixtures page mounted");
 console.log("   - Project ID:", route.params.id);
 console.log("   - Version ID:", route.params.versionId);
+
+// Computed: FIXTURE nodes that have no fixture types assigned (user forgot to fill them in)
+const emptyFixtureNodes = computed(() => {
+  if (!networkData.value?.nodes) return [];
+  return networkData.value.nodes.filter(
+    (n: any) => n.type === 'FIXTURE' && (!n.fixtures || n.fixtures.length === 0)
+  );
+});
 
 // Computed
 const criticalPathPipes = computed(() => {

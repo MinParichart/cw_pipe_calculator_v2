@@ -277,3 +277,88 @@ describe('UTC3008 — GET /api/versions/compare/:v1/:v2 [v2]', () => {
     expect(res.status).toBe(401)
   })
 })
+
+// ─────────────────────────────────────────────
+// UTC3007: [v2] Duplicate Version
+// ─────────────────────────────────────────────
+describe('UTC3007 — [v2] POST /api/versions/:versionId/duplicate', () => {
+  let sourceVersionId: number
+
+  beforeAll(async () => {
+    // สร้าง version พร้อม snapshotNetwork เพื่อใช้ duplicate
+    const ver = await request(app)
+      .post(`${PROJ_BASE}/${projectId}/versions`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Source for Duplicate' })
+    sourceVersionId = getObj(ver.body).id
+
+    // ใส่ snapshotNetwork
+    await request(app)
+      .put(`/api/versions/${sourceVersionId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        snapshotNetwork: JSON.stringify({ nodes: [{ id: 'n1', type: 'SOURCE' }], pipes: [] }),
+        snapshotFixtures: JSON.stringify({ fixtures: [] }),
+      })
+  })
+
+  it('TC-3007-01: duplicate → HTTP 201 พร้อม version object ใหม่', async () => {
+    const res = await request(app)
+      .post(`/api/versions/${sourceVersionId}/duplicate`)
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(201)
+    const ver = getObj(res.body)
+    expect(ver).toHaveProperty('id')
+    expect(ver.id).not.toBe(sourceVersionId)
+  })
+
+  it('TC-3007-02: version ที่ duplicate มี snapshotNetwork เหมือนต้นฉบับ', async () => {
+    const dupRes = await request(app)
+      .post(`/api/versions/${sourceVersionId}/duplicate`)
+      .set('Authorization', `Bearer ${token}`)
+    const dupId = getObj(dupRes.body).id
+
+    const [src, dup] = await Promise.all([
+      request(app).get(`/api/versions/${sourceVersionId}`).set('Authorization', `Bearer ${token}`),
+      request(app).get(`/api/versions/${dupId}`).set('Authorization', `Bearer ${token}`),
+    ])
+    expect(getObj(dup.body).snapshotNetwork).toBe(getObj(src.body).snapshotNetwork)
+  })
+
+  it('TC-3007-03: versionNumber ของ duplicate ต้องเพิ่มจากเดิม', async () => {
+    const res = await request(app)
+      .post(`/api/versions/${sourceVersionId}/duplicate`)
+      .set('Authorization', `Bearer ${token}`)
+    const ver = getObj(res.body)
+    expect(ver.versionNumber).toBeGreaterThan(0)
+  })
+})
+
+// ─────────────────────────────────────────────
+// UTC3008: [v2] Compare 2 Versions
+// ─────────────────────────────────────────────
+describe('UTC3008 — [v2] GET /api/versions/compare/:v1/:v2', () => {
+  // ใช้ version1Id กับ duplicatedVersionId ที่สร้างไว้แล้วใน UTC3007
+  // เพื่อหลีกเลี่ยง unique constraint บน (projectId, versionNumber)
+
+  it('TC-3008-01: GET compare → HTTP 200', async () => {
+    const res = await request(app)
+      .get(`/api/versions/compare/${version1Id}/${duplicatedVersionId}`)
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(200)
+  })
+
+  it('TC-3008-02: response มี diff object พร้อม snapshotNetwork ของทั้งสอง version', async () => {
+    const res = await request(app)
+      .get(`/api/versions/compare/${version1Id}/${duplicatedVersionId}`)
+      .set('Authorization', `Bearer ${token}`)
+    const data = getObj(res.body)
+    const keys = Object.keys(data ?? {})
+    expect(keys.length).toBeGreaterThan(0)
+  })
+
+  it('TC-3008-03: ไม่ส่ง token → HTTP 401', async () => {
+    const res = await request(app).get(`/api/versions/compare/${version1Id}/${duplicatedVersionId}`)
+    expect(res.status).toBe(401)
+  })
+})

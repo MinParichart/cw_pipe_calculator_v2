@@ -1,7 +1,8 @@
 // Document Routes
-import express from 'express'
+import express, { NextFunction, Request, Response } from 'express'
 import multer from 'multer'
 import { DocumentController } from '../controllers/documentController'
+import { authenticate } from '../middleware/auth'
 
 const router = express.Router()
 const documentController = new DocumentController()
@@ -28,11 +29,19 @@ const upload = multer({
   },
 })
 
+// Multer error handler — returns 400 instead of 500 for file filter rejections
+const multerErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof multer.MulterError || err?.message) {
+    return res.status(400).json({ success: false, error: { code: 'INVALID_FILE', message: err.message } })
+  }
+  next(err)
+}
+
 /**
  * @route   GET /api/projects/:projectId/documents
  * @desc    Get all documents for a project
  */
-router.get('/projects/:projectId/documents', documentController.getDocuments.bind(documentController))
+router.get('/projects/:projectId/documents', authenticate, documentController.getDocuments.bind(documentController))
 
 /**
  * @route   POST /api/projects/:projectId/documents
@@ -40,7 +49,9 @@ router.get('/projects/:projectId/documents', documentController.getDocuments.bin
  */
 router.post(
   '/projects/:projectId/documents',
+  authenticate,
   upload.single('file'),
+  multerErrorHandler,
   documentController.uploadDocument.bind(documentController)
 )
 
@@ -48,13 +59,13 @@ router.post(
  * @route   DELETE /api/documents/:id
  * @desc    Delete a document
  */
-router.delete('/documents/:id', documentController.deleteDocument.bind(documentController))
+router.delete('/documents/:id', authenticate, documentController.deleteDocument.bind(documentController))
 
 /**
  * @route   GET /api/versions/:versionId/documents
  * @desc    Get all documents for a version (v2)
  */
-router.get('/versions/:versionId/documents', documentController.getVersionDocuments.bind(documentController))
+router.get('/versions/:versionId/documents', authenticate, documentController.getVersionDocuments.bind(documentController))
 
 /**
  * @route   POST /api/versions/:versionId/documents
@@ -62,7 +73,9 @@ router.get('/versions/:versionId/documents', documentController.getVersionDocume
  */
 router.post(
   '/versions/:versionId/documents',
+  authenticate,
   upload.single('file'),
+  multerErrorHandler,
   documentController.uploadVersionDocument.bind(documentController)
 )
 

@@ -1,10 +1,22 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+  <div
+    class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50"
+  >
     <div class="max-w-md w-full">
       <!-- Logo -->
       <div class="text-center">
-        <svg class="mx-auto h-16 w-16 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v18M8 7h8M8 12h8M8 17h8" />
+        <svg
+          class="mx-auto h-16 w-16 text-primary-600"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 3v18M8 7h8M8 12h8M8 17h8"
+          />
         </svg>
         <h1 class="mt-6 text-4xl font-bold text-gray-900">
           CW Pipe Calculator
@@ -18,67 +30,22 @@
       <div class="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
         <AccountLoginForm />
       </div>
-
-      <!-- Features -->
-      <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div class="bg-white p-4 rounded-lg shadow-sm">
-          <div class="flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h3 class="mt-4 text-lg font-medium text-gray-900 text-center">
-            คำนวณอัตโนมัติ
-          </h3>
-          <p class="mt-2 text-sm text-gray-500 text-center">
-            Hunter's Curve + Hazen-Williams
-          </p>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg shadow-sm">
-          <div class="flex items-center justify-center h-12 w-12 rounded-md bg-success-500 text-white">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-            </svg>
-          </div>
-          <h3 class="mt-4 text-lg font-medium text-gray-900 text-center">
-            Visual Builder
-          </h3>
-          <p class="mt-2 text-sm text-gray-500 text-center">
-            ลากวาด Node และท่อได้ง่าย
-          </p>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg shadow-sm">
-          <div class="flex items-center justify-center h-12 w-12 rounded-md bg-warning-500 text-white">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 class="mt-4 text-lg font-medium text-gray-900 text-center">
-            ประหยัดเวลา
-          </h3>
-          <p class="mt-2 text-sm text-gray-500 text-center">
-            คำนวณผลในไม่กี่วินาที
-          </p>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 // Redirect if already authenticated
-const { isAuthenticated } = useAuth()
+const { isAuthenticated } = useAuth();
 
 onMounted(() => {
   if (isAuthenticated.value) {
-    navigateTo('/projects')
+    navigateTo("/projects");
   }
-})
+});
 
 // Define page meta for layout
 definePageMeta({
-  layout: 'auth',
-})
+  layout: "auth"
+});
 </script>

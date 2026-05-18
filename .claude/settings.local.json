@@ -123,7 +123,9 @@
       "Bash(node:*)",
       "Bash(git log:*)",
       "Bash(git show:*)",
-      "Bash(npx playwright:*)"
+      "Bash(npx playwright:*)",
+      "Bash(unzip -p \"testcase_17-5-2026-updated.docx\" word/document.xml)",
+      "Bash(find D:41.IS-Thesiscw_pipe_calculator_v2frontendtests -name *.test.ts -o -name *.spec.ts)"
     ]
   }
 }

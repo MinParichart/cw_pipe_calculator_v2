@@ -241,6 +241,168 @@
             </div>
           </div>
 
+          <!-- Hydraulic Statistics Cards -->
+          <div v-if="hasCalculation(versionAData) || hasCalculation(versionBData)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Max Flow Rate -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-medium text-gray-900">อัตราการไหลสูงสุด</h4>
+                <svg
+                  class="h-5 w-5 text-cyan-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Version A:</span>
+                  <span class="font-medium">{{
+                    formatFlowRate(getMaxFlowRate(versionAData))
+                  }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Version B:</span>
+                  <span class="font-medium">{{
+                    formatFlowRate(getMaxFlowRate(versionBData))
+                  }}</span>
+                </div>
+                <div class="flex justify-between border-t pt-2">
+                  <span class="text-gray-600">Difference:</span>
+                  <span
+                    class="font-bold"
+                    :class="
+                      getFlowRateDiffClass(
+                        getMaxFlowRate(versionBData),
+                        getMaxFlowRate(versionAData)
+                      )
+                    "
+                  >
+                    {{
+                      formatFlowRateDiff(
+                        getMaxFlowRate(versionBData),
+                        getMaxFlowRate(versionAData)
+                      )
+                    }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Max Pipe Size -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-medium text-gray-900">ขนาดท่อใหญ่สุด</h4>
+                <svg
+                  class="h-5 w-5 text-amber-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+                  />
+                </svg>
+              </div>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Version A:</span>
+                  <span class="font-medium">{{
+                    formatPipeSize(getMaxPipeSize(versionAData))
+                  }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Version B:</span>
+                  <span class="font-medium">{{
+                    formatPipeSize(getMaxPipeSize(versionBData))
+                  }}</span>
+                </div>
+                <div class="flex justify-between border-t pt-2">
+                  <span class="text-gray-600">Difference:</span>
+                  <span
+                    class="font-bold"
+                    :class="
+                      getPipeSizeDiffClass(
+                        getMaxPipeSize(versionBData),
+                        getMaxPipeSize(versionAData)
+                      )
+                    "
+                  >
+                    {{
+                      formatPipeSizeDiff(
+                        getMaxPipeSize(versionBData),
+                        getMaxPipeSize(versionAData)
+                      )
+                    }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Required Inlet Pressure -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-medium text-gray-900">Required Inlet Pressure</h4>
+                <svg
+                  class="h-5 w-5 text-purple-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Version A:</span>
+                  <span class="font-medium">{{
+                    formatPressure(getRequiredInletPressure(versionAData))
+                  }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Version B:</span>
+                  <span class="font-medium">{{
+                    formatPressure(getRequiredInletPressure(versionBData))
+                  }}</span>
+                </div>
+                <div class="flex justify-between border-t pt-2">
+                  <span class="text-gray-600">Difference:</span>
+                  <span
+                    class="font-bold"
+                    :class="
+                      getPressureDiffClass(
+                        getRequiredInletPressure(versionBData),
+                        getRequiredInletPressure(versionAData)
+                      )
+                    "
+                  >
+                    {{
+                      formatPressureDiff(
+                        getRequiredInletPressure(versionBData),
+                        getRequiredInletPressure(versionAData)
+                      )
+                    }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Network Diagrams Comparison -->
           <div class="bg-white rounded-lg shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
@@ -628,6 +790,85 @@ const getDiffClass = (valueB: number, valueA: number) => {
   const diff = valueB - valueA;
   if (diff > 0) return "text-green-600";
   if (diff < 0) return "text-red-600";
+  return "text-gray-600";
+};
+
+// Hydraulic Statistics Methods
+const getMaxFlowRate = (data: any) => {
+  if (!data?.snapshotResults?.pipeSizesSummary?.stats) return 0;
+  const value = data.snapshotResults.pipeSizesSummary.stats.flowRate;
+  return parseFloat(value) || 0;
+};
+
+const getMaxPipeSize = (data: any) => {
+  if (!data?.snapshotResults?.pipeSizesSummary?.stats) return 0;
+  const value = data.snapshotResults.pipeSizesSummary.stats.maxPipeSize;
+  return parseFloat(value) || 0;
+};
+
+const getRequiredInletPressure = (data: any) => {
+  if (!data?.snapshotResults?.requiredInletPressure) return 0;
+  const value = data.snapshotResults.requiredInletPressure.totalPressureBar;
+  return parseFloat(value) || 0;
+};
+
+// Format Methods
+const formatFlowRate = (value: number) => {
+  if (value === 0 || !value) return "-";
+  return `${value.toFixed(2)} L/s`;
+};
+
+const formatPipeSize = (value: number) => {
+  if (value === 0 || !value) return "-";
+  return `${value.toFixed(0)} mm`;
+};
+
+const formatPressure = (value: number) => {
+  if (value === 0 || !value) return "-";
+  return `${value.toFixed(2)} bar`;
+};
+
+// Format Difference Methods
+const formatFlowRateDiff = (valueB: number, valueA: number) => {
+  const diff = valueB - valueA;
+  if (diff === 0) return "0 L/s";
+  const sign = diff > 0 ? "+" : "";
+  return `${sign}${diff.toFixed(2)} L/s`;
+};
+
+const formatPipeSizeDiff = (valueB: number, valueA: number) => {
+  const diff = valueB - valueA;
+  if (diff === 0) return "0 mm";
+  const sign = diff > 0 ? "+" : "";
+  return `${sign}${diff.toFixed(0)} mm`;
+};
+
+const formatPressureDiff = (valueB: number, valueA: number) => {
+  const diff = valueB - valueA;
+  if (diff === 0) return "0 bar";
+  const sign = diff > 0 ? "+" : "";
+  return `${sign}${diff.toFixed(2)} bar`;
+};
+
+// Difference Class Methods
+const getFlowRateDiffClass = (valueB: number, valueA: number) => {
+  const diff = valueB - valueA;
+  if (diff > 0) return "text-green-600"; // More flow = good
+  if (diff < 0) return "text-red-600";
+  return "text-gray-600";
+};
+
+const getPipeSizeDiffClass = (valueB: number, valueA: number) => {
+  const diff = valueB - valueA;
+  if (diff > 0) return "text-amber-600"; // Larger pipes = more cost (neutral/warning)
+  if (diff < 0) return "text-green-600"; // Smaller pipes = less cost (good)
+  return "text-gray-600";
+};
+
+const getPressureDiffClass = (valueB: number, valueA: number) => {
+  const diff = valueB - valueA;
+  if (diff < 0) return "text-green-600"; // Less pressure = good
+  if (diff > 0) return "text-red-600"; // More pressure = bad
   return "text-gray-600";
 };
 

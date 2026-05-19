@@ -378,9 +378,30 @@ const onSummaryChange = (summary: any) => {
 
 const saveCalculationSnapshot = async (results: any) => {
   try {
+    // Get required inlet pressure from the component ref
+    let requiredInletPressure = null;
+    if (requiredInletPressureRef.value) {
+      requiredInletPressure = {
+        totalPressureBar: parseFloat(requiredInletPressureRef.value.totalPressureBar),
+        totalPressureMwg: parseFloat(requiredInletPressureRef.value.totalPressureMwg),
+        majorLossBar: requiredInletPressureRef.value.majorLossBarValue,
+        majorLossMwg: requiredInletPressureRef.value.majorLossMwg,
+        minorLossBar: requiredInletPressureRef.value.minorLossBarValue,
+        minorLossMwg: requiredInletPressureRef.value.minorLossMwg,
+        verticalLossBar: requiredInletPressureRef.value.verticalLossBarValue,
+        verticalLossMwg: requiredInletPressureRef.value.verticalLossMwg,
+        fixturePressureBar: requiredInletPressureRef.value.selectedFixturePressureBar,
+        fixturePressureMwg: requiredInletPressureRef.value.selectedFixturePressureMwg,
+        verticalHeight: requiredInletPressureRef.value.verticalHeight,
+        selectedFixture: requiredInletPressureRef.value.selectedFixtureKey
+      };
+      console.log("📊 Required Inlet Pressure saved:", requiredInletPressure);
+    }
+
     const snapshotResults = {
       pipeSizesSummary: results,
       calculationSummary: calculationSummary.value,
+      requiredInletPressure: requiredInletPressure,
       updatedAt: new Date().toISOString()
     };
 
@@ -388,7 +409,7 @@ const saveCalculationSnapshot = async (results: any) => {
       snapshotResults: JSON.stringify(snapshotResults)
     });
 
-    console.log("✅ Calculation snapshot saved");
+    console.log("✅ Calculation snapshot saved with required inlet pressure");
   } catch (error) {
     console.error("Failed to save calculation snapshot:", error);
   }

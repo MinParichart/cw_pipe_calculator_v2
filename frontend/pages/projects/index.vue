@@ -4,9 +4,7 @@
       <!-- Header -->
       <div class="flex justify-between items-center mb-6">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">
-            โปรเจกต์ของฉัน
-          </h1>
+          <h1 class="text-3xl font-bold text-gray-900">โปรเจกต์ของฉัน</h1>
           <p class="mt-1 text-sm text-gray-600">
             จัดการและคำนวณขนาดท่อน้ำดีสำหรับโปรเจกต์ของคุณ
           </p>
@@ -15,15 +13,28 @@
           @click="createNewProject"
           class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center gap-2"
         >
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          <svg
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           สร้างโปรเจกต์ใหม่
         </button>
       </div>
 
       <!-- Projects Grid -->
-      <div v-if="projects.length > 0" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div
+        v-if="projects.length > 0"
+        class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+      >
         <ProjectCard
           v-for="project in sortedProjects"
           :key="project.id"
@@ -33,19 +44,55 @@
         />
       </div>
 
+      <!-- Workflow Guide Section -->
+      <div v-if="projects.length > 0" class="mt-10">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">
+                📋 ขั้นตอนการทำงาน (Workflow)
+              </h2>
+              <p class="mt-1 text-sm text-gray-600">
+                แนวทางการคำนวณขนาดท่อน้ำดี
+              </p>
+            </div>
+          </div>
+
+          <!-- Workflow Image -->
+          <div class="mt-4 rounded-lg overflow-hidden border-2 border-gray-200">
+            <img
+              src="/file/workflow.png"
+              alt="Workflow Guide"
+              class="w-full h-auto"
+            />
+          </div>
+        </div>
+      </div>
+
       <!-- Empty State -->
       <div v-else class="text-center py-16">
-        <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <svg
+          class="mx-auto h-16 w-16 text-gray-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
         </svg>
-        <h3 class="mt-4 text-xl font-medium text-gray-900">
-          ยังไม่มีโปรเจกต์
-        </h3>
+        <h3 class="mt-4 text-xl font-medium text-gray-900">ยังไม่มีโปรเจกต์</h3>
         <p class="mt-2 text-sm text-gray-500">
           เริ่มต้นสร้างโปรเจกต์ใหม่เพื่อคำนวณขนาดท่อน้ำดี
         </p>
         <div class="mt-6">
-          <button @click="createNewProject" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors">
+          <button
+            @click="createNewProject"
+            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+          >
             สร้างโปรเจกต์แรกของคุณ
           </button>
         </div>
@@ -54,19 +101,26 @@
   </div>
 
   <!-- Delete Confirmation Modal -->
-  <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div
+    v-if="showDeleteModal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  >
     <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-      <h3 class="text-lg font-medium text-gray-900">
-        ยืนยันการลบโปรเจกต์
-      </h3>
+      <h3 class="text-lg font-medium text-gray-900">ยืนยันการลบโปรเจกต์</h3>
       <p class="mt-2 text-sm text-gray-600">
         การดำเนินการนี้ไม่สามารถย้อนกลับได้ คุณต้องการลบโปรเจกต์นี้หรือไม่?
       </p>
       <div class="mt-6 flex justify-end gap-3">
-        <button @click="showDeleteModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+        <button
+          @click="showDeleteModal = false"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
           ยกเลิก
         </button>
-        <button @click="confirmDelete" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+        <button
+          @click="confirmDelete"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+        >
           ลบโปรเจกต์
         </button>
       </div>
@@ -75,72 +129,74 @@
 </template>
 
 <script setup lang="ts">
-import ProjectCard from '~/components/projects/ProjectCard.vue'
-import { projectsApi } from '~/composables/useApi'
+import ProjectCard from "~/components/projects/ProjectCard.vue";
+import { projectsApi } from "~/composables/useApi";
 
-const { user } = useAuth()
-const router = useRouter()
-const toast = useToast()
+const { user } = useAuth();
+const router = useRouter();
+const toast = useToast();
 
 // State
-const projects = ref<any[]>([])
-const loading = ref(false)
-const showDeleteModal = ref(false)
-const projectToDelete = ref<number | null>(null)
+const projects = ref<any[]>([]);
+const loading = ref(false);
+const showDeleteModal = ref(false);
+const projectToDelete = ref<number | null>(null);
 
 // Computed
 const sortedProjects = computed(() => {
   return [...projects.value].sort((a, b) => {
-    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  })
-})
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
+});
 
 // Methods
 const loadProjects = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    projects.value = await projectsApi.list()
+    projects.value = await projectsApi.list();
   } catch (error: any) {
-    toast.error(error.message || 'Failed to load projects')
+    toast.error(error.message || "Failed to load projects");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const createNewProject = () => {
-  router.push('/projects/new')
-}
+  router.push("/projects/new");
+};
 
 const openProject = (id: number) => {
-  router.push(`/projects/${id}`)
-}
+  router.push(`/projects/${id}`);
+};
 
 const deleteProject = (id: number) => {
-  projectToDelete.value = id
-  showDeleteModal.value = true
-}
+  projectToDelete.value = id;
+  showDeleteModal.value = true;
+};
 
 const confirmDelete = async () => {
   if (projectToDelete.value) {
     try {
-      await projectsApi.delete(projectToDelete.value)
-      projects.value = projects.value.filter(p => p.id !== projectToDelete.value)
-      showDeleteModal.value = false
-      projectToDelete.value = null
-      toast.success('Project deleted successfully')
+      await projectsApi.delete(projectToDelete.value);
+      projects.value = projects.value.filter(
+        (p) => p.id !== projectToDelete.value
+      );
+      showDeleteModal.value = false;
+      projectToDelete.value = null;
+      toast.success("Project deleted successfully");
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete project')
+      toast.error(error.message || "Failed to delete project");
     }
   }
-}
+};
 
 // Load projects on mount
 onMounted(() => {
-  loadProjects()
-})
+  loadProjects();
+});
 
 // Define page meta for layout
 definePageMeta({
-  layout: 'dashboard',
-})
+  layout: "dashboard"
+});
 </script>
